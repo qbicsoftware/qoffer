@@ -10,7 +10,7 @@ TBA!
 
 Package Manager
 -----
-TBA!
+users can add new packages into the database, these packages includes title, description and price information which is used after in the offer creation process.
 
 
 Offer Manager

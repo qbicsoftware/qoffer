@@ -739,6 +739,9 @@ public enum Database {
     if (count == 0) {
       String sql =
           "INSERT INTO z_offers (offer_number, offer_project_reference, offer_facility, offer_name, offer_description, offer_price, offer_total, offer_date, added_by, offer_status, discount, internal) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+      // String sql =
+      // "INSERT INTO z_offers (offer_number, offer_project_reference, offer_facility, offer_name, offer_description, offer_price, offer_total, offer_date, added_by, offer_status, discount) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+
       // The following statement is an try-with-resources statement, which declares two resources,
       // conn and statement, which will be automatically closed when the try block terminates
       try (Connection conn = login();
@@ -827,12 +830,14 @@ public enum Database {
       }
     } else {
       String sqlInsert =
-          "INSERT INTO z_offers_packages (offer_id, package_id, package_addon_price) VALUES (?,?,?)";
+          "INSERT INTO z_offers_packages (offer_id, package_id, package_addon_price,package_count,package_discount) VALUES (?,?,?,?,?)";
       try (Connection connInsert = login();
           PreparedStatement statementInsert = connInsert.prepareStatement(sqlInsert)) {
         statementInsert.setInt(1, offer_id);
         statementInsert.setInt(2, package_id);
         statementInsert.setFloat(3, package_unit_price);
+        statementInsert.setInt(4, 1);
+        statementInsert.setString(5, "0%");
         int result = statementInsert.executeUpdate();
         System.out.println("Insert: " + statementInsert);
         success = (result > 0);

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE ivy-module [
-	<!ENTITY vaadin.version "7.7.6">
+	<!ENTITY vaadin.version "7.7.9">
 ]>
 <ivy-module version="2.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -51,6 +51,13 @@
 	
          <dependency org="org.slf4j" name ="slf4j-api" rev="1.7.5" />
          <dependency org="org.docx4j" name ="docx4j" rev="3.3.1" />
+         
+        <dependency org="org.apache.poi" name="poi-scratchpad" rev="3.10-FINAL"/>
+		<dependency org="org.apache.poi" name="poi-ooxml-schemas" rev="3.10-FINAL"/>
+		<dependency org="org.apache.poi" name="poi-ooxml" rev="3.10-FINAL"/>
+		<dependency org="org.apache.poi" name="poi-excelant" rev="3.10-FINAL"/>
+		<dependency org="org.apache.poi" name="poi-examples" rev="3.10-FINAL"/>
+		<dependency org="org.apache.poi" name="poi" rev="3.10-FINAL"/>
 		
 	</dependencies>
 	

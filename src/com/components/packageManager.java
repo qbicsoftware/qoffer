@@ -16,10 +16,33 @@
 
 package com.components;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
+import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.docx4j.Docx4J;
+import org.docx4j.dml.wordprocessingDrawing.Inline;
+import org.docx4j.jaxb.Context;
+import org.docx4j.openpackaging.exceptions.Docx4JException;
+import org.docx4j.openpackaging.exceptions.InvalidFormatException;
+import org.docx4j.openpackaging.packages.ProtectDocument;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
+import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.docx4j.wml.STDocProtect;
 
 import com.dbase.DBManager;
 import com.dbase.Database;
@@ -31,6 +54,7 @@ import com.vaadin.event.SelectionEvent;
 import com.vaadin.event.SelectionEvent.SelectionListener;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Page;
+import com.vaadin.server.VaadinService;
 import com.vaadin.shared.Position;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.Alignment;
@@ -577,7 +601,7 @@ public class packageManager extends CustomComponent {
     selectedPacksInOfferGrid.removeColumn("package_date");
     selectedPacksInOfferGrid.removeColumn("package_id");
     selectedPacksInOfferGrid.removeColumn("discount");
-    selectedPacksInOfferGrid.removeColumn("internal");
+
 
     selectedPacksInOfferGrid.getColumn("package_addon_price").setHeaderCaption(
         "Package Add-On Price (€)");
@@ -790,6 +814,111 @@ public class packageManager extends CustomComponent {
             public void buttonClick(ClickEvent event) {
 
               Notification("Test", "Test", "");
+
+              WordprocessingMLPackage wordMLPackage = null;
+              try {
+                wordMLPackage = WordprocessingMLPackage.createPackage();
+              } catch (InvalidFormatException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
+              MainDocumentPart mdp = wordMLPackage.getMainDocumentPart();
+
+              String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+
+              // Image as a file resource
+              File resource = new File(basepath + "/WEB-INF/images/header.png");
+
+              java.io.InputStream is = null;
+              try {
+                is = new java.io.FileInputStream(resource);
+              } catch (FileNotFoundException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
+              long length = resource.length();
+              // You cannot create an array using a long type.
+              // It needs to be an int type.
+              if (length > Integer.MAX_VALUE) {
+                System.out.println("File too large!!");
+              }
+              byte[] bytes = new byte[(int) length];
+              int offset = 0;
+              int numRead = 0;
+              try {
+                while (offset < bytes.length
+                    && (numRead = is.read(bytes, offset, bytes.length - offset)) >= 0) {
+                  offset += numRead;
+                }
+              } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
+              // Ensure all the bytes have been read in
+              if (offset < bytes.length) {
+                System.out.println("Could not completely read file " + resource.getName());
+              }
+              try {
+                is.close();
+              } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
+
+              String filenameHint = null;
+              String altText = null;
+              int id1 = 0;
+              int id2 = 1;
+
+              // Image 1: no width specified
+              org.docx4j.wml.P p;
+              try {
+                p = newImage(wordMLPackage, bytes, filenameHint, altText, id1, id2);
+                wordMLPackage.getMainDocumentPart().addObject(p);
+              } catch (Exception e2) {
+                // TODO Auto-generated catch block
+                e2.printStackTrace();
+              }
+
+              /*
+               * // Image 2: width 3000 org.docx4j.wml.P p2 = newImage(wordMLPackage, bytes,
+               * filenameHint, altText, id1, id2, 3000);
+               * wordMLPackage.getMainDocumentPart().addObject(p2);
+               * 
+               * // Image 3: width 6000 org.docx4j.wml.P p3 = newImage(wordMLPackage, bytes,
+               * filenameHint, altText, id1, id2, 6000);
+               * wordMLPackage.getMainDocumentPart().addObject(p3);
+               */
+
+              // Now save it
+              /*
+               * try { wordMLPackage.save(new java.io.File(System.getProperty("user.dir") +
+               * "/OUT_AddImage.docx")); } catch (Docx4JException e1) { // TODO Auto-generated catch
+               * block e1.printStackTrace(); }
+               */
+
+              mdp.addParagraphOfText("hello world");
+
+
+              ProtectDocument protection = new ProtectDocument(wordMLPackage);
+              protection.restrictEditing(STDocProtect.READ_ONLY, "foobaa");
+
+
+              String filename = System.getProperty("user.dir") + "/offer.docx";
+              try {
+                Docx4J.save(wordMLPackage, new java.io.File(filename), Docx4J.FLAG_SAVE_ZIP_FILE);
+              } catch (Docx4JException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+              }
+
+              // To save encrypted, you'd use FLAG_SAVE_ENCRYPTED_AGILE, for example:
+              // Docx4J.save(wordMLPackage, new java.io.File(filename),
+              // Docx4J.FLAG_SAVE_ENCRYPTED_AGILE, "foo");
+
+
+              System.out.println("Saved " + filename);
+
               /*
                * factory = Context.getWmlObjectFactory(); docxHelper = new Docx4jHelper(); try {
                * wordMLPackage = WordprocessingMLPackage.createPackage(); } catch
@@ -808,7 +937,7 @@ public class packageManager extends CustomComponent {
                * ".docx"; try { wordMLPackage.save(new java.io.File(docxPath)); } catch
                * (Docx4JException e) { // TODO Auto-generated catch block e.printStackTrace();
                */
-
+              // writeDocx();
             }
           });
         });
@@ -865,7 +994,7 @@ public class packageManager extends CustomComponent {
     offerGrid.getColumn("offer_name").setHeaderCaption("Name").setWidth(200);
     offerGrid.getColumn("offer_facility").setHeaderCaption("Prospect");
     offerGrid.getColumn("offer_description").setHeaderCaption("Description").setWidth(300);
-    // offerGrid.getColumn("offer_group").setHeaderCaption("Group");
+    offerGrid.getColumn("offer_group").setHeaderCaption("Group");
     offerGrid.getColumn("offer_total").setHeaderCaption("Price (€)").setEditable(false);
     offerGrid.getColumn("discount").setHeaderCaption("Discount").setEditable(false);
     offerGrid.getColumn("offer_status").setHeaderCaption("Status").setEditable(false);
@@ -878,7 +1007,8 @@ public class packageManager extends CustomComponent {
     offerGrid.removeColumn("last_edited");
     offerGrid.removeColumn("offer_id");
     offerGrid.removeColumn("added_by");
-    // offerGrid.removeColumn("offer_date");
+    offerGrid.removeColumn("offer_date");
+    offerGrid.removeColumn("internal");
 
     offerGrid.sort("offer_date", SortDirection.ASCENDING);
 
@@ -908,6 +1038,83 @@ public class packageManager extends CustomComponent {
    * 
    * }
    */
+
+
+  /**
+   * Create image, without specifying width
+   */
+  public static org.docx4j.wml.P newImage(WordprocessingMLPackage wordMLPackage, byte[] bytes,
+      String filenameHint, String altText, int id1, int id2) throws Exception {
+
+    BinaryPartAbstractImage imagePart =
+        BinaryPartAbstractImage.createImagePart(wordMLPackage, bytes);
+
+    Inline inline = imagePart.createImageInline(filenameHint, altText, id1, id2, false);
+
+    // Now add the inline in w:p/w:r/w:drawing
+    org.docx4j.wml.ObjectFactory factory = Context.getWmlObjectFactory();
+    org.docx4j.wml.P p = factory.createP();
+    org.docx4j.wml.R run = factory.createR();
+    p.getContent().add(run);
+    org.docx4j.wml.Drawing drawing = factory.createDrawing();
+    run.getContent().add(drawing);
+    drawing.getAnchorOrInline().add(inline);
+
+    return p;
+
+  }
+
+  private void writeDocx() {
+    try {
+      int count = 0;
+      String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+      XWPFDocument document = new XWPFDocument();
+      XWPFDocument docx =
+          new XWPFDocument(new FileInputStream(basepath + "/WEB-INF/documents/template1000.docx"));
+      XWPFWordExtractor we = new XWPFWordExtractor(docx);
+      String text = we.getText();
+      if (text.contains("Hello")) {
+        text = text.replace("Hello", "Hi");
+        System.out.println(text);
+      }
+      char[] c = text.toCharArray();
+      for (int i = 0; i < c.length; i++) {
+
+        if (c[i] == '\n') {
+          count++;
+        }
+      }
+      System.out.println(c[0]);
+      StringTokenizer st = new StringTokenizer(text, "\n");
+
+      XWPFParagraph para = document.createParagraph();
+      para.setAlignment(ParagraphAlignment.CENTER);
+      XWPFRun run = para.createRun();
+      run.setBold(true);
+      run.setFontSize(36);
+      run.setText("Apache POI works well!");
+
+      List<XWPFParagraph> paragraphs = new ArrayList<XWPFParagraph>();
+      List<XWPFRun> runs = new ArrayList<XWPFRun>();
+      int k = 0;
+      for (k = 0; k < count + 1; k++) {
+        paragraphs.add(document.createParagraph());
+      }
+      k = 0;
+      while (st.hasMoreElements()) {
+        paragraphs.get(k).setAlignment(ParagraphAlignment.LEFT);
+        paragraphs.get(k).setSpacingAfter(0);
+        paragraphs.get(k).setSpacingBefore(0);
+        run = paragraphs.get(k).createRun();
+        run.setText(st.nextElement().toString());
+        k++;
+      }
+
+      document.write(new FileOutputStream("template2000.docx"));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
   private void Notification(String title, String description, String type) {
     com.vaadin.ui.Notification notify = new com.vaadin.ui.Notification(title, description);

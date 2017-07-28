@@ -254,6 +254,26 @@ public enum Database {
     return list;
   }
 
+  public String getUserEmail(String username) {
+    String userEmail = "oops! no email address is available in the database.";
+    String sql = "SELECT email FROM z_persons WHERE username = ?";
+    // The following statement is an try-with-resources statement, which declares two resources,
+    // conn and statement, which will be automatically closed when the try block terminates
+    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
+      statement.setString(1, username);
+      ResultSet rs = statement.executeQuery();
+      if (rs.next())
+        userEmail = rs.getString(1);
+      // System.out.println(rs.next() + " getString " + rs.getString(1));
+      // System.out.println("PackageName: " + package_name + " Desc: " + package_description);
+      // nothing will be in the database, until you commit it!
+      // conn.commit();
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return userEmail;
+  }
+
   public String getPackDescriptionFromPackName(String package_name) {
     String package_description = "N/A";
     String sql = "SELECT package_description FROM z_packages WHERE package_name = ?";
@@ -341,8 +361,11 @@ public enum Database {
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
+
+      String updatedPriceFormatted = String.format("%.02f", updatedPrice);
+
       statement.setString(1, discount);
-      statement.setFloat(2, updatedPrice);
+      statement.setString(2, updatedPriceFormatted);
       statement.setString(3, offer_id);
       int result = statement.executeUpdate();
       success = (result > 0);
@@ -360,12 +383,11 @@ public enum Database {
   public boolean updateQuantityQuery(String package_count, String offer_id, String package_id,
       boolean internal) {
 
-
     boolean success = false;
     float updatedPackageAddOnPrice = 0;
     float offerPrice = 0;
     float offerTotalPrice = 0;
-    int discountPercentage = 0;
+    float discountPercentage = 0;
 
     if (internal) {
       String sqlS = "SELECT package_price FROM z_packages WHERE package_id = ? ";
@@ -425,9 +447,12 @@ public enum Database {
       e.printStackTrace();
     }
 
+    System.out.println("offerPrice: " + offerPrice);
+
     String sqlF = "UPDATE z_offers SET offer_price = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementF = conn.prepareStatement(sqlF)) {
-      statementF.setFloat(1, offerPrice);
+      String offerPriceFormatted = String.format("%.02f", offerPrice);
+      statementF.setString(1, offerPriceFormatted);
       statementF.setString(2, offer_id);
       int result = statementF.executeUpdate();
       success = (result > 0);
@@ -447,11 +472,14 @@ public enum Database {
       e.printStackTrace();
     }
 
-    offerTotalPrice = offerPrice * ((100 - discountPercentage) / 100);
+    offerTotalPrice = offerTotalPrice + offerPrice * ((100 - discountPercentage) / 100);
+    // System.out.println("offerTotalPrice: " + offerTotalPrice + " offerPrice: " + offerPrice
+    // + " discountPercentage: " + discountPercentage);
 
-    String sqlT = "UPDATE z_offers SET offer_price = ? WHERE offer_id = ?";
+    String sqlT = "UPDATE z_offers SET offer_total = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementT = conn.prepareStatement(sqlT)) {
-      statementT.setFloat(1, offerTotalPrice);
+      String offerTotalPriceFormatted = String.format("%.02f", offerTotalPrice);
+      statementT.setString(1, offerTotalPriceFormatted);
       statementT.setString(2, offer_id);
       int result = statementT.executeUpdate();
       success = (result > 0);

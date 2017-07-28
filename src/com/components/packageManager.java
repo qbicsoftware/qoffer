@@ -16,42 +16,89 @@
 
 package com.components;
 
+import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.soap.Text;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.docx4j.Docx4J;
+import org.docx4j.XmlUtils;
 import org.docx4j.dml.wordprocessingDrawing.Inline;
 import org.docx4j.jaxb.Context;
+import org.docx4j.model.structure.PageDimensions;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.exceptions.InvalidFormatException;
-import org.docx4j.openpackaging.packages.ProtectDocument;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
-import org.docx4j.wml.STDocProtect;
+import org.docx4j.wml.Body;
+import org.docx4j.wml.BooleanDefaultTrue;
+import org.docx4j.wml.CTBorder;
+import org.docx4j.wml.CTShd;
+import org.docx4j.wml.CTTblPrBase.TblStyle;
+import org.docx4j.wml.CTVerticalJc;
+import org.docx4j.wml.Color;
+import org.docx4j.wml.ContentAccessor;
+import org.docx4j.wml.Drawing;
+import org.docx4j.wml.HpsMeasure;
+import org.docx4j.wml.Jc;
+import org.docx4j.wml.JcEnumeration;
+import org.docx4j.wml.P;
+import org.docx4j.wml.PPr;
+import org.docx4j.wml.R;
+import org.docx4j.wml.RFonts;
+import org.docx4j.wml.RPr;
+import org.docx4j.wml.STBorder;
+import org.docx4j.wml.STVerticalJc;
+import org.docx4j.wml.SectPr;
+import org.docx4j.wml.SectPr.PgMar;
+import org.docx4j.wml.Tbl;
+import org.docx4j.wml.TblPr;
+import org.docx4j.wml.TblWidth;
+import org.docx4j.wml.Tc;
+import org.docx4j.wml.TcMar;
+import org.docx4j.wml.TcPr;
+import org.docx4j.wml.TcPrInner.GridSpan;
+import org.docx4j.wml.TcPrInner.TcBorders;
+import org.docx4j.wml.TcPrInner.VMerge;
+import org.docx4j.wml.Tr;
+import org.docx4j.wml.U;
+import org.docx4j.wml.UnderlineEnumeration;
 
 import com.dbase.DBManager;
 import com.dbase.Database;
+import com.utils.Docx4jHelper;
+import com.utils.DocxStyle;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.sqlcontainer.SQLContainer;
 import com.vaadin.data.util.sqlcontainer.query.FreeformQuery;
 import com.vaadin.data.util.sqlcontainer.query.TableQuery;
 import com.vaadin.event.SelectionEvent;
 import com.vaadin.event.SelectionEvent.SelectionListener;
+import com.vaadin.server.FileDownloader;
+import com.vaadin.server.FileResource;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Page;
 import com.vaadin.server.VaadinService;
@@ -90,9 +137,22 @@ public class packageManager extends CustomComponent {
   private static Database db;
   private String[] values;
   private String descriptionText;
+  private String filename;
+  private FileDownloader fileDownloader;
   private float totalPrice;
   private float packageUnitPrice;
   private final TabSheet managerTabs = new TabSheet();
+  private Docx4jHelper docxHelper;
+  private int packageGridSize = 0;
+
+  org.docx4j.wml.P header;
+  org.docx4j.wml.P footer;
+
+  List<String> packageNames = new ArrayList<String>();
+  List<String> packageDescriptions = new ArrayList<String>();
+  List<String> packageCounts = new ArrayList<String>();
+  List<String> packageUnitPrices = new ArrayList<String>();
+  List<String> packageTotalPrices = new ArrayList<String>();
 
   Date dNow = new Date();
   SimpleDateFormat ft = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss");
@@ -163,6 +223,7 @@ public class packageManager extends CustomComponent {
 
     VerticalLayout packManLayout = new VerticalLayout();
     // packManLayout.setCaption("Package Manager");
+
 
     String buttonTitle = "Refresh";
     Button refresh = new Button(buttonTitle);
@@ -415,8 +476,8 @@ public class packageManager extends CustomComponent {
         offerName = db.getShortTitleFromProjectRef(offerProjectReference);
         offerDescription = db.getLongDescFromProjectRef(offerProjectReference);
 
-        System.out.println("offerProjectReference: " + offerProjectReference + " offerName: "
-            + offerName + " offerDescription: " + offerDescription);
+        // System.out.println("offerProjectReference: " + offerProjectReference + " offerName: "
+        // + offerName + " offerDescription: " + offerDescription);
 
         offerId =
             db.registerNewOffer(offerNumber, offerProjectReference, offerFacility, offerName,
@@ -437,14 +498,14 @@ public class packageManager extends CustomComponent {
             packageUnitPrice =
                 db.getPriceInfoFromPackageName(values[i].toString(),
                     externalPriceSelected.getValue());
-            System.out.println(i + "Package Unit Price: " + packageUnitPrice);
+            // System.out.println(i + "Package Unit Price: " + packageUnitPrice);
             db.insertOrUpdateOffersPackages(offerId, packageId, packageUnitPrice);
             // System.out.println("PackageID: " + packageId + "OfferID: " + offerId);
             // System.out.println(i + " " + values[i]);
           }
 
           Notification(
-              "Perfect! Offer succesfully saved in the DB!",
+              "Perfect! Offer succesfully saved in the Database!",
               "Next step is to modify, finalize and send it to the customer. Keep in mind that the description of the offer is still missing. Please go ahead and complete it. Fingers crossed!",
               "success");
           managerTabs.setSelectedTab(1);
@@ -470,14 +531,13 @@ public class packageManager extends CustomComponent {
     packQuantityLayout.setSizeFull();
 
     ComboBox addQuantity = new ComboBox("Select Quantity");
-    ComboBox updateQuantityDiscount = new ComboBox("Select Discount");
 
-    updateQuantityDiscount.addItem("0%");
-    updateQuantityDiscount.addItem("10%");
-    updateQuantityDiscount.addItem("20%");
-    updateQuantityDiscount.addItem("30%");
-    updateQuantityDiscount.addItem("40%");
-    updateQuantityDiscount.addItem("50%");
+    /*
+     * ComboBox updateQuantityDiscount = new ComboBox("Select Discount");
+     * updateQuantityDiscount.addItem("0%"); updateQuantityDiscount.addItem("10%");
+     * updateQuantityDiscount.addItem("20%"); updateQuantityDiscount.addItem("30%");
+     * updateQuantityDiscount.addItem("40%"); updateQuantityDiscount.addItem("50%");
+     */
 
     addQuantity.addItem("1");
     addQuantity.addItem("2");
@@ -496,7 +556,7 @@ public class packageManager extends CustomComponent {
     updateQuantityButton.setIcon(FontAwesome.SPINNER);
 
     packSettingsLayout.addComponent(addQuantity);
-    packSettingsLayout.addComponent(updateQuantityDiscount);
+    // packSettingsLayout.addComponent(updateQuantityDiscount);
     packSettingsLayout.addComponent(updateQuantityButton);
 
     packSettingsLayout.setComponentAlignment(updateQuantityButton, Alignment.BOTTOM_CENTER);
@@ -511,13 +571,39 @@ public class packageManager extends CustomComponent {
         new FreeformQuery(queryFreeform, DBManager.getDatabaseInstanceAlternative(), "package_id");
     SQLContainer packsContainer = new SQLContainer(query);
 
+    packageGridSize = packsContainer.size();
+
     // System.out.println("Print Container: " + container.size());
     packsContainer.setAutoCommit(isEnabled());
 
     selectedPacksInOfferGrid = new Grid(packsContainer);
 
-    // Create a grid bound to it
+    packageNames.clear();
+    packageDescriptions.clear();
+    packageCounts.clear();
+    packageUnitPrices.clear();
+    packageTotalPrices.clear();
 
+    // System.out.println(selectedPacksInOfferGrid.getColumns());
+    DecimalFormat myFormatter = new DecimalFormat("###,###.###");
+
+    for (Object itemIdInvoiced : packsContainer.getItemIds()) {
+      packageNames.add(packsContainer.getContainerProperty(itemIdInvoiced, "package_name")
+          .getValue().toString());
+      packageDescriptions.add(packsContainer
+          .getContainerProperty(itemIdInvoiced, "package_description").getValue().toString());
+      packageCounts.add(packsContainer.getContainerProperty(itemIdInvoiced, "package_count")
+          .getValue().toString());
+      packageUnitPrices.add(myFormatter.format(
+          packsContainer.getContainerProperty(itemIdInvoiced, "package_price").getValue())
+          .toString());
+      packageTotalPrices.add(myFormatter.format(
+          packsContainer.getContainerProperty(itemIdInvoiced, "package_addon_price").getValue())
+          .toString());
+
+    }
+
+    // Create a grid bound to it
     selectedPacksInOfferGrid.addSelectionListener(new SelectionListener() {
 
       /**
@@ -531,8 +617,8 @@ public class packageManager extends CustomComponent {
         addQuantity.select(db.getPackageCount(queryEnd, selectedPacksInOfferGrid.getSelectedRow()
             .toString()));
 
-        updateQuantityDiscount.select(db.getPackageDiscount(queryEnd, selectedPacksInOfferGrid
-            .getSelectedRow().toString()));
+        // updateQuantityDiscount.select(db.getPackageDiscount(queryEnd, selectedPacksInOfferGrid
+        // .getSelectedRow().toString()));
 
       }
 
@@ -548,34 +634,38 @@ public class packageManager extends CustomComponent {
       @Override
       public void buttonClick(ClickEvent event) {
 
-        // System.out.println("ValueStatus: " + updateStatus.getValue() + " Discount "
-        // + updateDiscount.getValue());
+        /*
+         * System.out.println("ValueStatus: " + updateStatus.getValue() + " Discount " // +
+         * updateDiscount.getValue()); if (addQuantity.getValue() == null ||
+         * updateQuantityDiscount.getValue() == null) { }
+         */
 
-        if (addQuantity.getValue() == null || updateQuantityDiscount.getValue() == null) {
-
+        if (addQuantity.getValue() == null) {
           Notification("oOps! Forgot something?!",
               "Please make sure that you select an option for status and discount update.", "error");
 
         } else {
 
-          System.out.println("Whats going inside Package Details? ");
-
-          float percentage =
-              Integer
-                  .parseInt(updateQuantityDiscount.getValue().toString().trim().replace("%", ""));
-
-          System.out.println("Dropdown: " + addQuantity.getValue().toString() + " offer id: "
-              + queryEnd + "package id: " + selectedPacksInOfferGrid.getSelectedRow().toString());
+          /*
+           * float percentage = Integer
+           * .parseInt(updateQuantityDiscount.getValue().toString().trim().replace("%", ""));
+           * 
+           * System.out.println("Dropdown: " + addQuantity.getValue().toString() + " offer id: " +
+           * queryEnd + "package id: " + selectedPacksInOfferGrid.getSelectedRow().toString());
+           */
 
           db.updateQuantityQuery(addQuantity.getValue().toString(), queryEnd,
               selectedPacksInOfferGrid.getSelectedRow().toString(), db.internalOfferCheck(queryEnd));
 
-          // TODO: Query Internal & External
-          // container.getItem(selected).getItemProperty("offer_id").toString());
-          // offerGrid.getContainerDataSource().getItem(selected).getItemProperty("offer_id").toString());
-
-          db.updateQuantityDiscountQuery(updateQuantityDiscount.getValue().toString(), queryEnd,
-              selectedPacksInOfferGrid.getSelectedRow().toString());
+          /*
+           * TODO: Query Internal & External
+           * container.getItem(selected).getItemProperty("offer_id").toString());
+           * offerGrid.getContainerDataSource
+           * ().getItem(selected).getItemProperty("offer_id").toString());
+           * 
+           * db.updateQuantityDiscountQuery(updateQuantityDiscount.getValue().toString(), queryEnd,
+           * selectedPacksInOfferGrid.getSelectedRow().toString());
+           */
 
           packsContainer.refresh();
 
@@ -638,6 +728,8 @@ public class packageManager extends CustomComponent {
     // packManLayout.setCaption("Package Manager");
     HorizontalLayout editSettingsLayout = new HorizontalLayout();
     HorizontalLayout detailsLayout = new HorizontalLayout();
+
+
 
     // detailsLayout.setMargin(true);
     // detailsLayout.setSizeFull();
@@ -708,6 +800,12 @@ public class packageManager extends CustomComponent {
     printOfferButton.setIcon(FontAwesome.PRINT);
     printOfferButton.setDescription("Select an offer from the grid then click here to modify!");
 
+    String downloadOfferButtonTitle = "Download";
+    Button downloadOfferButton = new Button(downloadOfferButtonTitle);
+    downloadOfferButton.setIcon(FontAwesome.DOWNLOAD);
+    downloadOfferButton.setDescription("Download the printed document!");
+    downloadOfferButton.setEnabled(false);
+
     offerManLayout.setMargin(true);
     offerManLayout.setSpacing(true);
     offerManLayout.setSizeFull();
@@ -720,6 +818,8 @@ public class packageManager extends CustomComponent {
 
     Grid offerGrid = new Grid(container);
 
+    offerGrid.setSelectionMode(SelectionMode.SINGLE);
+
     /*
      * packageGrid.setColumnOrder("user_id", "user_ldap", "user_name", "email", "phone",
      * "workgroup_id", "group_id", "kostenstelle", "project", "admin_panel");
@@ -730,13 +830,20 @@ public class packageManager extends CustomComponent {
      */
 
     offerGrid.addSelectionListener(selectionEvent -> { // Java 8
+
           // Get selection from the selection model
           Object selected = ((SingleSelectionModel) offerGrid.getSelectionModel()).getSelectedRow();
+
+
+          // System.out.println("Selected Row -> " + selected.toString());
 
           if (selected != null) {
 
             updateStatus.select(db.getOfferStatus(container.getItem(selected)
                 .getItemProperty("offer_id").toString()));
+
+            // System.out.println(db.getOfferStatus(container.getItem(selected)
+            // .getItemProperty("offer_id").toString()));
 
             updateDiscount.select(db.getOfferDiscount(container.getItem(selected)
                 .getItemProperty("offer_id").toString()));
@@ -758,189 +865,360 @@ public class packageManager extends CustomComponent {
             }
           }
 
-          updateButton.addClickListener(new ClickListener() {
 
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 8910018717791341602L;
-
-            @Override
-            public void buttonClick(ClickEvent event) {
-
-              // System.out.println("ValueStatus: " + updateStatus.getValue() + " Discount "
-              // + updateDiscount.getValue());
-
-              if (updateStatus.getValue() == null || updateDiscount.getValue() == null) {
-
-                Notification("oOps! Forgot something?!",
-                    "Please make sure that you select an option for status and discount update.",
-                    "error");
-
-              } else {
-
-                // System.out.println("Selected Row: " + offerGrid.getSelectedRow().toString());
-                // db.updateStatus(updateStatus.getValue().toString(), offerGrid.getSelectedRow()
-                // .toString());
-                // container.getItem(selected).getItemProperty("offer_id").toString());
-                // offerGrid.getContainerDataSource().getItem(selected).getItemProperty("offer_id").toString());
-                System.out.println("Whats going on here?");
-                float percentage =
-                    Integer.parseInt(updateDiscount.getValue().toString().trim().replace("%", ""));
-
-                db.updateDiscount(updateDiscount.getValue().toString(), offerGrid.getSelectedRow()
-                    .toString(), percentage);
-                // container.getItem(selected).getItemProperty("offer_id").toString());
-                // offerGrid.getContainerDataSource().getItem(selected).getItemProperty("offer_id").toString());
-
-                // TODO: Set Status
-
-                container.refresh();
-
-              }
-            }
-          });
-
-
-          printOfferButton.addClickListener(new ClickListener() {
-
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = 9170993096605292649L;
-
-            @Override
-            public void buttonClick(ClickEvent event) {
-
-              Notification("Test", "Test", "");
-
-              WordprocessingMLPackage wordMLPackage = null;
-              try {
-                wordMLPackage = WordprocessingMLPackage.createPackage();
-              } catch (InvalidFormatException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-              }
-              MainDocumentPart mdp = wordMLPackage.getMainDocumentPart();
-
-              String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-
-              // Image as a file resource
-              File resource = new File(basepath + "/WEB-INF/images/header.png");
-
-              java.io.InputStream is = null;
-              try {
-                is = new java.io.FileInputStream(resource);
-              } catch (FileNotFoundException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-              }
-              long length = resource.length();
-              // You cannot create an array using a long type.
-              // It needs to be an int type.
-              if (length > Integer.MAX_VALUE) {
-                System.out.println("File too large!!");
-              }
-              byte[] bytes = new byte[(int) length];
-              int offset = 0;
-              int numRead = 0;
-              try {
-                while (offset < bytes.length
-                    && (numRead = is.read(bytes, offset, bytes.length - offset)) >= 0) {
-                  offset += numRead;
-                }
-              } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-              }
-              // Ensure all the bytes have been read in
-              if (offset < bytes.length) {
-                System.out.println("Could not completely read file " + resource.getName());
-              }
-              try {
-                is.close();
-              } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-              }
-
-              String filenameHint = null;
-              String altText = null;
-              int id1 = 0;
-              int id2 = 1;
-
-              // Image 1: no width specified
-              org.docx4j.wml.P p;
-              try {
-                p = newImage(wordMLPackage, bytes, filenameHint, altText, id1, id2);
-                wordMLPackage.getMainDocumentPart().addObject(p);
-              } catch (Exception e2) {
-                // TODO Auto-generated catch block
-                e2.printStackTrace();
-              }
-
-              /*
-               * // Image 2: width 3000 org.docx4j.wml.P p2 = newImage(wordMLPackage, bytes,
-               * filenameHint, altText, id1, id2, 3000);
-               * wordMLPackage.getMainDocumentPart().addObject(p2);
-               * 
-               * // Image 3: width 6000 org.docx4j.wml.P p3 = newImage(wordMLPackage, bytes,
-               * filenameHint, altText, id1, id2, 6000);
-               * wordMLPackage.getMainDocumentPart().addObject(p3);
-               */
-
-              // Now save it
-              /*
-               * try { wordMLPackage.save(new java.io.File(System.getProperty("user.dir") +
-               * "/OUT_AddImage.docx")); } catch (Docx4JException e1) { // TODO Auto-generated catch
-               * block e1.printStackTrace(); }
-               */
-
-              mdp.addParagraphOfText("hello world");
-
-
-              ProtectDocument protection = new ProtectDocument(wordMLPackage);
-              protection.restrictEditing(STDocProtect.READ_ONLY, "foobaa");
-
-
-              String filename = System.getProperty("user.dir") + "/offer.docx";
-              try {
-                Docx4J.save(wordMLPackage, new java.io.File(filename), Docx4J.FLAG_SAVE_ZIP_FILE);
-              } catch (Docx4JException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-              }
-
-              // To save encrypted, you'd use FLAG_SAVE_ENCRYPTED_AGILE, for example:
-              // Docx4J.save(wordMLPackage, new java.io.File(filename),
-              // Docx4J.FLAG_SAVE_ENCRYPTED_AGILE, "foo");
-
-
-              System.out.println("Saved " + filename);
-
-              /*
-               * factory = Context.getWmlObjectFactory(); docxHelper = new Docx4jHelper(); try {
-               * wordMLPackage = WordprocessingMLPackage.createPackage(); } catch
-               * (InvalidFormatException e) { // TODO Auto-generated catch block
-               * e.printStackTrace(); } //paragraphs P p =
-               * docxHelper.createParagraph("Summary for project " + projectCode, true, false,
-               * "40"); wordMLPackage.getMainDocumentPart().addObject(p); P p1 =
-               * docxHelper.createParagraph(expHeadline, true, false, "32");
-               * mainDocumentPart.addObject(p1);
-               * 
-               * //table
-               * wordMLPackage.getMainDocumentPart().addObject(docxHelper.createTableWithContent
-               * (header, data)); wordMLPackage.getMainDocumentPart().addObject(new Br());
-               * 
-               * //save file String docxPath = tmpFolder + projectCode + "_" + createTimeStamp() +
-               * ".docx"; try { wordMLPackage.save(new java.io.File(docxPath)); } catch
-               * (Docx4JException e) { // TODO Auto-generated catch block e.printStackTrace();
-               */
-              // writeDocx();
-            }
-          });
         });
+
+
+    updateButton.addClickListener(new ClickListener() {
+
+      /**
+       * 
+       */
+      private static final long serialVersionUID = 8910018717791341602L;
+
+      @Override
+      public void buttonClick(ClickEvent event) {
+
+        // System.out.println("ValueStatus: " + updateStatus.getValue() + " Discount "
+        // + updateDiscount.getValue());
+
+        if (updateStatus.getValue() == null || updateDiscount.getValue() == null) {
+
+          Notification("oOps! Forgot something?!",
+              "Please make sure that you select an option for status and discount update.", "error");
+
+        } else {
+
+          // System.out.println("Selected Row: " + offerGrid.getSelectedRow().toString());
+          db.updateStatus(updateStatus.getValue().toString(), offerGrid.getSelectedRow().toString());
+          // container.getItem(selected).getItemProperty("offer_id").toString());
+          // offerGrid.getContainerDataSource().getItem(selected).getItemProperty("offer_id").toString());
+
+          float percentage =
+              Integer.parseInt(updateDiscount.getValue().toString().trim().replace("%", ""));
+
+          db.updateDiscount(updateDiscount.getValue().toString(), offerGrid.getSelectedRow()
+              .toString(), percentage);
+          // container.getItem(selected).getItemProperty("offer_id").toString());
+          // offerGrid.getContainerDataSource().getItem(selected).getItemProperty("offer_id").toString());
+
+          // TODO: Set Status
+
+          container.refresh();
+
+        }
+      }
+    });
+
+
+    printOfferButton.addClickListener(new ClickListener() {
+
+      // WordprocessingMLPackage template;
+
+      /**
+       * 
+       */
+      private static final long serialVersionUID = 9170993096605292649L;
+
+      @Override
+      public void buttonClick(ClickEvent event) {
+
+
+        Notification("File Saved!", offerGrid.getSelectedRow().toString() + ", "
+            + container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number"), "");
+
+        WordprocessingMLPackage wordMLPackage = null;
+        try {
+          wordMLPackage = WordprocessingMLPackage.createPackage();
+        } catch (InvalidFormatException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+
+        MainDocumentPart mdp = wordMLPackage.getMainDocumentPart();
+
+        // list.add(p);
+        // spc.getContent().add(rspc);
+        // wordMLPackage.getMainDocumentPart().addObject(p);
+
+        String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+
+        // Image as a file resource
+        File resourceHeader = new File(basepath + "/WEB-INF/images/header.png");
+        java.io.InputStream isHeader = null;
+
+        try {
+          isHeader = new java.io.FileInputStream(resourceHeader);
+        } catch (FileNotFoundException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+        long lengthHeader = resourceHeader.length();
+
+        // You cannot create an array using a long type.
+        // It needs to be an int type.
+        if (lengthHeader > Integer.MAX_VALUE) {
+          System.out.println("File too large!!");
+        }
+        byte[] bytesHeader = new byte[(int) lengthHeader];
+        int offsetHeader = 0;
+        int numReadHeader = 0;
+        try {
+          while (offsetHeader < bytesHeader.length
+              && (numReadHeader =
+                  isHeader.read(bytesHeader, offsetHeader, bytesHeader.length - offsetHeader)) >= 0) {
+            offsetHeader += numReadHeader;
+          }
+        } catch (IOException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+        // Ensure all the bytes have been read in
+        if (offsetHeader < bytesHeader.length) {
+          System.out.println("Could not completely read file " + resourceHeader.getName());
+        }
+        try {
+          isHeader.close();
+        } catch (IOException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+
+        String filenameHintHeader = null;
+        String altTextHeader = null;
+        int id1Header = 0;
+        int id2Header = 1;
+
+        // Image 1: no width specified
+        // org.docx4j.wml.P p;
+        // org.docx4j.wml.P p;
+
+        try {
+          header =
+              newImage(wordMLPackage, bytesHeader, filenameHintHeader, altTextHeader, id1Header,
+                  id2Header, 7000);
+          // wordMLPackage.getMainDocumentPart().addObject(p);
+        } catch (Exception e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+
+
+        File resourceFooter = new File(basepath + "/WEB-INF/images/footer.png");
+
+        java.io.InputStream isFooter = null;
+        try {
+          isFooter = new java.io.FileInputStream(resourceFooter);
+        } catch (FileNotFoundException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+
+        long lengthFooter = resourceFooter.length();
+        // You cannot create an array using a long type.
+        // It needs to be an int type.
+        if (lengthFooter > Integer.MAX_VALUE) {
+          System.out.println("File too large!!");
+        }
+        byte[] bytesFooter = new byte[(int) lengthFooter];
+        int offsetFooter = 0;
+        int numReadFooter = 0;
+        try {
+          while (offsetFooter < bytesFooter.length
+              && (numReadFooter =
+                  isFooter.read(bytesFooter, offsetFooter, bytesFooter.length - offsetFooter)) >= 0) {
+            offsetFooter += numReadFooter;
+          }
+        } catch (IOException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+        // Ensure all the bytes have been read in
+        if (offsetFooter < bytesFooter.length) {
+          System.out.println("Could not completely read file " + resourceFooter.getName());
+        }
+        try {
+          isFooter.close();
+        } catch (IOException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+
+        String filenameHintFooter = null;
+        String altTextFooter = null;
+        int id1Footer = 0;
+        int id2Footer = 1;
+
+        try {
+          footer =
+              newImage(wordMLPackage, bytesFooter, filenameHintFooter, altTextFooter, id1Footer,
+                  id2Footer, 2000);
+          // wordMLPackage.getMainDocumentPart().addObject(p);
+        } catch (Exception e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+
+        // wordMLPackage.getMainDocumentPart().addObject(new Br());
+        // wordMLPackage.getMainDocumentPart().addObject(new Br());
+
+        /*
+         * // Image 2: width 4000 org.docx4j.wml.P p2 = newImage(wordMLPackage, bytes, filenameHint,
+         * altText, id1, id2, 4000); wordMLPackage.getMainDocumentPart().addObject(p2);
+         * 
+         * // Image 3: width 6000 org.docx4j.wml.P p3 = newImage(wordMLPackage, bytes, filenameHint,
+         * altText, id1, id2, 6000); wordMLPackage.getMainDocumentPart().addObject(p3);
+         */
+
+        // mdp.addParagraphOfText(container.getItem(selected).getItemProperty("offer_id").toString());
+        // mdp.addParagraphOfText("Client Address Here!");
+        // mdp.addParagraphOfText("Quotation");
+
+        DecimalFormat myFormatter = new DecimalFormat("###,###.###");
+
+        String clientAddress =
+            container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_facility")
+                .toString();
+
+        String offerNumber =
+            container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number")
+                .toString();
+
+        String quotationNumber = offerNumber.substring(0, 6);
+
+        String projectReference = offerNumber.substring(offerNumber.lastIndexOf('_') + 1);
+
+        String projectScientist = db.getUserEmail(LiferayAndVaadinUtils.getUser().getScreenName());
+
+        String projectTitle =
+            container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_name").toString();
+
+        String projectDescription =
+            container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_description")
+                .toString();
+
+        String offerPrice =
+            myFormatter.format(Float.valueOf(container.getItem(offerGrid.getSelectedRow())
+                .getItemProperty("offer_price").toString()));
+
+        String discount =
+            container.getItem(offerGrid.getSelectedRow()).getItemProperty("discount").toString();
+
+        String offerTotal =
+            myFormatter.format(Float.valueOf(container.getItem(offerGrid.getSelectedRow())
+                .getItemProperty("offer_total").toString()));
+
+        String deliveryDetails =
+            "An exact delivery time can be announced at the date of sample submission.";
+
+        String notesDetails = "We are looking forward to a good cooperation with you.";
+
+        String agreementText =
+            "The invoice will be issued after completion of the project. Quality control at all steps of the data processing will guarantee that the processed data is in accordance to DFG (German research foundation) guidance for good scientific practice. All project related data will be kept securely on our local infrastructure. If the data generated through the project as outlined in this offer is subject to publication, QBiC offers to collaboratively contribute to the compilation of the manuscript and its scientific discussion (e.g., with respect to bioinformatics methods, visualisation of results and their interpretation). If such collaborative efforts lead to a significant scientific contribution, co-authorships on reports/manuscripts for QBiC scientist(s) involved in the study are expected. Offer expires in 30 days. If you agree with this offer, please return a signed copy.";
+
+        /*
+         * mdp.addParagraphOfText("Quotation Number: " + quotationNumber);
+         * 
+         * mdp.addParagraphOfText("Project Reference: " + projectReference);
+         * 
+         * mdp.addParagraphOfText(projectReference + " - " + projectTitle);
+         * 
+         * mdp.addParagraphOfText("Project Description");
+         * 
+         * mdp.addParagraphOfText(projectDescription);
+         * 
+         * mdp.addParagraphOfText("");
+         * 
+         * mdp.addParagraphOfText("Notes: " + "");
+         * 
+         * mdp.addParagraphOfText("");
+         * 
+         * // mdp.createStyledParagraphOfText(styleId, text) P p3 =
+         * createParagraph("blablabla blika", true, true, true);
+         * wordMLPackage.getMainDocumentPart().addObject(p3);
+         */
+
+        Tbl quotation =
+            createQuotationPage(header, clientAddress, quotationNumber, projectReference,
+                projectScientist, projectTitle, projectDescription, offerTotal, deliveryDetails,
+                notesDetails, agreementText, footer);
+
+        Tbl quotationDetails =
+            createQuotationDetailsPage(header, clientAddress, quotationNumber, projectReference,
+                projectScientist, projectTitle, projectDescription, offerTotal, offerPrice,
+                discount, deliveryDetails, notesDetails, agreementText, footer);
+
+        wordMLPackage.getMainDocumentPart().addObject(quotation);
+
+        mdp.addParagraphOfText("");
+
+        wordMLPackage.getMainDocumentPart().addObject(quotationDetails);
+
+
+        // table.setTblPr(new TblPr());
+        // CTBorder border = new CTBorder();
+        // border.setSz(new BigInteger("0"));
+        // border.setSpace(new BigInteger("0"));
+        // border.setVal(STBorder.SINGLE);
+
+        // TblBorders borders = new TblBorders();
+        // borders.setBottom(border);
+        // borders.setLeft(border);
+        // borders.setRight(border);
+        // borders.setTop(border);
+        // borders.setInsideH(border);
+        // borders.setInsideV(border);
+
+        Body body;
+        try {
+          body = wordMLPackage.getMainDocumentPart().getContents().getBody();
+          PageDimensions page = new PageDimensions();
+          PgMar pgMar = page.getPgMar();
+          pgMar.setBottom(BigInteger.valueOf(pixelsToDxa(40)));
+          pgMar.setTop(BigInteger.valueOf(pixelsToDxa(40)));
+          pgMar.setLeft(BigInteger.valueOf(pixelsToDxa(40)));
+          pgMar.setRight(BigInteger.valueOf(pixelsToDxa(40)));
+          SectPr sectPr = factory.createSectPr();
+          body.setSectPr(sectPr);
+          sectPr.setPgMar(pgMar);
+        } catch (Docx4JException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+
+        // TODO: create a check box and give the user options to save as read-only or
+        // editable.
+        // ProtectDocument protection = new ProtectDocument(wordMLPackage);
+        // protection.restrictEditing(STDocProtect.READ_ONLY, "foobaa");
+
+        // save file example - date_projectid.docx - 20170530_QMARI.docx
+        filename =
+            System.getProperty("user.dir") + "/"
+                + container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number")
+                + ".docx";
+        try {
+          Docx4J.save(wordMLPackage, new java.io.File(filename), Docx4J.FLAG_SAVE_ZIP_FILE);
+        } catch (Docx4JException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+
+        System.out.println("Saved: " + filename);
+
+
+        if (fileDownloader != null)
+          downloadOfferButton.removeExtension(fileDownloader);
+        FileResource offer = new FileResource(new File(filename));
+        fileDownloader = new FileDownloader(offer);
+        fileDownloader.extend(downloadOfferButton);
+        downloadOfferButton.setEnabled(true);
+        Notification("Ready for Download!", "The generated docx file, saved under " + filename
+            + " is ready for download. Fire it up, click download now!", "success");
+        downloadOfferButton.setEnabled(true);
+
+      }
+    });
+
 
     /*
      * updateDiscount.addValueChangeListener(new ValueChangeListener() {
@@ -980,9 +1258,7 @@ public class packageManager extends CustomComponent {
      * .getItem(selectedStatus).getItemProperty("offer_id").toString());
      * 
      * } });
-     */
-
-    /*
+     * 
      * offerGrid.setColumnOrder("offer_number", "offer_project_reference", "offer_name",
      * "offer_facility", "offer_description", "offer_price", "discount", "offer_status",
      * "offer_date");
@@ -1020,6 +1296,7 @@ public class packageManager extends CustomComponent {
     offerManLayout.addComponent(editSettingsLayout);
     offerManLayout.addComponent(detailsLayout);
     offerManLayout.addComponent(printOfferButton);
+    offerManLayout.addComponent(downloadOfferButton);
     // packManLayout.addComponent(refresh);
 
     return offerManLayout;
@@ -1062,6 +1339,1057 @@ public class packageManager extends CustomComponent {
 
     return p;
 
+  }
+
+  private WordprocessingMLPackage wordMLPackage;
+
+  private static org.docx4j.wml.ObjectFactory factory = Context.getWmlObjectFactory();
+
+  private boolean bold;
+  private boolean italic;
+  private boolean underline;
+  private String fontSize;
+  private String fontColor;
+  private String fontFamily;
+
+  // cell margins
+  private int left;
+  private int bottom;
+  private int top;
+  private int right;
+
+  private String background;
+  private STVerticalJc verticalAlignment;
+  private JcEnumeration horizAlignment;
+
+  private boolean borderLeft;
+  private boolean borderRight;
+  private boolean borderTop;
+  private boolean borderBottom;
+  private boolean noWrap;
+
+
+  private void setPageMargins() {
+    try {
+      Body body = wordMLPackage.getMainDocumentPart().getContents().getBody();
+      PageDimensions page = new PageDimensions();
+      PgMar pgMar = page.getPgMar();
+      pgMar.setBottom(BigInteger.valueOf(pixelsToDxa(20)));
+      pgMar.setTop(BigInteger.valueOf(pixelsToDxa(20)));
+      pgMar.setLeft(BigInteger.valueOf(pixelsToDxa(20)));
+      pgMar.setRight(BigInteger.valueOf(pixelsToDxa(20)));
+      SectPr sectPr = factory.createSectPr();
+      body.setSectPr(sectPr);
+      sectPr.setPgMar(pgMar);
+    } catch (Docx4JException e) {
+      e.printStackTrace();
+    }
+  }
+
+  // get dots per inch
+  protected static int getDPI() {
+    return GraphicsEnvironment.isHeadless() ? 96 : Toolkit.getDefaultToolkit()
+        .getScreenResolution();
+  }
+
+  private int pixelsToDxa(int pixels) {
+    return (1440 * pixels / getDPI());
+  }
+
+
+  private void initDocx4J() {
+
+    docxHelper = new Docx4jHelper();
+    try {
+      wordMLPackage = WordprocessingMLPackage.createPackage();
+    } catch (InvalidFormatException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  private WordprocessingMLPackage getTemplate(String name) throws Docx4JException,
+      FileNotFoundException {
+    WordprocessingMLPackage template =
+        WordprocessingMLPackage.load(new FileInputStream(new File(name)));
+    return template;
+  }
+
+  private static List<Object> getAllElementFromObject(Object obj, Class<?> toSearch) {
+    List<Object> result = new ArrayList<Object>();
+    if (obj instanceof JAXBElement)
+      obj = ((JAXBElement<?>) obj).getValue();
+
+    if (obj.getClass().equals(toSearch))
+      result.add(obj);
+    else if (obj instanceof ContentAccessor) {
+      List<?> children = ((ContentAccessor) obj).getContent();
+      for (Object child : children) {
+        result.addAll(getAllElementFromObject(child, toSearch));
+      }
+
+    }
+    return result;
+  }
+
+  private void replacePlaceholder(WordprocessingMLPackage template, String name, String placeholder) {
+    List<Object> texts = getAllElementFromObject(template.getMainDocumentPart(), Text.class);
+
+    for (Object text : texts) {
+      Text textElement = (Text) text;
+      if (textElement.getValue().equals(placeholder)) {
+        textElement.setValue(name);
+      }
+    }
+  }
+
+  private void writeDocxToStream(WordprocessingMLPackage template, String target)
+      throws IOException, Docx4JException {
+    File f = new File(target);
+    template.save(f);
+  }
+
+
+  private void replaceParagraph(String placeholder, String textToAdd,
+      WordprocessingMLPackage template, ContentAccessor addTo) {
+    // 1. get the paragraph
+    List<Object> paragraphs = getAllElementFromObject(template.getMainDocumentPart(), P.class);
+
+    P toReplace = null;
+    for (Object p : paragraphs) {
+      List<Object> texts = getAllElementFromObject(p, Text.class);
+      for (Object t : texts) {
+        Text content = (Text) t;
+        if (content.getValue().equals(placeholder)) {
+          toReplace = (P) p;
+          break;
+        }
+      }
+    }
+
+    // we now have the paragraph that contains our placeholder: toReplace
+    // 2. split into seperate lines
+    String as[] = StringUtils.splitPreserveAllTokens(textToAdd, '\n');
+
+    for (int i = 0; i < as.length; i++) {
+      String ptext = as[i];
+
+      // 3. copy the found paragraph to keep styling correct
+      P copy = XmlUtils.deepCopy(toReplace);
+
+      // replace the text elements from the copy
+      List<?> texts = getAllElementFromObject(copy, Text.class);
+      if (texts.size() > 0) {
+        Text textToReplace = (Text) texts.get(0);
+        textToReplace.setValue(ptext);
+      }
+
+      // add the paragraph to the document
+      addTo.getContent().add(copy);
+    }
+
+    // 4. remove the original one
+    ((ContentAccessor) toReplace.getParent()).getContent().remove(toReplace);
+
+  }
+
+  private void replaceTable(String[] placeholders, List<Map<String, String>> textToAdd,
+      WordprocessingMLPackage template) throws Docx4JException, JAXBException {
+    List<Object> tables = getAllElementFromObject(template.getMainDocumentPart(), Tbl.class);
+
+    // 1. find the table
+    Tbl tempTable = getTemplateTable(tables, placeholders[0]);
+    List<Object> rows = getAllElementFromObject(tempTable, Tr.class);
+
+    // first row is header, second row is content
+    if (rows.size() == 2) {
+      // this is our template row
+      Tr templateRow = (Tr) rows.get(1);
+
+      for (Map<String, String> replacements : textToAdd) {
+        // 2 and 3 are done in this method
+        addRowToTable(tempTable, templateRow, replacements);
+      }
+
+      // 4. remove the template row
+      tempTable.getContent().remove(templateRow);
+    }
+  }
+
+  private Tbl getTemplateTable(List<Object> tables, String templateKey) throws Docx4JException,
+      JAXBException {
+    for (java.util.Iterator<Object> iterator = tables.iterator(); iterator.hasNext();) {
+      Object tbl = iterator.next();
+      List<?> textElements = getAllElementFromObject(tbl, Text.class);
+      for (Object text : textElements) {
+        Text textElement = (Text) text;
+        if (textElement.getValue() != null && textElement.getValue().equals(templateKey))
+          return (Tbl) tbl;
+      }
+    }
+    return null;
+  }
+
+  private static void addRowToTable(Tbl reviewtable, Tr templateRow,
+      Map<String, String> replacements) {
+    Tr workingRow = XmlUtils.deepCopy(templateRow);
+    List<?> textElements = getAllElementFromObject(workingRow, Text.class);
+    for (Object object : textElements) {
+      Text text = (Text) object;
+      String replacementValue = replacements.get(text.getValue());
+      if (replacementValue != null)
+        text.setValue(replacementValue);
+    }
+    reviewtable.getContent().add(workingRow);
+  }
+
+  private static org.docx4j.wml.P createParagraph(String paragraphContent, boolean addNewLine,
+      boolean bold, boolean italic) {
+    org.docx4j.wml.ObjectFactory factory = Context.getWmlObjectFactory();
+    org.docx4j.wml.P p = factory.createP();
+
+    org.docx4j.wml.R run = factory.createR();
+    p.getContent().add(run);
+
+    org.docx4j.wml.Text text = factory.createText();
+    text.setValue(paragraphContent);
+    run.getContent().add(text);
+
+    if (bold) {
+      org.docx4j.wml.RPr rpr = factory.createRPr();
+      org.docx4j.wml.BooleanDefaultTrue b = new org.docx4j.wml.BooleanDefaultTrue();
+      b.setVal(true);
+      rpr.setB(b);
+      run.setRPr(rpr);
+    }
+
+    if (italic) {
+      org.docx4j.wml.RPr rpr = factory.createRPr();
+      org.docx4j.wml.BooleanDefaultTrue b = new org.docx4j.wml.BooleanDefaultTrue();
+      b.setVal(true);
+      rpr.setI(b);
+      run.setRPr(rpr);
+    }
+
+    if (bold && italic) {
+      org.docx4j.wml.RPr rpr = factory.createRPr();
+      org.docx4j.wml.BooleanDefaultTrue b = new org.docx4j.wml.BooleanDefaultTrue();
+      b.setVal(true);
+      rpr.setB(b);
+      rpr.setI(b);
+      run.setRPr(rpr);
+    }
+
+    if (addNewLine) {
+      run.getContent().add(factory.createBr());
+    }
+
+    return p;
+  }
+
+  private Tbl createQuotationPage(org.docx4j.wml.P headerImage, String clientAddress,
+      String quotationNumber, String projectReference, String projectScientist,
+      String projectTitle, String projectDescription, String offerTotal, String deliveryDetails,
+      String notesDetails, String agreementText, org.docx4j.wml.P footerImage) {
+
+    Date dNow = new Date();
+    SimpleDateFormat ft = new SimpleDateFormat("dd MMMM yyyy");
+
+    DocxStyle leftBlack11 = new DocxStyle();
+    leftBlack11.setBold(false);
+    leftBlack11.setItalic(false);
+    leftBlack11.setUnderline(false);
+    leftBlack11.setFontSize("22");
+    leftBlack11.setFontFamily("Avenir");
+    leftBlack11.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle addressLeftCenterBlack10 = new DocxStyle();
+    addressLeftCenterBlack10.setBold(false);
+    addressLeftCenterBlack10.setItalic(false);
+    addressLeftCenterBlack10.setUnderline(false);
+    addressLeftCenterBlack10.setFontFamily("Avenir");
+    addressLeftCenterBlack10.setFontSize("20");
+    addressLeftCenterBlack10.setHorizAlignment(JcEnumeration.LEFT);
+    addressLeftCenterBlack10.setVerticalAlignment(STVerticalJc.CENTER);
+
+    DocxStyle titleLeftGray16 = new DocxStyle();
+    titleLeftGray16.setBold(false);
+    titleLeftGray16.setItalic(false);
+    titleLeftGray16.setUnderline(false);
+    titleLeftGray16.setFontColor("7A7A7A");
+    titleLeftGray16.setFontFamily("Avenir");
+    titleLeftGray16.setFontSize("32");
+    titleLeftGray16.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle titleLeftBlack14 = new DocxStyle();
+    titleLeftBlack14.setBold(false);
+    titleLeftBlack14.setItalic(false);
+    titleLeftBlack14.setUnderline(false);
+    titleLeftBlack14.setFontFamily("Avenir");
+    titleLeftBlack14.setFontSize("28");
+    titleLeftBlack14.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle subtitleLeftGray11 = new DocxStyle();
+    subtitleLeftGray11.setBold(false);
+    subtitleLeftGray11.setItalic(false);
+    subtitleLeftGray11.setUnderline(false);
+    subtitleLeftGray11.setFontColor("7A7A7A");
+    subtitleLeftGray11.setFontFamily("Avenir");
+    subtitleLeftGray11.setFontSize("22");
+    subtitleLeftGray11.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle subtitleLeftBlack11 = new DocxStyle();
+    subtitleLeftBlack11.setBold(false);
+    subtitleLeftBlack11.setItalic(false);
+    subtitleLeftBlack11.setUnderline(false);
+    subtitleLeftBlack11.setFontFamily("Avenir");
+    subtitleLeftBlack11.setFontSize("22");
+    subtitleLeftBlack11.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle rightBottomGray11 = new DocxStyle();
+    rightBottomGray11.setBold(false);
+    rightBottomGray11.setItalic(false);
+    rightBottomGray11.setUnderline(false);
+    rightBottomGray11.setFontFamily("Avenir");
+    rightBottomGray11.setFontColor("7A7A7A");
+    rightBottomGray11.setHorizAlignment(JcEnumeration.RIGHT);
+    rightBottomGray11.setVerticalAlignment(STVerticalJc.BOTTOM);
+
+    DocxStyle rightBottomBlack11 = new DocxStyle();
+    rightBottomBlack11.setBold(false);
+    rightBottomBlack11.setItalic(false);
+    rightBottomBlack11.setUnderline(false);
+    rightBottomBlack11.setFontFamily("Avenir");
+    rightBottomBlack11.setHorizAlignment(JcEnumeration.RIGHT);
+    rightBottomBlack11.setVerticalAlignment(STVerticalJc.BOTTOM);
+    rightBottomBlack11.setBackground("F3F3F3");
+
+    DocxStyle leftGray9 = new DocxStyle();
+    leftGray9.setBold(false);
+    leftGray9.setItalic(false);
+    leftGray9.setUnderline(false);
+    leftGray9.setFontColor("7A7A7A");
+    leftGray9.setFontFamily("Avenir");
+    leftGray9.setFontSize("18");
+    leftGray9.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle justifiedGray9 = new DocxStyle();
+    justifiedGray9.setBold(false);
+    justifiedGray9.setItalic(false);
+    justifiedGray9.setUnderline(false);
+    justifiedGray9.setFontFamily("Avenir");
+    justifiedGray9.setFontColor("7A7A7A");
+    justifiedGray9.setFontSize("18");
+    justifiedGray9.setHorizAlignment(JcEnumeration.BOTH);
+
+    DocxStyle justifiedBlack9 = new DocxStyle();
+    justifiedBlack9.setBold(false);
+    justifiedBlack9.setItalic(false);
+    justifiedBlack9.setUnderline(false);
+    justifiedBlack9.setFontFamily("Avenir");
+    justifiedBlack9.setFontSize("18");
+    justifiedBlack9.setHorizAlignment(JcEnumeration.BOTH);
+
+    DocxStyle style = new DocxStyle();
+    style.setBold(false);
+    style.setItalic(true);
+    style.setUnderline(true);
+    style.setFontSize("40");
+    style.setFontColor("FF0000");
+    style.setFontFamily("Avenir");
+    style.setTop(300);
+    style.setBackground("CCFFCC");
+    style.setHorizAlignment(JcEnumeration.LEFT);
+    style.setNoWrap(false);
+
+    Tbl tableQuotation = factory.createTbl();
+
+    // for TEST: this adds borders to all cells
+    TblPr tblPr = new TblPr();
+    TblStyle tblStyle = new TblStyle();
+    tblStyle.setVal("TableGrid");
+    tblPr.setTblStyle(tblStyle);
+    tableQuotation.setTblPr(tblPr);
+
+
+    Tr tableRow = factory.createTr();
+
+    /*
+     * tableRow = factory.createTr(); addTableCell(tableRow, "Address", 4000, addressStyle, 1,
+     * null); addTableCell(tableRow, "QBiC Photo", 7000, defStyle, 1, null);
+     * table.getContent().add(tableRow);
+     * 
+     * tableRow = factory.createTr(); addTableCell(tableRow, "", 10000, defStyle, 3, null);
+     * table.getContent().add(tableRow);
+     */
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, clientAddress, 4000, addressLeftCenterBlack10, 1, null);
+    addTableCell(tableRow, headerImage, 8000, rightBottomGray11, 1, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 12000, leftGray9, 2, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Quotation", 4000, titleLeftGray16, 1, null);
+    addTableCell(tableRow, ft.format(dNow), 8000, rightBottomGray11, 1, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 12000, leftGray9, 2, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, projectTitle, 8000, titleLeftBlack14, 1, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Quotation Number", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, "Project Description", 8000, subtitleLeftBlack11, 1, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, quotationNumber, 4000, leftGray9, 1, null);
+    addTableCell(tableRow, projectDescription, 8000, justifiedBlack9, 1, "restart");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Project Reference", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, projectReference, 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Project Scientist", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, projectScientist, 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Delivery Time", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, deliveryDetails, 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Notes", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, notesDetails, 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 4000, leftGray9, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, "close");
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 12000, leftGray9, 2, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Estimated Total (Netto): " + offerTotal + " €", 12000,
+        rightBottomBlack11, 2, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 12000, leftGray9, 2, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Agreement", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, "", 8000, leftGray9, 1, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, agreementText, 12000, justifiedGray9, 2, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 12000, leftGray9, 2, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Place and date of issue", 4000, leftBlack11, 1, null);
+    addTableCell(tableRow, "Signature", 4000, leftBlack11, 1, null);
+    tableQuotation.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, footerImage, 12000, rightBottomGray11, 2, null);
+    tableQuotation.getContent().add(tableRow);
+    tableRow = factory.createTr();
+
+    // start vertical merge for Filed 2 and Field 3 on 3 rows
+    // addTableCell(tableRow, "Field 2", 3500, defStyle, 1, "restart");
+    // addTableCell(tableRow, "Field 3", 1500, defStyle, 1, "resart");
+
+
+    // add an image horizontally merged on 3 cells
+    /*
+     * String filenameHint = null; String altText = null; int id1 = 0; int id2 = 1; byte[] bytes =
+     * getImageBytes(); P pImage; try { pImage = newImage(wordMLPackage, bytes, filenameHint,
+     * altText, id1, id2, 8500); tableRow = factory.createTr(); addTableCell(tableRow, pImage, 8500,
+     * defStyle, 3, null); table.getContent().add(tableRow); } catch (Exception e) {
+     * e.printStackTrace(); }
+     */
+
+    return tableQuotation;
+  }
+
+
+  private Tbl createQuotationDetailsPage(org.docx4j.wml.P headerImage, String clientAddress,
+      String quotationNumber, String projectReference, String projectScientist,
+      String projectTitle, String projectDescription, String offerTotal, String offerPrice,
+      String discount, String deliveryDetails, String notesDetails, String agreementText,
+      org.docx4j.wml.P footerImage) {
+
+    Date dNow = new Date();
+    SimpleDateFormat ft = new SimpleDateFormat("dd MMMM yyyy");
+
+    DocxStyle leftBlack11 = new DocxStyle();
+    leftBlack11.setFontSize("22");
+    leftBlack11.setBold(false);
+    leftBlack11.setItalic(false);
+    leftBlack11.setUnderline(false);
+    leftBlack11.setFontFamily("Avenir");
+    leftBlack11.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle addressLeftCenterBlack10 = new DocxStyle();
+    addressLeftCenterBlack10.setBold(false);
+    addressLeftCenterBlack10.setItalic(false);
+    addressLeftCenterBlack10.setUnderline(false);
+    addressLeftCenterBlack10.setFontFamily("Avenir");
+    addressLeftCenterBlack10.setFontSize("20");
+    addressLeftCenterBlack10.setHorizAlignment(JcEnumeration.LEFT);
+    addressLeftCenterBlack10.setVerticalAlignment(STVerticalJc.CENTER);
+
+    DocxStyle titleLeftGray16 = new DocxStyle();
+    titleLeftGray16.setBold(false);
+    titleLeftGray16.setItalic(false);
+    titleLeftGray16.setUnderline(false);
+    titleLeftGray16.setFontColor("7A7A7A");
+    titleLeftGray16.setFontFamily("Avenir");
+    titleLeftGray16.setFontSize("32");
+    titleLeftGray16.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle subtitleLeftGray11 = new DocxStyle();
+    subtitleLeftGray11.setBold(false);
+    subtitleLeftGray11.setItalic(false);
+    subtitleLeftGray11.setUnderline(false);
+    subtitleLeftGray11.setFontColor("7A7A7A");
+    subtitleLeftGray11.setFontFamily("Avenir");
+    subtitleLeftGray11.setFontSize("22");
+    subtitleLeftGray11.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle subtitleLeftBlack11 = new DocxStyle();
+    subtitleLeftBlack11.setBold(false);
+    subtitleLeftBlack11.setItalic(false);
+    subtitleLeftBlack11.setUnderline(false);
+    subtitleLeftBlack11.setFontFamily("Avenir");
+    subtitleLeftBlack11.setFontSize("22");
+    subtitleLeftBlack11.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle rightBottomGray11 = new DocxStyle();
+    rightBottomGray11.setBold(false);
+    rightBottomGray11.setItalic(false);
+    rightBottomGray11.setUnderline(false);
+    rightBottomGray11.setFontFamily("Avenir");
+    rightBottomGray11.setFontSize("22");
+    rightBottomGray11.setFontColor("7A7A7A");
+    rightBottomGray11.setHorizAlignment(JcEnumeration.RIGHT);
+    rightBottomGray11.setVerticalAlignment(STVerticalJc.BOTTOM);
+
+    DocxStyle rightBottomBlack11 = new DocxStyle();
+    rightBottomBlack11.setBold(false);
+    rightBottomBlack11.setItalic(false);
+    rightBottomBlack11.setUnderline(false);
+    rightBottomBlack11.setFontFamily("Avenir");
+    rightBottomBlack11.setFontSize("22");
+    rightBottomBlack11.setHorizAlignment(JcEnumeration.RIGHT);
+    rightBottomBlack11.setVerticalAlignment(STVerticalJc.BOTTOM);
+    rightBottomBlack11.setBackground("F3F3F3");
+
+    DocxStyle leftGray9 = new DocxStyle();
+    leftGray9.setBold(false);
+    leftGray9.setItalic(false);
+    leftGray9.setUnderline(false);
+    leftGray9.setFontColor("7A7A7A");
+    leftGray9.setFontFamily("Avenir");
+    leftGray9.setFontSize("18");
+    leftGray9.setHorizAlignment(JcEnumeration.LEFT);
+
+    DocxStyle justifiedGray9 = new DocxStyle();
+    justifiedGray9.setBold(false);
+    justifiedGray9.setItalic(false);
+    justifiedGray9.setUnderline(false);
+    justifiedGray9.setFontFamily("Avenir");
+    justifiedGray9.setFontColor("7A7A7A");
+    justifiedGray9.setFontSize("18");
+    justifiedGray9.setHorizAlignment(JcEnumeration.BOTH);
+
+    DocxStyle amountStyle = new DocxStyle();
+    amountStyle.setBold(false);
+    amountStyle.setItalic(false);
+    amountStyle.setUnderline(false);
+    amountStyle.setFontColor("7A7A7A");
+    amountStyle.setFontFamily("Avenir");
+    amountStyle.setFontSize("18");
+    amountStyle.setHorizAlignment(JcEnumeration.RIGHT);
+
+    // a address field cell style
+    DocxStyle detailsBlackStyle = new DocxStyle();
+    detailsBlackStyle.setBold(false);
+    detailsBlackStyle.setItalic(false);
+    detailsBlackStyle.setUnderline(false);
+    detailsBlackStyle.setFontFamily("Avenir");
+    detailsBlackStyle.setFontSize("18");
+    detailsBlackStyle.setHorizAlignment(JcEnumeration.BOTH);
+
+    // a specific table cell style
+    DocxStyle style = new DocxStyle();
+    style.setBold(false);
+    style.setItalic(true);
+    style.setUnderline(true);
+    style.setFontSize("40");
+    style.setFontColor("FF0000");
+    style.setFontFamily("Avenir");
+    style.setTop(300);
+    style.setBackground("CCFFCC");
+    style.setHorizAlignment(JcEnumeration.LEFT);
+    style.setNoWrap(false);
+
+    Tbl tableQuotationDetails = factory.createTbl();
+
+    // for TEST: this adds borders to all cells
+    TblPr tblPr = new TblPr();
+    TblStyle tblStyle = new TblStyle();
+    tblStyle.setVal("TableGrid");
+    tblPr.setTblStyle(tblStyle);
+    tableQuotationDetails.setTblPr(tblPr);
+
+    Tr tableRow = factory.createTr();
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 4000, addressLeftCenterBlack10, 1, null);
+    addTableCell(tableRow, headerImage, 8000, rightBottomGray11, 4, null);
+    tableQuotationDetails.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 12000, leftGray9, 5, null);
+    tableQuotationDetails.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Quotation Details", 4000, titleLeftGray16, 1, null);
+    addTableCell(tableRow, ft.format(dNow), 8000, rightBottomGray11, 4, null);
+    tableQuotationDetails.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 12000, leftGray9, 5, null);
+    tableQuotationDetails.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Work Package", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, "Description", 4000, subtitleLeftGray11, 1, null);
+    addTableCell(tableRow, "Quantity", 1000, amountStyle, 1, null);
+    addTableCell(tableRow, "Unit Price", 1000, amountStyle, 1, null);
+    addTableCell(tableRow, "Amount", 2000, amountStyle, 1, null);
+    tableQuotationDetails.getContent().add(tableRow);
+
+    // System.out.println("PackageGridSize: " + packageGridSize);
+    for (int i = 0; i < packageGridSize; i++) {
+
+      tableRow = factory.createTr();
+      addTableCell(tableRow, packageNames.get(i), 4000, leftGray9, 1, null);
+      addTableCell(tableRow, packageDescriptions.get(i), 4000, justifiedGray9, 1, null);
+      addTableCell(tableRow, packageCounts.get(i), 1000, amountStyle, 1, null);
+      addTableCell(tableRow, packageUnitPrices.get(i) + " €", 1200, amountStyle, 1, null);
+      addTableCell(tableRow, packageTotalPrices.get(i) + " €", 1800, amountStyle, 1, null);
+      tableQuotationDetails.getContent().add(tableRow);
+
+    }
+
+    if (!discount.equals("0%")) {
+
+      tableRow = factory.createTr();
+      addTableCell(tableRow, "Estimated Sum " + offerPrice + " €", 12000, rightBottomGray11, 5,
+          null);
+      tableQuotationDetails.getContent().add(tableRow);
+
+      tableRow = factory.createTr();
+      addTableCell(tableRow, "Discount: " + discount, 12000, rightBottomGray11, 5, null);
+      tableQuotationDetails.getContent().add(tableRow);
+
+    }
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "Estimated Total (Netto): " + offerTotal + " €", 12000,
+        rightBottomBlack11, 5, null);
+    tableQuotationDetails.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, "", 12000, leftGray9, 5, null);
+    tableQuotationDetails.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+    addTableCell(tableRow, footerImage, 12000, rightBottomGray11, 5, null);
+    tableQuotationDetails.getContent().add(tableRow);
+
+    tableRow = factory.createTr();
+
+    return tableQuotationDetails;
+  }
+
+
+  /*
+   * private byte[] getImageBytes() { // TODO Auto-generated method stub return null; }
+   */
+
+  private void addTableCell(Tr tableRow, P image, int width, DocxStyle style,
+      int horizontalMergedCells, String verticalMergedVal) {
+    Tc tableCell = factory.createTc();
+    addImageCellStyle(tableCell, image, style);
+    setCellWidth(tableCell, width);
+    setCellVMerge(tableCell, verticalMergedVal);
+    setCellHMerge(tableCell, horizontalMergedCells);
+    tableRow.getContent().add(tableCell);
+  }
+
+  private void addTableCell(Tr tableRow, String content, int width, DocxStyle style,
+      int horizontalMergedCells, String verticalMergedVal) {
+    Tc tableCell = factory.createTc();
+    addCellStyle(tableCell, content, style);
+    setCellWidth(tableCell, width);
+    setCellVMerge(tableCell, verticalMergedVal);
+    setCellHMerge(tableCell, horizontalMergedCells);
+    if (style.isNoWrap()) {
+      setCellNoWrap(tableCell);
+    }
+    tableRow.getContent().add(tableCell);
+  }
+
+  private void addCellStyle(Tc tableCell, String content, DocxStyle style) {
+    if (style != null) {
+
+      P paragraph = factory.createP();
+
+      org.docx4j.wml.Text text = factory.createText();
+      text.setValue(content);
+
+      R run = factory.createR();
+      run.getContent().add(text);
+
+      paragraph.getContent().add(run);
+
+      setHorizontalAlignment(paragraph, style.getHorizAlignment());
+
+      RPr runProperties = factory.createRPr();
+
+      if (style.isBold()) {
+        addBoldStyle(runProperties);
+      }
+      if (style.isItalic()) {
+        addItalicStyle(runProperties);
+      }
+      if (style.isUnderline()) {
+        addUnderlineStyle(runProperties);
+      }
+
+      setFontSize(runProperties, style.getFontSize());
+      setFontColor(runProperties, style.getFontColor());
+      setFontFamily(runProperties, style.getFontFamily());
+
+      setCellMargins(tableCell, style.getTop(), style.getRight(), style.getBottom(),
+          style.getLeft());
+      setCellColor(tableCell, style.getBackground());
+      setVerticalAlignment(tableCell, style.getVerticalAlignment());
+
+      setCellBorders(tableCell, style.isBorderTop(), style.isBorderRight(), style.isBorderBottom(),
+          style.isBorderLeft());
+
+      run.setRPr(runProperties);
+
+      tableCell.getContent().add(paragraph);
+    }
+  }
+
+  private void addImageCellStyle(Tc tableCell, P image, DocxStyle style) {
+    setCellMargins(tableCell, style.getTop(), style.getRight(), style.getBottom(), style.getLeft());
+    setCellColor(tableCell, style.getBackground());
+    setVerticalAlignment(tableCell, style.getVerticalAlignment());
+    setHorizontalAlignment(image, style.getHorizAlignment());
+    setCellBorders(tableCell, style.isBorderTop(), style.isBorderRight(), style.isBorderBottom(),
+        style.isBorderLeft());
+    tableCell.getContent().add(image);
+  }
+
+  public P newImage(WordprocessingMLPackage wordMLPackage, byte[] bytes, String filenameHint,
+      String altText, int id1, int id2, long cx) throws Exception {
+    BinaryPartAbstractImage imagePart =
+        BinaryPartAbstractImage.createImagePart(wordMLPackage, bytes);
+    Inline inline = imagePart.createImageInline(filenameHint, altText, id1, id2, cx, false);
+    // Now add the inline in w:p/w:r/w:drawing
+    org.docx4j.wml.ObjectFactory factory = Context.getWmlObjectFactory();
+    P p = factory.createP();
+    R run = factory.createR();
+    p.getContent().add(run);
+    Drawing drawing = factory.createDrawing();
+    run.getContent().add(drawing);
+    drawing.getAnchorOrInline().add(inline);
+    return p;
+  }
+
+  private void setCellBorders(Tc tableCell, boolean borderTop, boolean borderRight,
+      boolean borderBottom, boolean borderLeft) {
+
+    TcPr tableCellProperties = tableCell.getTcPr();
+    if (tableCellProperties == null) {
+      tableCellProperties = new TcPr();
+      tableCell.setTcPr(tableCellProperties);
+    }
+
+    CTBorder border = new CTBorder();
+    // border.setColor("auto");
+    border.setColor("FFFFFF");
+    border.setSz(new BigInteger("20"));
+    border.setSpace(new BigInteger("0"));
+    border.setVal(STBorder.SINGLE);
+
+    TcBorders borders = new TcBorders();
+    if (borderBottom) {
+      borders.setBottom(border);
+    }
+    if (borderTop) {
+      borders.setTop(border);
+    }
+    if (borderLeft) {
+      borders.setLeft(border);
+    }
+    if (borderRight) {
+      borders.setRight(border);
+    }
+    tableCellProperties.setTcBorders(borders);
+  }
+
+  private void setCellWidth(Tc tableCell, int width) {
+    if (width > 0) {
+      TcPr tableCellProperties = tableCell.getTcPr();
+      if (tableCellProperties == null) {
+        tableCellProperties = new TcPr();
+        tableCell.setTcPr(tableCellProperties);
+      }
+      TblWidth tableWidth = new TblWidth();
+      tableWidth.setType("dxa");
+      tableWidth.setW(BigInteger.valueOf(width));
+      tableCellProperties.setTcW(tableWidth);
+    }
+  }
+
+  private void setCellNoWrap(Tc tableCell) {
+    TcPr tableCellProperties = tableCell.getTcPr();
+    if (tableCellProperties == null) {
+      tableCellProperties = new TcPr();
+      tableCell.setTcPr(tableCellProperties);
+    }
+    BooleanDefaultTrue b = new BooleanDefaultTrue();
+    b.setVal(true);
+    tableCellProperties.setNoWrap(b);
+  }
+
+  private void setCellVMerge(Tc tableCell, String mergeVal) {
+    if (mergeVal != null) {
+      TcPr tableCellProperties = tableCell.getTcPr();
+      if (tableCellProperties == null) {
+        tableCellProperties = new TcPr();
+        tableCell.setTcPr(tableCellProperties);
+      }
+      VMerge merge = new VMerge();
+      if (!"close".equals(mergeVal)) {
+        merge.setVal(mergeVal);
+      }
+      tableCellProperties.setVMerge(merge);
+    }
+  }
+
+  private void setCellHMerge(Tc tableCell, int horizontalMergedCells) {
+    if (horizontalMergedCells > 1) {
+      TcPr tableCellProperties = tableCell.getTcPr();
+      if (tableCellProperties == null) {
+        tableCellProperties = new TcPr();
+        tableCell.setTcPr(tableCellProperties);
+      }
+
+      GridSpan gridSpan = new GridSpan();
+      gridSpan.setVal(new BigInteger(String.valueOf(horizontalMergedCells)));
+
+      tableCellProperties.setGridSpan(gridSpan);
+      tableCell.setTcPr(tableCellProperties);
+    }
+  }
+
+  private void setCellColor(Tc tableCell, String color) {
+    if (color != null) {
+      TcPr tableCellProperties = tableCell.getTcPr();
+      if (tableCellProperties == null) {
+        tableCellProperties = new TcPr();
+        tableCell.setTcPr(tableCellProperties);
+      }
+      CTShd shd = new CTShd();
+      shd.setFill(color);
+      tableCellProperties.setShd(shd);
+    }
+  }
+
+  private void setCellMargins(Tc tableCell, int top, int right, int bottom, int left) {
+    TcPr tableCellProperties = tableCell.getTcPr();
+    if (tableCellProperties == null) {
+      tableCellProperties = new TcPr();
+      tableCell.setTcPr(tableCellProperties);
+    }
+    TcMar margins = new TcMar();
+
+    if (bottom > 0) {
+      TblWidth bW = new TblWidth();
+      bW.setType("dxa");
+      bW.setW(BigInteger.valueOf(bottom));
+      margins.setBottom(bW);
+    }
+
+    if (top > 0) {
+      TblWidth tW = new TblWidth();
+      tW.setType("dxa");
+      tW.setW(BigInteger.valueOf(top));
+      margins.setTop(tW);
+    }
+
+    if (left > 0) {
+      TblWidth lW = new TblWidth();
+      lW.setType("dxa");
+      lW.setW(BigInteger.valueOf(left));
+      margins.setLeft(lW);
+    }
+
+    if (right > 0) {
+      TblWidth rW = new TblWidth();
+      rW.setType("dxa");
+      rW.setW(BigInteger.valueOf(right));
+      margins.setRight(rW);
+    }
+
+    tableCellProperties.setTcMar(margins);
+  }
+
+  private void setVerticalAlignment(Tc tableCell, STVerticalJc align) {
+    if (align != null) {
+      TcPr tableCellProperties = tableCell.getTcPr();
+      if (tableCellProperties == null) {
+        tableCellProperties = new TcPr();
+        tableCell.setTcPr(tableCellProperties);
+      }
+
+      CTVerticalJc valign = new CTVerticalJc();
+      valign.setVal(align);
+
+      tableCellProperties.setVAlign(valign);
+    }
+  }
+
+  private void setFontSize(RPr runProperties, String fontSize) {
+    if (fontSize != null && !fontSize.isEmpty()) {
+      HpsMeasure size = new HpsMeasure();
+      size.setVal(new BigInteger(fontSize));
+      runProperties.setSz(size);
+      runProperties.setSzCs(size);
+    }
+  }
+
+  private void setFontFamily(RPr runProperties, String fontFamily) {
+    if (fontFamily != null) {
+      RFonts rf = runProperties.getRFonts();
+      if (rf == null) {
+        rf = new RFonts();
+        runProperties.setRFonts(rf);
+      }
+      rf.setAscii(fontFamily);
+    }
+  }
+
+  private void setFontColor(RPr runProperties, String color) {
+    if (color != null) {
+      Color c = new Color();
+      c.setVal(color);
+      runProperties.setColor(c);
+    }
+  }
+
+  private void setHorizontalAlignment(P paragraph, JcEnumeration hAlign) {
+    if (hAlign != null) {
+      PPr pprop = new PPr();
+      Jc align = new Jc();
+      align.setVal(hAlign);
+      pprop.setJc(align);
+      paragraph.setPPr(pprop);
+    }
+  }
+
+  private void addBoldStyle(RPr runProperties) {
+    BooleanDefaultTrue b = new BooleanDefaultTrue();
+    b.setVal(true);
+    runProperties.setB(b);
+  }
+
+  private void addItalicStyle(RPr runProperties) {
+    BooleanDefaultTrue b = new BooleanDefaultTrue();
+    b.setVal(true);
+    runProperties.setI(b);
+  }
+
+  private void addUnderlineStyle(RPr runProperties) {
+    U val = new U();
+    val.setVal(UnderlineEnumeration.SINGLE);
+    runProperties.setU(val);
   }
 
   private void writeDocx() {
@@ -1134,5 +2462,93 @@ public class packageManager extends CustomComponent {
     }
     notify.show(Page.getCurrent());
   }
+
+  /*
+   * public class Test {
+   * 
+   * static WordprocessingMLPackage wordMLPackage = null; static String inputfilepath; static
+   * boolean save;
+   * 
+   * public static void main(String[] args) throws Exception { String inputfilepath;
+   * 
+   * try { // getInputFilePath(args); inputfilepath = System.getProperty("user.dir") +
+   * "/CreateWordprocessingMLDocument_out.docx"; } catch (IllegalArgumentException e) {
+   * 
+   * inputfilepath = System.getProperty("user.dir") + "/CreateWordprocessingMLDocument_out.docx"; }
+   * 
+   * save = (inputfilepath == null ? false : true);
+   * 
+   * System.out.println("Creating package.."); wordMLPackage =
+   * WordprocessingMLPackage.createPackage();
+   * 
+   * wordMLPackage.getMainDocumentPart().addStyledParagraphOfText("Title", "Hello world");
+   * 
+   * wordMLPackage.getMainDocumentPart().addParagraphOfText("from docx4j!");
+   * org.docx4j.wml.ObjectFactory factory = new org.docx4j.wml.ObjectFactory();
+   * 
+   * // Let's add a table int writableWidthTwips =
+   * wordMLPackage.getDocumentModel().getSections().get(0).getPageDimensions()
+   * .getWritableWidthTwips(); int cols = 5; int cellWidthTwips = new
+   * Double(Math.floor((writableWidthTwips / cols))).intValue();
+   * 
+   * // Tbl tbl = TblFactory.createTable(3, 3, cellWidthTwips);
+   * 
+   * Tbl tbl = Context.getWmlObjectFactory().createTbl();
+   * 
+   * // /////////////////// String strTblPr = "<w:tblPr " + Namespaces.W_NAMESPACE_DECLARATION + ">"
+   * + "<w:tblStyle w:val=\"TableGrid\"/>" + "<w:tblW w:w=\"0\" w:type=\"auto\"/>" +
+   * "<w:tblLook w:val=\"04A0\"/>" + "</w:tblPr>"; TblPr tblPr = null;
+   * 
+   * try { tblPr = (TblPr) XmlUtils.unmarshalString(strTblPr); }
+   * 
+   * catch (JAXBException e) { // Shouldn't happen e.printStackTrace(); } tbl.setTblPr(tblPr);
+   * 
+   * TblGrid tblGrid = Context.getWmlObjectFactory().createTblGrid(); tbl.setTblGrid(tblGrid);
+   * 
+   * int writableWidthTwips1 =
+   * wordMLPackage.getDocumentModel().getSections().get(0).getPageDimensions()
+   * .getWritableWidthTwips(); int cellWidthTwips1 = new Double(Math.floor((writableWidthTwips /
+   * cols))).intValue();
+   * 
+   * for (int i = 0; i < cols; i++) { TblGridCol gridCol =
+   * Context.getWmlObjectFactory().createTblGridCol();
+   * gridCol.setW(BigInteger.valueOf(cellWidthTwips)); tblGrid.getGridCol().add(gridCol); }
+   * 
+   * List<String> ls = new ArrayList<String>(); ls.add("rohit"); ls.add("Dwivedi"); ls.add("hi");
+   * ls.add("hello"); ls.add("Byee");
+   * 
+   * Tc tc = null; Tr tr = null; int rows = 3; for (int j = 0; j < rows; j++) { tr =
+   * Context.getWmlObjectFactory().createTr(); // tbl.getEGContentRowContent().add(tr); // for (int
+   * i = 1; i <= cols; i++) { for (int i = 0; i < cols; i++) { tc =
+   * Context.getWmlObjectFactory().createTc();
+   * 
+   * TcPr tcPr = Context.getWmlObjectFactory().createTcPr(); tc.setTcPr(tcPr); TblWidth cellWidth =
+   * Context.getWmlObjectFactory().createTblWidth(); tcPr.setTcW(cellWidth);
+   * cellWidth.setType("dxa"); cellWidth.setW(BigInteger.valueOf(cellWidthTwips));
+   * org.docx4j.wml.ObjectFactory factory1 = Context.getWmlObjectFactory(); org.docx4j.wml.P p1 =
+   * factory.createP(); org.docx4j.wml.Text t1 = factory.createText(); // ls.add("val :" + i);
+   * t1.setValue(ls.get(i)); org.docx4j.wml.R run1 = factory.createR();
+   * run1.getRunContent().add(t1);
+   * 
+   * p1.getParagraphContent().add(run1); tc.getEGBlockLevelElts().add(p1);
+   * tr.getEGContentCellContent().add(tc);
+   * 
+   * }
+   * 
+   * tbl.getEGContentRowContent().add(tr); }
+   * 
+   * wordMLPackage.getMainDocumentPart().addObject(tbl);
+   * 
+   * if (save) { wordMLPackage.save(new java.io.File(inputfilepath)); System.out.println("Saved " +
+   * inputfilepath); }
+   * 
+   * System.out.println("Done.");
+   * 
+   * }
+   * 
+   * }
+   */
+
+
 
 }

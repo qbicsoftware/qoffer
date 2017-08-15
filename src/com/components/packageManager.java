@@ -178,7 +178,7 @@ public class packageManager extends CustomComponent {
     DBManager.getDatabaseInstance();
     db = Database.Instance;
 
-    System.out.println(ft.format(dNow) + "  INFO  Package Manager accessed! - User: "
+    System.out.println(ft.format(dNow) + "  INFO  Offer Manager accessed! - User: "
         + LiferayAndVaadinUtils.getUser().getScreenName());
 
     // final TabSheet managerTabs = new TabSheet();
@@ -2393,7 +2393,7 @@ public class packageManager extends CustomComponent {
       String text = we.getText();
       if (text.contains("Hello")) {
         text = text.replace("Hello", "Hi");
-        System.out.println(text);
+        // System.out.println(text);
       }
       char[] c = text.toCharArray();
       for (int i = 0; i < c.length; i++) {
@@ -2402,7 +2402,7 @@ public class packageManager extends CustomComponent {
           count++;
         }
       }
-      System.out.println(c[0]);
+      // System.out.println(c[0]);
       StringTokenizer st = new StringTokenizer(text, "\n");
 
       XWPFParagraph para = document.createParagraph();

@@ -308,7 +308,7 @@ public enum Database {
       // System.out.println("PackageName: " + package_name + " Desc: " + package_description);
       // nothing will be in the database, until you commit it!
       // conn.commit();
-      System.out.println("getPackIDFromPackName: " + statement);
+      // System.out.println("getPackIDFromPackName: " + statement);
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -329,7 +329,7 @@ public enum Database {
       // System.out.println("PackageName: " + package_name + " Desc: " + package_description);
       // nothing will be in the database, until you commit it!
       // conn.commit();
-      System.out.println("getPackIDFromPackName: " + statement);
+      // System.out.println("getPackIDFromPackName: " + statement);
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -347,7 +347,7 @@ public enum Database {
       if (rs.next())
         updatedPrice = rs.getFloat(1);
       updatedPrice = updatedPrice * ((100 - percentage) / 100);
-      System.out.println("percentage: " + percentage + " updatedPrice: " + updatedPrice);
+      // System.out.println("percentage: " + percentage + " updatedPrice: " + updatedPrice);
       // System.out.println(rs.next() + " getString " + rs.getString(1));
       // System.out.println("PackageName: " + package_name + " Desc: " + package_description);
       // nothing will be in the database, until you commit it!
@@ -430,7 +430,7 @@ public enum Database {
       // System.out.println("PackageName: " + package_name + " Desc: " + package_description);
       // nothing will be in the database, until you commit it!
       // conn.commit();
-      System.out.println("getOfferDiscount: " + statement);
+      // System.out.println("getOfferDiscount: " + statement);
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -447,7 +447,7 @@ public enum Database {
       e.printStackTrace();
     }
 
-    System.out.println("offerPrice: " + offerPrice);
+    // System.out.println("offerPrice: " + offerPrice);
 
     String sqlF = "UPDATE z_offers SET offer_price = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementF = conn.prepareStatement(sqlF)) {
@@ -474,8 +474,9 @@ public enum Database {
     }
 
     offerTotalPrice = offerTotalPrice + offerPrice * ((100 - discountPercentage) / 100);
-    System.out.println(" 1 >>> offerTotalPrice: " + offerTotalPrice + " offerPrice: " + offerPrice
-        + " discountPercentage: " + discountPercentage);
+    // System.out.println(" 1 >>> offerTotalPrice: " + offerTotalPrice + " offerPrice: " +
+    // offerPrice
+    // + " discountPercentage: " + discountPercentage);
 
     String sqlT = "UPDATE z_offers SET offer_total = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementT = conn.prepareStatement(sqlT)) {
@@ -483,8 +484,8 @@ public enum Database {
       offerTotalPriceFormatted = offerTotalPriceFormatted.replaceAll(",", ".");
       statementT.setString(1, offerTotalPriceFormatted);
       statementT.setString(2, offer_id);
-      System.out.println(" 2 >>> offerTotalPriceFormatted: " + offerTotalPriceFormatted
-          + " offer_id: " + offer_id);
+      // System.out.println(" 2 >>> offerTotalPriceFormatted: " + offerTotalPriceFormatted
+      // + " offer_id: " + offer_id);
       int result = statementT.executeUpdate();
       success = (result > 0);
     } catch (SQLException e) {
@@ -511,7 +512,7 @@ public enum Database {
       // System.out.println("PackageName: " + package_name + " Desc: " + package_description);
       // nothing will be in the database, until you commit it!
       // conn.commit();
-      System.out.println("getOfferDiscount: " + statement);
+      // System.out.println("getOfferDiscount: " + statement);
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -687,7 +688,7 @@ public enum Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    System.out.println("Statement: " + sql + " Here: " + short_title);
+    // System.out.println("Statement: " + sql + " Here: " + short_title);
     return short_title;
   }
 
@@ -709,7 +710,7 @@ public enum Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    System.out.println("Statement: " + sql + " Here: " + long_description);
+    // System.out.println("Statement: " + sql + " Here: " + long_description);
     return long_description;
   }
 
@@ -811,14 +812,14 @@ public enum Database {
       } catch (SQLException e) {
         e.printStackTrace();
       }
-      System.out.println("INSERT: " + offer_id);
+      // System.out.println("INSERT: " + offer_id);
       return offer_id;
 
 
     }
 
     else {
-      System.out.println("NO INSERT: " + offer_id);
+      // System.out.println("NO INSERT: " + offer_id);
       return offer_id;
     }
 
@@ -841,7 +842,7 @@ public enum Database {
       while (resultCheck.next()) {
         count = resultCheck.getInt(1);
       }
-      System.out.println("resultCheck: " + count);
+      // System.out.println("resultCheck: " + count);
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -855,7 +856,7 @@ public enum Database {
         statementUpdate.setFloat(2, package_unit_price);
         statementUpdate.setInt(3, offer_id);
         int result = statementUpdate.executeUpdate();
-        System.out.println("Update: " + statementUpdate);
+        // System.out.println("Update: " + statementUpdate);
         success = (result > 0);
       } catch (SQLException e) {
         e.printStackTrace();
@@ -871,7 +872,7 @@ public enum Database {
         statementInsert.setInt(4, 1);
         statementInsert.setString(5, "0%");
         int result = statementInsert.executeUpdate();
-        System.out.println("Insert: " + statementInsert);
+        // System.out.println("Insert: " + statementInsert);
         success = (result > 0);
       } catch (SQLException e) {
         e.printStackTrace();

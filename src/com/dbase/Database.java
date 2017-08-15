@@ -363,7 +363,7 @@ public enum Database {
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
 
       String updatedPriceFormatted = String.format("%.02f", updatedPrice);
-
+      updatedPriceFormatted = updatedPriceFormatted.replaceAll(",", ".");
       statement.setString(1, discount);
       statement.setString(2, updatedPriceFormatted);
       statement.setString(3, offer_id);
@@ -452,6 +452,7 @@ public enum Database {
     String sqlF = "UPDATE z_offers SET offer_price = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementF = conn.prepareStatement(sqlF)) {
       String offerPriceFormatted = String.format("%.02f", offerPrice);
+      offerPriceFormatted = offerPriceFormatted.replaceAll(",", ".");
       statementF.setString(1, offerPriceFormatted);
       statementF.setString(2, offer_id);
       int result = statementF.executeUpdate();
@@ -473,14 +474,17 @@ public enum Database {
     }
 
     offerTotalPrice = offerTotalPrice + offerPrice * ((100 - discountPercentage) / 100);
-    // System.out.println("offerTotalPrice: " + offerTotalPrice + " offerPrice: " + offerPrice
-    // + " discountPercentage: " + discountPercentage);
+    System.out.println(" 1 >>> offerTotalPrice: " + offerTotalPrice + " offerPrice: " + offerPrice
+        + " discountPercentage: " + discountPercentage);
 
     String sqlT = "UPDATE z_offers SET offer_total = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementT = conn.prepareStatement(sqlT)) {
       String offerTotalPriceFormatted = String.format("%.02f", offerTotalPrice);
+      offerTotalPriceFormatted = offerTotalPriceFormatted.replaceAll(",", ".");
       statementT.setString(1, offerTotalPriceFormatted);
       statementT.setString(2, offer_id);
+      System.out.println(" 2 >>> offerTotalPriceFormatted: " + offerTotalPriceFormatted
+          + " offer_id: " + offer_id);
       int result = statementT.executeUpdate();
       success = (result > 0);
     } catch (SQLException e) {

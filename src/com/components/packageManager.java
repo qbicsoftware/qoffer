@@ -539,18 +539,8 @@ public class packageManager extends CustomComponent {
      * updateQuantityDiscount.addItem("40%"); updateQuantityDiscount.addItem("50%");
      */
 
-    addQuantity.addItem("1");
-    addQuantity.addItem("2");
-    addQuantity.addItem("3");
-    addQuantity.addItem("4");
-    addQuantity.addItem("5");
-    addQuantity.addItem("6");
-    addQuantity.addItem("7");
-    addQuantity.addItem("8");
-    addQuantity.addItem("9");
-    addQuantity.addItem("10");
-    addQuantity.addItem("11");
-    addQuantity.addItem("12");
+    for (int i = 1; i <= 30; i++)
+      addQuantity.addItem(i);
 
     Button updateQuantityButton = new Button("Update");
     updateQuantityButton.setIcon(FontAwesome.SPINNER);

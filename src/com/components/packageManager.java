@@ -160,7 +160,7 @@ public class packageManager extends CustomComponent {
 
   String dateToday = offerNumber.format(dNow);
   String queryFreeform =
-      "SELECT * FROM z_offers INNER JOIN z_offers_packages ON z_offers.`offer_id` = z_offers_packages.`offer_id` INNER JOIN z_packages ON z_packages.`package_id` = z_offers_packages.`package_id` WHERE z_offers.offer_id = 8";
+      "SELECT * FROM offers INNER JOIN offers_packages ON offers.`offer_id` = offers_packages.`offer_id` INNER JOIN packages ON packages.`package_id` = offers_packages.`package_id` WHERE offers.offer_id = 8";
 
   /**
    * 
@@ -239,7 +239,7 @@ public class packageManager extends CustomComponent {
     packManLayout.setSpacing(true);
     packManLayout.setSizeFull();
 
-    TableQuery tq = new TableQuery("z_packages", DBManager.getDatabaseInstanceAlternative());
+    TableQuery tq = new TableQuery("packages", DBManager.getDatabaseInstanceAlternative());
     tq.setVersionColumn("OPTLOCK");
     SQLContainer container = new SQLContainer(tq);
 
@@ -554,7 +554,7 @@ public class packageManager extends CustomComponent {
     packSettingsLayout.setSpacing(true);
 
     queryFreeform =
-        "SELECT * FROM z_offers INNER JOIN z_offers_packages ON z_offers.`offer_id` = z_offers_packages.`offer_id` INNER JOIN z_packages ON z_packages.`package_id` = z_offers_packages.`package_id` WHERE z_offers.offer_id = "
+        "SELECT * FROM offers INNER JOIN offers_packages ON offers.`offer_id` = offers_packages.`offer_id` INNER JOIN packages ON packages.`package_id` = offers_packages.`package_id` WHERE offers.offer_id = "
             + queryEnd;
 
     FreeformQuery query =
@@ -800,7 +800,7 @@ public class packageManager extends CustomComponent {
     offerManLayout.setSpacing(true);
     offerManLayout.setSizeFull();
 
-    TableQuery tq = new TableQuery("z_offers", DBManager.getDatabaseInstanceAlternative());
+    TableQuery tq = new TableQuery("offers", DBManager.getDatabaseInstanceAlternative());
     tq.setVersionColumn("OPTLOCK");
     SQLContainer container = new SQLContainer(tq);
 
@@ -1129,12 +1129,12 @@ public class packageManager extends CustomComponent {
          */
 
         Tbl quotation =
-            createQuotationPage(header, clientAddress, quotationNumber, projectReference,
+            createQuotationPage(header, clientAddress, offerNumber, projectReference,
                 projectScientist, projectTitle, projectDescription, offerTotal, deliveryDetails,
                 notesDetails, agreementText, footer);
 
         Tbl quotationDetails =
-            createQuotationDetailsPage(header, clientAddress, quotationNumber, projectReference,
+            createQuotationDetailsPage(header, clientAddress, offerNumber, projectReference,
                 projectScientist, projectTitle, projectDescription, offerTotal, offerPrice,
                 discount, deliveryDetails, notesDetails, agreementText, footer);
 
@@ -1590,14 +1590,14 @@ public class packageManager extends CustomComponent {
     leftBlack11.setItalic(false);
     leftBlack11.setUnderline(false);
     leftBlack11.setFontSize("22");
-    leftBlack11.setFontFamily("Avenir");
+    leftBlack11.setFontFamily("OpenSans");
     leftBlack11.setHorizAlignment(JcEnumeration.LEFT);
 
     DocxStyle addressLeftCenterBlack10 = new DocxStyle();
     addressLeftCenterBlack10.setBold(false);
     addressLeftCenterBlack10.setItalic(false);
     addressLeftCenterBlack10.setUnderline(false);
-    addressLeftCenterBlack10.setFontFamily("Avenir");
+    addressLeftCenterBlack10.setFontFamily("OpenSans");
     addressLeftCenterBlack10.setFontSize("20");
     addressLeftCenterBlack10.setHorizAlignment(JcEnumeration.LEFT);
     addressLeftCenterBlack10.setVerticalAlignment(STVerticalJc.CENTER);
@@ -1607,7 +1607,7 @@ public class packageManager extends CustomComponent {
     titleLeftGray16.setItalic(false);
     titleLeftGray16.setUnderline(false);
     titleLeftGray16.setFontColor("7A7A7A");
-    titleLeftGray16.setFontFamily("Avenir");
+    titleLeftGray16.setFontFamily("OpenSans");
     titleLeftGray16.setFontSize("32");
     titleLeftGray16.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1615,7 +1615,7 @@ public class packageManager extends CustomComponent {
     titleLeftBlack14.setBold(false);
     titleLeftBlack14.setItalic(false);
     titleLeftBlack14.setUnderline(false);
-    titleLeftBlack14.setFontFamily("Avenir");
+    titleLeftBlack14.setFontFamily("OpenSans");
     titleLeftBlack14.setFontSize("28");
     titleLeftBlack14.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1624,7 +1624,7 @@ public class packageManager extends CustomComponent {
     subtitleLeftGray11.setItalic(false);
     subtitleLeftGray11.setUnderline(false);
     subtitleLeftGray11.setFontColor("7A7A7A");
-    subtitleLeftGray11.setFontFamily("Avenir");
+    subtitleLeftGray11.setFontFamily("OpenSans");
     subtitleLeftGray11.setFontSize("22");
     subtitleLeftGray11.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1632,7 +1632,7 @@ public class packageManager extends CustomComponent {
     subtitleLeftBlack11.setBold(false);
     subtitleLeftBlack11.setItalic(false);
     subtitleLeftBlack11.setUnderline(false);
-    subtitleLeftBlack11.setFontFamily("Avenir");
+    subtitleLeftBlack11.setFontFamily("OpenSans");
     subtitleLeftBlack11.setFontSize("22");
     subtitleLeftBlack11.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1640,7 +1640,7 @@ public class packageManager extends CustomComponent {
     rightBottomGray11.setBold(false);
     rightBottomGray11.setItalic(false);
     rightBottomGray11.setUnderline(false);
-    rightBottomGray11.setFontFamily("Avenir");
+    rightBottomGray11.setFontFamily("OpenSans");
     rightBottomGray11.setFontColor("7A7A7A");
     rightBottomGray11.setHorizAlignment(JcEnumeration.RIGHT);
     rightBottomGray11.setVerticalAlignment(STVerticalJc.BOTTOM);
@@ -1649,17 +1649,19 @@ public class packageManager extends CustomComponent {
     rightBottomBlack11.setBold(false);
     rightBottomBlack11.setItalic(false);
     rightBottomBlack11.setUnderline(false);
-    rightBottomBlack11.setFontFamily("Avenir");
+    rightBottomBlack11.setFontFamily("OpenSans");
+    rightBottomBlack11.setFontSize("22");
+    rightBottomBlack11.setFontColor("FFFFFF");
     rightBottomBlack11.setHorizAlignment(JcEnumeration.RIGHT);
     rightBottomBlack11.setVerticalAlignment(STVerticalJc.BOTTOM);
-    rightBottomBlack11.setBackground("F3F3F3");
+    rightBottomBlack11.setBackground("52A8F8");
 
     DocxStyle leftGray9 = new DocxStyle();
     leftGray9.setBold(false);
     leftGray9.setItalic(false);
     leftGray9.setUnderline(false);
     leftGray9.setFontColor("7A7A7A");
-    leftGray9.setFontFamily("Avenir");
+    leftGray9.setFontFamily("OpenSans");
     leftGray9.setFontSize("18");
     leftGray9.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1667,7 +1669,7 @@ public class packageManager extends CustomComponent {
     justifiedGray9.setBold(false);
     justifiedGray9.setItalic(false);
     justifiedGray9.setUnderline(false);
-    justifiedGray9.setFontFamily("Avenir");
+    justifiedGray9.setFontFamily("OpenSans");
     justifiedGray9.setFontColor("7A7A7A");
     justifiedGray9.setFontSize("18");
     justifiedGray9.setHorizAlignment(JcEnumeration.BOTH);
@@ -1676,7 +1678,7 @@ public class packageManager extends CustomComponent {
     justifiedBlack9.setBold(false);
     justifiedBlack9.setItalic(false);
     justifiedBlack9.setUnderline(false);
-    justifiedBlack9.setFontFamily("Avenir");
+    justifiedBlack9.setFontFamily("OpenSans");
     justifiedBlack9.setFontSize("18");
     justifiedBlack9.setHorizAlignment(JcEnumeration.BOTH);
 
@@ -1686,7 +1688,7 @@ public class packageManager extends CustomComponent {
     style.setUnderline(true);
     style.setFontSize("40");
     style.setFontColor("FF0000");
-    style.setFontFamily("Avenir");
+    style.setFontFamily("OpenSans");
     style.setTop(300);
     style.setBackground("CCFFCC");
     style.setHorizAlignment(JcEnumeration.LEFT);
@@ -1884,14 +1886,14 @@ public class packageManager extends CustomComponent {
     leftBlack11.setBold(false);
     leftBlack11.setItalic(false);
     leftBlack11.setUnderline(false);
-    leftBlack11.setFontFamily("Avenir");
+    leftBlack11.setFontFamily("OpenSans");
     leftBlack11.setHorizAlignment(JcEnumeration.LEFT);
 
     DocxStyle addressLeftCenterBlack10 = new DocxStyle();
     addressLeftCenterBlack10.setBold(false);
     addressLeftCenterBlack10.setItalic(false);
     addressLeftCenterBlack10.setUnderline(false);
-    addressLeftCenterBlack10.setFontFamily("Avenir");
+    addressLeftCenterBlack10.setFontFamily("OpenSans");
     addressLeftCenterBlack10.setFontSize("20");
     addressLeftCenterBlack10.setHorizAlignment(JcEnumeration.LEFT);
     addressLeftCenterBlack10.setVerticalAlignment(STVerticalJc.CENTER);
@@ -1901,7 +1903,7 @@ public class packageManager extends CustomComponent {
     titleLeftGray16.setItalic(false);
     titleLeftGray16.setUnderline(false);
     titleLeftGray16.setFontColor("7A7A7A");
-    titleLeftGray16.setFontFamily("Avenir");
+    titleLeftGray16.setFontFamily("OpenSans");
     titleLeftGray16.setFontSize("32");
     titleLeftGray16.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1910,7 +1912,7 @@ public class packageManager extends CustomComponent {
     subtitleLeftGray11.setItalic(false);
     subtitleLeftGray11.setUnderline(false);
     subtitleLeftGray11.setFontColor("7A7A7A");
-    subtitleLeftGray11.setFontFamily("Avenir");
+    subtitleLeftGray11.setFontFamily("OpenSans");
     subtitleLeftGray11.setFontSize("22");
     subtitleLeftGray11.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1918,7 +1920,7 @@ public class packageManager extends CustomComponent {
     subtitleLeftBlack11.setBold(false);
     subtitleLeftBlack11.setItalic(false);
     subtitleLeftBlack11.setUnderline(false);
-    subtitleLeftBlack11.setFontFamily("Avenir");
+    subtitleLeftBlack11.setFontFamily("OpenSans");
     subtitleLeftBlack11.setFontSize("22");
     subtitleLeftBlack11.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1926,7 +1928,7 @@ public class packageManager extends CustomComponent {
     rightBottomGray11.setBold(false);
     rightBottomGray11.setItalic(false);
     rightBottomGray11.setUnderline(false);
-    rightBottomGray11.setFontFamily("Avenir");
+    rightBottomGray11.setFontFamily("OpenSans");
     rightBottomGray11.setFontSize("22");
     rightBottomGray11.setFontColor("7A7A7A");
     rightBottomGray11.setHorizAlignment(JcEnumeration.RIGHT);
@@ -1936,18 +1938,19 @@ public class packageManager extends CustomComponent {
     rightBottomBlack11.setBold(false);
     rightBottomBlack11.setItalic(false);
     rightBottomBlack11.setUnderline(false);
-    rightBottomBlack11.setFontFamily("Avenir");
+    rightBottomBlack11.setFontFamily("OpenSans");
     rightBottomBlack11.setFontSize("22");
+    rightBottomBlack11.setFontColor("FFFFFF");
     rightBottomBlack11.setHorizAlignment(JcEnumeration.RIGHT);
     rightBottomBlack11.setVerticalAlignment(STVerticalJc.BOTTOM);
-    rightBottomBlack11.setBackground("F3F3F3");
+    rightBottomBlack11.setBackground("52A8F8");
 
     DocxStyle leftGray9 = new DocxStyle();
     leftGray9.setBold(false);
     leftGray9.setItalic(false);
     leftGray9.setUnderline(false);
     leftGray9.setFontColor("7A7A7A");
-    leftGray9.setFontFamily("Avenir");
+    leftGray9.setFontFamily("OpenSans");
     leftGray9.setFontSize("18");
     leftGray9.setHorizAlignment(JcEnumeration.LEFT);
 
@@ -1955,7 +1958,7 @@ public class packageManager extends CustomComponent {
     justifiedGray9.setBold(false);
     justifiedGray9.setItalic(false);
     justifiedGray9.setUnderline(false);
-    justifiedGray9.setFontFamily("Avenir");
+    justifiedGray9.setFontFamily("OpenSans");
     justifiedGray9.setFontColor("7A7A7A");
     justifiedGray9.setFontSize("18");
     justifiedGray9.setHorizAlignment(JcEnumeration.BOTH);
@@ -1965,7 +1968,7 @@ public class packageManager extends CustomComponent {
     amountStyle.setItalic(false);
     amountStyle.setUnderline(false);
     amountStyle.setFontColor("7A7A7A");
-    amountStyle.setFontFamily("Avenir");
+    amountStyle.setFontFamily("OpenSans");
     amountStyle.setFontSize("18");
     amountStyle.setHorizAlignment(JcEnumeration.RIGHT);
 
@@ -1974,7 +1977,7 @@ public class packageManager extends CustomComponent {
     detailsBlackStyle.setBold(false);
     detailsBlackStyle.setItalic(false);
     detailsBlackStyle.setUnderline(false);
-    detailsBlackStyle.setFontFamily("Avenir");
+    detailsBlackStyle.setFontFamily("OpenSans");
     detailsBlackStyle.setFontSize("18");
     detailsBlackStyle.setHorizAlignment(JcEnumeration.BOTH);
 
@@ -1985,7 +1988,7 @@ public class packageManager extends CustomComponent {
     style.setUnderline(true);
     style.setFontSize("40");
     style.setFontColor("FF0000");
-    style.setFontFamily("Avenir");
+    style.setFontFamily("OpenSans");
     style.setTop(300);
     style.setBackground("CCFFCC");
     style.setHorizAlignment(JcEnumeration.LEFT);

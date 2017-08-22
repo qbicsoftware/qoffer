@@ -160,7 +160,7 @@ public enum Database {
   }
 
   public List<packageBean> getPackages() {
-    String sql = "SELECT * FROM z_packages";
+    String sql = "SELECT * FROM packages";
     List<packageBean> pbean = new ArrayList<packageBean>();
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
 
@@ -188,7 +188,7 @@ public enum Database {
 
   public ArrayList<String> getPackageGroups() {
     ArrayList<String> list = new ArrayList<String>();
-    String sql = "SELECT DISTINCT package_group FROM z_packages";
+    String sql = "SELECT DISTINCT package_group FROM packages";
     // The following statement is an try-with-devices statement, which declares two devices,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); Statement statement = conn.createStatement()) {
@@ -221,7 +221,7 @@ public enum Database {
 
   public ArrayList<String> getProjects() {
     ArrayList<String> list = new ArrayList<String>();
-    String sql = "SELECT openbis_project_identifier FROM z_projects";
+    String sql = "SELECT openbis_project_identifier FROM projects";
     // The following statement is an try-with-devices statement, which declares two devices,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); Statement statement = conn.createStatement()) {
@@ -239,7 +239,7 @@ public enum Database {
 
   public ArrayList<String> getPackageNames() {
     ArrayList<String> list = new ArrayList<String>();
-    String sql = "SELECT package_name FROM z_packages ORDER BY package_name";
+    String sql = "SELECT package_name FROM packages ORDER BY package_name";
     // The following statement is an try-with-devices statement, which declares two devices,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); Statement statement = conn.createStatement()) {
@@ -256,7 +256,7 @@ public enum Database {
 
   public String getUserEmail(String username) {
     String userEmail = "oops! no email address is available in the database.";
-    String sql = "SELECT email FROM z_persons WHERE username = ?";
+    String sql = "SELECT email FROM persons WHERE username = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -276,7 +276,7 @@ public enum Database {
 
   public String getPackDescriptionFromPackName(String package_name) {
     String package_description = "N/A";
-    String sql = "SELECT package_description FROM z_packages WHERE package_name = ?";
+    String sql = "SELECT package_description FROM packages WHERE package_name = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -296,7 +296,7 @@ public enum Database {
 
   public int getPackIDFromPackName(String package_name) {
     int package_id = 0;
-    String sql = "SELECT package_id FROM z_packages WHERE package_name = ?";
+    String sql = "SELECT package_id FROM packages WHERE package_name = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -317,7 +317,7 @@ public enum Database {
 
   public boolean internalOfferCheck(String offer_id) {
     boolean internal = true;
-    String sql = "SELECT internal FROM z_offers WHERE offer_id = ?";
+    String sql = "SELECT internal FROM offers WHERE offer_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -340,7 +340,7 @@ public enum Database {
     boolean success = false;
     float updatedPrice = 0;
 
-    String sqlS = "SELECT offer_price FROM z_offers WHERE offer_id = ? ";
+    String sqlS = "SELECT offer_price FROM offers WHERE offer_id = ? ";
     try (Connection conn = login(); PreparedStatement statementS = conn.prepareStatement(sqlS)) {
       statementS.setString(1, offer_id);
       ResultSet rs = statementS.executeQuery();
@@ -357,7 +357,7 @@ public enum Database {
       e.printStackTrace();
     }
 
-    String sql = "UPDATE z_offers SET discount = ?, offer_total = ? WHERE offer_id = ? ";
+    String sql = "UPDATE offers SET discount = ?, offer_total = ? WHERE offer_id = ? ";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -390,7 +390,7 @@ public enum Database {
     float discountPercentage = 0;
 
     if (internal) {
-      String sqlS = "SELECT package_price FROM z_packages WHERE package_id = ? ";
+      String sqlS = "SELECT package_price FROM packages WHERE package_id = ? ";
       try (Connection conn = login(); PreparedStatement statementS = conn.prepareStatement(sqlS)) {
         statementS.setString(1, package_id);
         ResultSet rs = statementS.executeQuery();
@@ -402,7 +402,7 @@ public enum Database {
         e.printStackTrace();
       }
     } else {
-      String sqlS = "SELECT package_price_external FROM z_packages WHERE package_id = ? ";
+      String sqlS = "SELECT package_price_external FROM packages WHERE package_id = ? ";
       try (Connection conn = login(); PreparedStatement statementS = conn.prepareStatement(sqlS)) {
         statementS.setString(1, package_id);
         ResultSet rs = statementS.executeQuery();
@@ -416,7 +416,7 @@ public enum Database {
     }
 
     String sql =
-        "UPDATE z_offers_packages SET package_count = ?, package_addon_price = ? WHERE offer_id = ? AND package_id = ? ";
+        "UPDATE offers_packages SET package_count = ?, package_addon_price = ? WHERE offer_id = ? AND package_id = ? ";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -435,7 +435,7 @@ public enum Database {
       e.printStackTrace();
     }
 
-    String sqlL = "SELECT SUM(package_addon_price) FROM z_offers_packages WHERE offer_id = ?";
+    String sqlL = "SELECT SUM(package_addon_price) FROM offers_packages WHERE offer_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statementL = conn.prepareStatement(sqlL)) {
@@ -449,7 +449,7 @@ public enum Database {
 
     // System.out.println("offerPrice: " + offerPrice);
 
-    String sqlF = "UPDATE z_offers SET offer_price = ? WHERE offer_id = ?";
+    String sqlF = "UPDATE offers SET offer_price = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementF = conn.prepareStatement(sqlF)) {
       String offerPriceFormatted = String.format("%.02f", offerPrice);
       offerPriceFormatted = offerPriceFormatted.replaceAll(",", ".");
@@ -461,7 +461,7 @@ public enum Database {
       e.printStackTrace();
     }
 
-    String sqlD = "SELECT discount FROM z_offers WHERE offer_id = ?";
+    String sqlD = "SELECT discount FROM offers WHERE offer_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statementD = conn.prepareStatement(sqlD)) {
@@ -478,7 +478,7 @@ public enum Database {
     // offerPrice
     // + " discountPercentage: " + discountPercentage);
 
-    String sqlT = "UPDATE z_offers SET offer_total = ? WHERE offer_id = ?";
+    String sqlT = "UPDATE offers SET offer_total = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementT = conn.prepareStatement(sqlT)) {
       String offerTotalPriceFormatted = String.format("%.02f", offerTotalPrice);
       offerTotalPriceFormatted = offerTotalPriceFormatted.replaceAll(",", ".");
@@ -499,7 +499,7 @@ public enum Database {
       String package_id) {
     boolean success = false;
     String sql =
-        "UPDATE z_offers_packages SET package_discount = ? WHERE offer_id = ? AND package_id = ? ";
+        "UPDATE offers_packages SET package_discount = ? WHERE offer_id = ? AND package_id = ? ";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -521,7 +521,7 @@ public enum Database {
 
   public boolean updateStatus(String offer_status, String offer_id) {
     boolean success = false;
-    String sql = "UPDATE z_offers SET offer_status = ? WHERE offer_id = ? ";
+    String sql = "UPDATE offers SET offer_status = ? WHERE offer_id = ? ";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -541,7 +541,7 @@ public enum Database {
 
   public String getOfferDiscount(String offer_id) {
     String discount = "0%";
-    String sql = "SELECT discount FROM z_offers WHERE offer_id = ?";
+    String sql = "SELECT discount FROM offers WHERE offer_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -563,8 +563,7 @@ public enum Database {
   public String getPackageCount(String offer_id, String package_id) {
 
     String count = null;
-    String sql =
-        "SELECT package_count FROM z_offers_packages WHERE offer_id = ? AND package_id = ?";
+    String sql = "SELECT package_count FROM offers_packages WHERE offer_id = ? AND package_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -587,7 +586,7 @@ public enum Database {
   public String getPackageDiscount(String offer_id, String package_id) {
     String count = null;
     String sql =
-        "SELECT package_discount FROM z_offers_packages WHERE offer_id = ? AND package_id = ?";
+        "SELECT package_discount FROM offers_packages WHERE offer_id = ? AND package_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -610,7 +609,7 @@ public enum Database {
 
   public String getOfferStatus(String offer_id) {
     String status = "In Progress";
-    String sql = "SELECT offer_status FROM z_offers WHERE offer_id = ?";
+    String sql = "SELECT offer_status FROM offers WHERE offer_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -633,9 +632,9 @@ public enum Database {
     float package_price = 0;
     String sql;
     if (externalSelected) {
-      sql = "SELECT package_price FROM z_packages WHERE package_name = ?";
+      sql = "SELECT package_price FROM packages WHERE package_name = ?";
     } else {
-      sql = "SELECT package_price_external FROM z_packages WHERE package_name = ?";
+      sql = "SELECT package_price_external FROM packages WHERE package_name = ?";
     }
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
@@ -655,7 +654,7 @@ public enum Database {
   }
 
   public void addNewPack(String name) {
-    String sql = "INSERT INTO z_packages (package_name) VALUES(?)";
+    String sql = "INSERT INTO packages (package_name) VALUES(?)";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login();
@@ -672,7 +671,7 @@ public enum Database {
 
   public String getShortTitleFromProjectRef(String openbis_project_identifier) {
     String short_title = "N/A";
-    String sql = "SELECT short_title FROM z_projects WHERE openbis_project_identifier LIKE ?";
+    String sql = "SELECT short_title FROM projects WHERE openbis_project_identifier LIKE ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -694,7 +693,7 @@ public enum Database {
 
   public String getLongDescFromProjectRef(String openbis_project_identifier) {
     String long_description = "N/A";
-    String sql = "SELECT long_description FROM z_projects WHERE openbis_project_identifier LIKE ?";
+    String sql = "SELECT long_description FROM projects WHERE openbis_project_identifier LIKE ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -717,7 +716,7 @@ public enum Database {
   public String getPIFromProjectRef(String openbis_project_identifier) {
     String pi_title = "", pi_name = "", pi_surname = "", pi_fullname = "";
     String sql =
-        "SELECT DISTINCT z_persons.title, z_persons.first_name, z_persons.family_name FROM z_projects INNER JOIN z_projects_persons ON z_projects.`id` = z_projects_persons.`project_id` INNER JOIN z_persons ON z_persons.`id` = z_projects_persons.`person_id` WHERE z_projects_persons.`project_role` = 'PI' AND `z_projects`.`openbis_project_identifier` LIKE ?";
+        "SELECT DISTINCT persons.title, persons.first_name, persons.family_name FROM projects INNER JOIN projects_persons ON projects.`id` = projects_persons.`project_id` INNER JOIN persons ON persons.`id` = projects_persons.`person_id` WHERE projects_persons.`project_role` = 'PI' AND `projects`.`openbis_project_identifier` LIKE ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -752,7 +751,7 @@ public enum Database {
     int count = 0;
     int offer_id = 0;
 
-    String sqlCheck = "SELECT COUNT(*) FROM z_offers WHERE offer_project_reference = ?";
+    String sqlCheck = "SELECT COUNT(*) FROM offers WHERE offer_project_reference = ?";
 
     try (Connection conn = login();
         PreparedStatement statementCheck =
@@ -771,9 +770,9 @@ public enum Database {
 
     if (count == 0) {
       String sql =
-          "INSERT INTO z_offers (offer_number, offer_project_reference, offer_facility, offer_name, offer_description, offer_price, offer_total, offer_date, added_by, offer_status, discount, internal) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+          "INSERT INTO offers (offer_number, offer_project_reference, offer_facility, offer_name, offer_description, offer_price, offer_total, offer_date, added_by, offer_status, discount, internal) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
       // String sql =
-      // "INSERT INTO z_offers (offer_number, offer_project_reference, offer_facility, offer_name, offer_description, offer_price, offer_total, offer_date, added_by, offer_status, discount) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+      // "INSERT INTO offers (offer_number, offer_project_reference, offer_facility, offer_name, offer_description, offer_price, offer_total, offer_date, added_by, offer_status, discount) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
 
       // The following statement is an try-with-resources statement, which declares two resources,
       // conn and statement, which will be automatically closed when the try block terminates
@@ -798,7 +797,7 @@ public enum Database {
         e.printStackTrace();
       }
 
-      String sql2 = "SELECT offer_id FROM z_offers WHERE offer_project_reference = ?";
+      String sql2 = "SELECT offer_id FROM offers WHERE offer_project_reference = ?";
       try (Connection conn = login();
           PreparedStatement statement2 =
               conn.prepareStatement(sql2, Statement.RETURN_GENERATED_KEYS)) {
@@ -829,8 +828,7 @@ public enum Database {
     int count = 0;
     boolean success = false;
 
-    String sqlCheck =
-        "SELECT COUNT(*) FROM z_offers_packages WHERE offer_id = ? AND package_id = ?";
+    String sqlCheck = "SELECT COUNT(*) FROM offers_packages WHERE offer_id = ? AND package_id = ?";
 
     try (Connection connCheck = login();
         PreparedStatement statementCheck =
@@ -849,7 +847,7 @@ public enum Database {
 
     if (count > 0) {
       String sqlUpdate =
-          "UPDATE z_offers_packages SET package_id = ?, package_addon_price = ? WHERE offer_id = ?";
+          "UPDATE offers_packages SET package_id = ?, package_addon_price = ? WHERE offer_id = ?";
       try (Connection connUpdate = login();
           PreparedStatement statementUpdate = connUpdate.prepareStatement(sqlUpdate)) {
         statementUpdate.setInt(1, package_id);
@@ -863,7 +861,7 @@ public enum Database {
       }
     } else {
       String sqlInsert =
-          "INSERT INTO z_offers_packages (offer_id, package_id, package_addon_price,package_count,package_discount) VALUES (?,?,?,?,?)";
+          "INSERT INTO offers_packages (offer_id, package_id, package_addon_price,package_count,package_discount) VALUES (?,?,?,?,?)";
       try (Connection connInsert = login();
           PreparedStatement statementInsert = connInsert.prepareStatement(sqlInsert)) {
         statementInsert.setInt(1, offer_id);

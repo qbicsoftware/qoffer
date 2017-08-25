@@ -182,6 +182,12 @@ public enum Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
+
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
+
     return pbean;
   }
 
@@ -198,6 +204,10 @@ public enum Database {
       }
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
     }
     return list;
   }
@@ -216,6 +226,10 @@ public enum Database {
       e.printStackTrace();
     }
     // System.out.println(list);
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return list;
   }
 
@@ -234,6 +248,10 @@ public enum Database {
       e.printStackTrace();
     }
     // System.out.println(list);
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return list;
   }
 
@@ -251,6 +269,10 @@ public enum Database {
       e.printStackTrace();
     }
     // System.out.println(list);
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return list;
   }
 
@@ -271,6 +293,10 @@ public enum Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return userEmail;
   }
 
@@ -290,6 +316,10 @@ public enum Database {
       // conn.commit();
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
     }
     return package_description;
   }
@@ -312,6 +342,10 @@ public enum Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return package_id;
   }
 
@@ -332,6 +366,10 @@ public enum Database {
       // System.out.println("getPackIDFromPackName: " + statement);
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
     }
     return internal;
   }
@@ -376,6 +414,10 @@ public enum Database {
       // System.out.println("getOfferDiscount: " + statement);
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
     }
     return success;
   }
@@ -492,6 +534,10 @@ public enum Database {
       e.printStackTrace();
     }
 
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return success;
   }
 
@@ -516,6 +562,11 @@ public enum Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
+
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return success;
   }
 
@@ -535,6 +586,11 @@ public enum Database {
       // conn.commit();
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
     }
     return success;
   }
@@ -556,6 +612,11 @@ public enum Database {
       // System.out.println("getOfferDiscount: " + statement);
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
     }
     return discount;
   }
@@ -579,6 +640,11 @@ public enum Database {
       // System.out.println("getOfferStatus: " + statement);
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
     }
     return count;
   }
@@ -625,6 +691,11 @@ public enum Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
+
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return status;
   }
 
@@ -649,6 +720,11 @@ public enum Database {
       // conn.commit();
     } catch (SQLException e) {
       e.printStackTrace();
+    }
+
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
     }
     return package_price;
   }
@@ -710,6 +786,10 @@ public enum Database {
       e.printStackTrace();
     }
     // System.out.println("Statement: " + sql + " Here: " + long_description);
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return long_description;
   }
 
@@ -738,7 +818,12 @@ public enum Database {
       e.printStackTrace();
     }
 
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return pi_fullname;
+
   }
 
 
@@ -812,6 +897,10 @@ public enum Database {
         e.printStackTrace();
       }
       // System.out.println("INSERT: " + offer_id);
+      try {
+        conn.close();
+      } catch (Exception e) { /* ignored */
+      }
       return offer_id;
 
 
@@ -819,6 +908,10 @@ public enum Database {
 
     else {
       // System.out.println("NO INSERT: " + offer_id);
+      try {
+        conn.close();
+      } catch (Exception e) { /* ignored */
+      }
       return offer_id;
     }
 
@@ -876,7 +969,10 @@ public enum Database {
         e.printStackTrace();
       }
     }
-
+    try {
+      conn.close();
+    } catch (Exception e) { /* ignored */
+    }
     return success;
   }
 

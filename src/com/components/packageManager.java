@@ -521,7 +521,8 @@ public class packageManager extends CustomComponent {
 
   }
 
-  private Component packageQuantityGrid(String queryEnd) throws SQLException {
+  private Component packageQuantityGrid(SQLContainer offerGridContainer, String queryEnd)
+      throws SQLException {
 
     VerticalLayout packQuantityLayout = new VerticalLayout();
     HorizontalLayout packSettingsLayout = new HorizontalLayout();
@@ -539,7 +540,7 @@ public class packageManager extends CustomComponent {
      * updateQuantityDiscount.addItem("40%"); updateQuantityDiscount.addItem("50%");
      */
 
-    for (int i = 1; i <= 30; i++)
+    for (int i = 1; i <= 50; i++)
       addQuantity.addItem(i);
 
     Button updateQuantityButton = new Button("Update");
@@ -658,7 +659,34 @@ public class packageManager extends CustomComponent {
            */
 
           packsContainer.refresh();
+          offerGridContainer.refresh();
 
+        }
+
+
+        packageNames.clear();
+        packageDescriptions.clear();
+        packageCounts.clear();
+        packageUnitPrices.clear();
+        packageTotalPrices.clear();
+
+        // System.out.println(selectedPacksInOfferGrid.getColumns());
+        DecimalFormat myFormatter = new DecimalFormat("###,###.###");
+
+        for (Object itemIdInvoiced : packsContainer.getItemIds()) {
+          packageNames.add(packsContainer.getContainerProperty(itemIdInvoiced, "package_name")
+              .getValue().toString());
+          packageDescriptions.add(packsContainer
+              .getContainerProperty(itemIdInvoiced, "package_description").getValue().toString());
+          packageCounts.add(packsContainer.getContainerProperty(itemIdInvoiced, "package_count")
+              .getValue().toString());
+          packageUnitPrices.add(myFormatter.format(
+              packsContainer.getContainerProperty(itemIdInvoiced, "package_price").getValue())
+              .toString());
+          packageTotalPrices.add(myFormatter
+              .format(
+                  packsContainer.getContainerProperty(itemIdInvoiced, "package_addon_price")
+                      .getValue()).toString());
 
         }
       }
@@ -719,14 +747,6 @@ public class packageManager extends CustomComponent {
     HorizontalLayout editSettingsLayout = new HorizontalLayout();
     HorizontalLayout detailsLayout = new HorizontalLayout();
 
-
-
-    // detailsLayout.setMargin(true);
-    // detailsLayout.setSizeFull();
-    // detailsLayout.setSpacing(true);
-
-    // editSettingsLayout.setMargin(true);
-    // editSettingsLayout.setSizeFull();
     editSettingsLayout.setSpacing(true);
     detailsLayout.setSizeFull();
 
@@ -785,7 +805,7 @@ public class packageManager extends CustomComponent {
     Button refresh = new Button("Refresh");
     refresh.setDescription("Click here to reload the data from the database!");
 
-    String printOfferButtonTitle = "Print Offer";
+    String printOfferButtonTitle = "Generate Offer";
     Button printOfferButton = new Button(printOfferButtonTitle);
     printOfferButton.setIcon(FontAwesome.PRINT);
     printOfferButton.setDescription("Select an offer from the grid then click here to modify!");
@@ -847,7 +867,7 @@ public class packageManager extends CustomComponent {
 
             try {
               detailsLayout.removeAllComponents();
-              detailsLayout.addComponent(packageQuantityGrid(container.getItem(selected)
+              detailsLayout.addComponent(packageQuantityGrid(container, container.getItem(selected)
                   .getItemProperty("offer_id").toString()));
             } catch (Exception e) {
               // TODO Auto-generated catch block
@@ -912,7 +932,6 @@ public class packageManager extends CustomComponent {
 
       @Override
       public void buttonClick(ClickEvent event) {
-
 
         Notification("File Saved!", offerGrid.getSelectedRow().toString() + ", "
             + container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number"), "");
@@ -1049,21 +1068,6 @@ public class packageManager extends CustomComponent {
           e1.printStackTrace();
         }
 
-        // wordMLPackage.getMainDocumentPart().addObject(new Br());
-        // wordMLPackage.getMainDocumentPart().addObject(new Br());
-
-        /*
-         * // Image 2: width 4000 org.docx4j.wml.P p2 = newImage(wordMLPackage, bytes, filenameHint,
-         * altText, id1, id2, 4000); wordMLPackage.getMainDocumentPart().addObject(p2);
-         * 
-         * // Image 3: width 6000 org.docx4j.wml.P p3 = newImage(wordMLPackage, bytes, filenameHint,
-         * altText, id1, id2, 6000); wordMLPackage.getMainDocumentPart().addObject(p3);
-         */
-
-        // mdp.addParagraphOfText(container.getItem(selected).getItemProperty("offer_id").toString());
-        // mdp.addParagraphOfText("Client Address Here!");
-        // mdp.addParagraphOfText("Quotation");
-
         DecimalFormat myFormatter = new DecimalFormat("###,###.###");
 
         String clientAddress =
@@ -1106,28 +1110,6 @@ public class packageManager extends CustomComponent {
         String agreementText =
             "The invoice will be issued after completion of the project. Quality control at all steps of the data processing will guarantee that the processed data is in accordance to DFG (German research foundation) guidance for good scientific practice. All project related data will be kept securely on our local infrastructure. If the data generated through the project as outlined in this offer is subject to publication, QBiC offers to collaboratively contribute to the compilation of the manuscript and its scientific discussion (e.g., with respect to bioinformatics methods, visualisation of results and their interpretation). If such collaborative efforts lead to a significant scientific contribution, co-authorships on reports/manuscripts for QBiC scientist(s) involved in the study are expected. Offer expires in 30 days. If you agree with this offer, please return a signed copy.";
 
-        /*
-         * mdp.addParagraphOfText("Quotation Number: " + quotationNumber);
-         * 
-         * mdp.addParagraphOfText("Project Reference: " + projectReference);
-         * 
-         * mdp.addParagraphOfText(projectReference + " - " + projectTitle);
-         * 
-         * mdp.addParagraphOfText("Project Description");
-         * 
-         * mdp.addParagraphOfText(projectDescription);
-         * 
-         * mdp.addParagraphOfText("");
-         * 
-         * mdp.addParagraphOfText("Notes: " + "");
-         * 
-         * mdp.addParagraphOfText("");
-         * 
-         * // mdp.createStyledParagraphOfText(styleId, text) P p3 =
-         * createParagraph("blablabla blika", true, true, true);
-         * wordMLPackage.getMainDocumentPart().addObject(p3);
-         */
-
         Tbl quotation =
             createQuotationPage(header, clientAddress, offerNumber, projectReference,
                 projectScientist, projectTitle, projectDescription, offerTotal, deliveryDetails,
@@ -1143,21 +1125,6 @@ public class packageManager extends CustomComponent {
         mdp.addParagraphOfText("");
 
         wordMLPackage.getMainDocumentPart().addObject(quotationDetails);
-
-
-        // table.setTblPr(new TblPr());
-        // CTBorder border = new CTBorder();
-        // border.setSz(new BigInteger("0"));
-        // border.setSpace(new BigInteger("0"));
-        // border.setVal(STBorder.SINGLE);
-
-        // TblBorders borders = new TblBorders();
-        // borders.setBottom(border);
-        // borders.setLeft(border);
-        // borders.setRight(border);
-        // borders.setTop(border);
-        // borders.setInsideH(border);
-        // borders.setInsideV(border);
 
         Body body;
         try {
@@ -2031,7 +1998,6 @@ public class packageManager extends CustomComponent {
     addTableCell(tableRow, "Amount", 2000, amountStyle, 1, null);
     tableQuotationDetails.getContent().add(tableRow);
 
-    // System.out.println("PackageGridSize: " + packageGridSize);
     for (int i = 0; i < packageGridSize; i++) {
 
       tableRow = factory.createTr();
@@ -2041,6 +2007,9 @@ public class packageManager extends CustomComponent {
       addTableCell(tableRow, packageUnitPrices.get(i) + " €", 1200, amountStyle, 1, null);
       addTableCell(tableRow, packageTotalPrices.get(i) + " €", 1800, amountStyle, 1, null);
       tableQuotationDetails.getContent().add(tableRow);
+
+      System.out.println(i + " Name: " + packageNames.get(i) + " Desc: "
+          + packageDescriptions.get(i) + " Count: " + packageCounts.get(i));
 
     }
 
@@ -2074,7 +2043,6 @@ public class packageManager extends CustomComponent {
 
     return tableQuotationDetails;
   }
-
 
   /*
    * private byte[] getImageBytes() { // TODO Auto-generated method stub return null; }

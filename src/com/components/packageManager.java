@@ -189,8 +189,6 @@ public class packageManager extends CustomComponent {
     gridLayout.setMargin(true);
     gridLayout.setSpacing(true);
 
-    // selectUser.addItems(DBManager.getDatabaseInstance().getPackages());
-
     try {
 
       managerTabs.addTab(addToOffer(), "Offer Generator");
@@ -204,7 +202,6 @@ public class packageManager extends CustomComponent {
 
     try {
       gridLayout.addComponent(managerTabs, 0, 1, 5, 1);
-      // gridLayout.addComponent(selectUser, 0, 2, 5, 2);
     } catch (OverlapsException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -246,15 +243,6 @@ public class packageManager extends CustomComponent {
     container.setAutoCommit(isEnabled());
 
     Grid packageGrid = new Grid(container);
-
-    /*
-     * packageGrid.setColumnOrder("user_id", "user_ldap", "user_name", "email", "phone",
-     * "workgroup_id", "group_id", "kostenstelle", "project", "admin_panel");
-     * packageGrid.sort("user_name", SortDirection.ASCENDING);
-     * 
-     * // usersGrid.removeColumn("workgroup_id"); packageGrid.removeColumn("group_id");
-     * packageGrid.removeColumn("admin_panel");
-     */
 
     addPackButton.addClickListener(new ClickListener() {
 
@@ -306,13 +294,6 @@ public class packageManager extends CustomComponent {
 
   private Component addToOffer() {
 
-    /*
-     * ComboBox selectedUser = new ComboBox("Prospect");
-     * selectedUser.setInputPrompt("No user selected!");
-     * selectedUser.setDescription("Please select a user or a project");
-     * selectedUser.addItems(db.getUsernames());
-     */
-
     ComboBox selectedProject = new ComboBox("Select Project");
 
     selectedProject.setInputPrompt("No project selected!");
@@ -359,9 +340,6 @@ public class packageManager extends CustomComponent {
     Label label = new Label("Package details will appear here!", Label.CONTENT_XHTML);
     label.addStyleName(ValoTheme.LABEL_BOLD);
     right.addComponent(label);
-
-    // selectPackages.addValueChangeListener(e -> Notification.show("Contained Packages:",
-    // String.valueOf(e.getProperty().getValue()), Type.TRAY_NOTIFICATION));
 
     selectedProject.addValueChangeListener(new ValueChangeListener() {
 

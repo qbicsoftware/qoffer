@@ -5,7 +5,7 @@
         <portlet-name>qOffer</portlet-name>
         <display-name>qOffer</display-name>
         
-        <portlet-class>com.vaadin.server.VaadinPortlet</portlet-class>
+        <portlet-class>com.qoffer.CustomVaadinPortlet</portlet-class>
         <init-param>
             <name>UI</name>
             <value>com.qoffer.QofferUI</value>

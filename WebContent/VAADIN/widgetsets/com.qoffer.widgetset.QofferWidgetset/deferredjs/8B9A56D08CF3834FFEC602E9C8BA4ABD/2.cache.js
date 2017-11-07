@@ -1,1 +1,0 @@
-$wnd.com_qoffer_widgetset_QofferWidgetset.runAsyncCallback2('Rab(1534,1,TLd);_.tc=function rac(){oYb((!hYb&&(hYb=new tYb),hYb),this.a.d)};tFd(Qh)(2);\n//# sourceURL=com.qoffer.widgetset.QofferWidgetset-2.js\n')

@@ -15,8 +15,12 @@
  *******************************************************************************/
 package com.qoffer;
 
+import javax.servlet.annotation.WebServlet;
+
 import com.components.packageManager;
 import com.vaadin.annotations.Theme;
+import com.vaadin.annotations.VaadinServletConfiguration;
+import com.vaadin.annotations.Widgetset;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinServlet;
@@ -29,8 +33,9 @@ import com.vaadin.ui.themes.ValoTheme;
 @Theme("valo")
 public class QofferUI extends UI {
 
-  // @WebServlet(value = "/*", asyncSupported = true)
-  // @VaadinServletConfiguration(productionMode = true, ui = QofferUI.class)
+  @WebServlet(value = "/*", asyncSupported = true)
+  @VaadinServletConfiguration(productionMode = true, ui = QofferUI.class)
+  @Widgetset("com.qoffer.widgetset.QofferWidgetset")
   public static class Servlet extends VaadinServlet {
   }
 
@@ -42,7 +47,6 @@ public class QofferUI extends UI {
 
   }
 
-
   @SuppressWarnings("unused")
   private Component errorView() {
     Label label = new Label();
@@ -52,6 +56,5 @@ public class QofferUI extends UI {
         .setValue("Initialization has failed! Are you logged out? Please try to login! If the problem continues please contact 'helpdesk@qbic.uni-tuebingen.de'");
     return label;
   }
-
 
 }

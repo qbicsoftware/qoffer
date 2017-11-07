@@ -1,7 +1,7 @@
-com.vaadin.integration.eclipse.mavenLatestVersionsUpgrade=["7.7.10"]
+com.vaadin.integration.eclipse.mavenLatestVersionsUpgrade=["7.7.11"]
 com.vaadin.integration.eclipse.useLatestNightly=false
 com.vaadin.integration.eclipse.widgetsetBuildsSuspended=false
-com.vaadin.integration.eclipse.widgetsetCompilationEta=52267
+com.vaadin.integration.eclipse.widgetsetCompilationEta=51756
 com.vaadin.integration.eclipse.widgetsetDirty=false
 com.vaadin.integration.eclipse.widgetsetParallelism=8
 com.vaadin.integration.eclipse.widgetsetStyle=OBF

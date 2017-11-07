@@ -1128,10 +1128,10 @@ public class packageManager extends CustomComponent {
 
         String basepathVaadin = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
         // save file example - date_projectid.docx - 20170530_QMARI.docx
-        filename =
-            System.getProperty("user.dir") + "/"
-                + container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number")
-                + ".docx";
+        /*
+         * filename = System.getProperty("user.dir") + "/" +
+         * container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number") + ".docx";
+         */
         filename =
             "/home/tomcat-liferay/liferay_production/tmp/"
                 + container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number")

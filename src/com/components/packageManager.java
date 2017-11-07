@@ -1126,11 +1126,17 @@ public class packageManager extends CustomComponent {
         // ProtectDocument protection = new ProtectDocument(wordMLPackage);
         // protection.restrictEditing(STDocProtect.READ_ONLY, "foobaa");
 
+        String basepathVaadin = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
         // save file example - date_projectid.docx - 20170530_QMARI.docx
         filename =
             System.getProperty("user.dir") + "/"
                 + container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number")
                 + ".docx";
+        filename =
+            "/home/tomcat-liferay/liferay_production/tmp/"
+                + container.getItem(offerGrid.getSelectedRow()).getItemProperty("offer_number")
+                + ".docx";
+
         try {
           Docx4J.save(wordMLPackage, new java.io.File(filename), Docx4J.FLAG_SAVE_ZIP_FILE);
         } catch (Docx4JException e) {

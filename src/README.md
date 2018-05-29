@@ -4,7 +4,7 @@
 
 For the sequencing packages (packages with package group *Sequencing*)
 there is an discount based on the number of samples used.
-The discount per sample size can be found in the file *src/webapp/WEB-INF/templates/discount_per_sample_size.csv*. The
+The discount per sample size can be found in the file [discount_per_sample_size.csv](https://github.com/qbicsoftware/qoffer/blob/master/src/main/webapp/WEB-INF/resourceFiles/discount_per_sample_size.csv). The
 discount is taken from this file and then automatically applied to the
 total package price and thus also the total offer price.
 

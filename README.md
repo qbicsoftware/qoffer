@@ -126,5 +126,5 @@ check the *Auto-calculate external prices* check box and edit the
 internal price via the inline editor (see above). Note: It might be
 necessary to open the inline editor via selecting the row and hitting
 shift \+ enter rather than double clicking, since Vaadin sometimes fails
-to grab the currently selected row if selected via double click. For the
-implementation details see the README within the src folder.
+to grab the currently selected row if selected via double click. The
+detailed README on the implementation details can be found [here](https://github.com/qbicsoftware/qoffer/blob/master/src/README.md).

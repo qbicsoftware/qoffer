@@ -19,7 +19,7 @@ data stored in a .xml file to such containers, so the bound data is
 displayed in the .docx file. Essentially we have several placeholders,
 the containers, and all the values we want for the placeholder.
 
-Unfortunately there is no way how to change the style of the
+Unfortunately there is no way to change the style of the
 placeholder based on the values itself. To change the style you need to
 change the style of the placeholder. Also it's not possible to bind
 more complicated structures (e.g. hyperlinks).
@@ -43,7 +43,8 @@ offer name, description, etc.; package names, prices, etc.)
 fields within it using the XMLUtils class
 * Applying the bindings of the contentControlTemplate.xml to the
 Template.docx file using the Docx4jUtils class
-* Saving the resulting .docx file and setting the FileResourceHandler up
+* Saving the resulting .docx file and enabling the download via the
+FileResourceHandler
 
 ### Automatic price calculation:
 

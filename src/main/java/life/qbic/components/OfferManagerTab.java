@@ -145,13 +145,6 @@ final class OfferManagerTab {
 
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
-    // add tooltips to the cells
-    offerManagerGrid.setCellDescriptionGenerator((Grid.CellDescriptionGenerator) cell -> {
-      if (cell.getValue() == null)
-        return null;
-      return cell.getValue().toString();
-    });
-
     addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton, container,
         exportTableButton);
 
@@ -180,6 +173,23 @@ final class OfferManagerTab {
     offerManagerGrid.setWidth("100%");
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
     offerManagerGrid.setEditorEnabled(true);
+
+    // add tooltips to the cells
+    offerManagerGrid.setCellDescriptionGenerator((Grid.CellDescriptionGenerator) cell -> {
+      if (cell.getValue() == null)
+        return null;
+      return cell.getValue().toString();
+    });
+
+    // add tooltips to the header row
+    for (Grid.Column column : offerManagerGrid.getColumns()) {
+      Grid.HeaderCell cell = offerManagerGrid.getDefaultHeaderRow().getCell(
+              column.getPropertyId());
+      String htmlWithTooltip = String.format(
+              "<span title=\"%s\">%s</span>", cell.getText(),
+              cell.getText());
+      cell.setHtml(htmlWithTooltip);
+    }
 
     offerManLayout.addComponent(offerManagerGrid);
     offerManLayout.addComponent(editSettingsLayout);
@@ -391,13 +401,25 @@ final class OfferManagerTab {
         if (!success) {
           return false;
         }
-        // enable the download
+        // handle the download of the file
         return super.handleConnectorRequest(request, response, path);
       }
     };
     fileDownloader.extend(printOfferButton);
   }
 
+  /**
+   * generates the .docx file for the offer
+   * @param container: sql container holding the offers
+   * @param db: database instance
+   * @param packageNames: list of the package names in the offer
+   * @param packageDescriptions: list of the package descriptions in the offer
+   * @param packageCounts: list of the package counts in the offer
+   * @param packageUnitPrices: list of the package unit prices (=price for one package)
+   * @param packageTotalPrices: list of the total package prices (package_unit_price*count)*discount
+   * @param fileDownloader: file downloader for enabling the download of the file
+   * @return whether or not creating the file has worked
+   */
   private static boolean generateOfferFile(SQLContainer container, Database db, List<String> packageNames,
                                         List<String> packageDescriptions, List<String> packageCounts,
                                         List<String> packageUnitPrices, List<String> packageTotalPrices,

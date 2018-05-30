@@ -72,12 +72,11 @@ hit the *Update price type* button.
 ### Generating the .docx file:
 
 Generating the .docx file is rather easy:
- 1. **Select an offer**
- 2. **Hit the *Generate Offer* button**
- 3. **Download the generated file** via the *Download* button.
+ 1. **Select an offer**.
+ 2. **Hit the *Generate Offer* button**.
+ 3. **Download the generated file** via the dialog.
 
-For the implementation details see the README within
-the src folder.
+The implementation details can be found [here](https://github.com/qbicsoftware/qoffer/blob/master/src/README.md).
 
 
 ## Package Manager
@@ -123,7 +122,7 @@ hit the *Update* button.
 qOffer supports automatic calculation of the external academic and
 external commercial price based on the internal price. To enable this
 check the *Auto-calculate external prices* check box and edit the
-internal price via the inline editor (see above). Note: It might be
+internal price via the inline editor (see above). **Note:** It might be
 necessary to open the inline editor via selecting the row and hitting
 shift \+ enter rather than double clicking, since Vaadin sometimes fails
 to grab the currently selected row if selected via double click. The

@@ -183,6 +183,8 @@ final class OfferGeneratorTab {
           offerGeneratorPackageNames[0][i] = offerGeneratorPackageNames[0][i].split(": ", 2)[1];
         }
 
+        // TODO: value change listener does not trigger if the last element from the twin col select gets deselected
+        System.out.println("packages in twin col select:");
         System.out.println(selectPackagesTwinColSelect.getValue());
 
         // there is a package for the current project, so we enable the complete offer button
@@ -199,7 +201,7 @@ final class OfferGeneratorTab {
         totalPrice[0] = 0;
         for (int i = 0; i < offerGeneratorPackageNames[0].length; i++) {
 
-          int currentPackageId = Integer.valueOf(offerGeneratorPackageIds[0][i]);
+          int currentPackageId = Integer.valueOf(offerGeneratorPackageIds[0][i].trim());
 
           // calculate the total offer price
           try {

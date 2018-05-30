@@ -35,6 +35,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.Arrays;
 
+import static life.qbic.components.OfferManagerTab.getPathOnServer;
 import static life.qbic.utils.qOfferManagerUtils.createExportContent;
 import static life.qbic.utils.qOfferManagerUtils.displayNotification;
 
@@ -48,6 +49,7 @@ final class PackageManagerTab {
   private static BigDecimal externalPriceModifier = new BigDecimal("1.1");
 
   private static FileDownloader fileDownloader;
+  private static String pathOnServer = getPathOnServer();
 
   /**
    * creates the tab for creating new packages
@@ -380,7 +382,7 @@ final class PackageManagerTab {
     });
 
     // setup the export as .csv file functionality
-    String exportPackagesFileName = "packages.csv";
+    String exportPackagesFileName =  pathOnServer + "packages.csv";
     fileDownloader = new FileDownloader(new FileResource(new File(exportPackagesFileName)))
     {
       @Override

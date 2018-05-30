@@ -5,6 +5,7 @@
 	<groupId>life.qbic</groupId>
 	<artifactId>qoffer-portlet</artifactId>
 	<version>1.0</version>
+	<url>https://github.com/qbicsoftware/qoffer</url>
 	<name>qOffer portlet</name>
 
 	<properties>

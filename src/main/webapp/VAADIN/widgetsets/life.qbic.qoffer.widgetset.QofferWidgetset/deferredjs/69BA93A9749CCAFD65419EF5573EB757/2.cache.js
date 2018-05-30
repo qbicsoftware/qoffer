@@ -1,1 +1,0 @@
-$wnd.life_qbic_qoffer_widgetset_QofferWidgetset.runAsyncCallback2('Leb(1644,1,y5d);_.vc=function kkc(){w4b((!p4b&&(p4b=new B4b),p4b),this.a.d)};U$d(Th)(2);\n//# sourceURL=life.qbic.qoffer.widgetset.QofferWidgetset-2.js\n')

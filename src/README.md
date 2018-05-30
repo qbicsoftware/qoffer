@@ -93,15 +93,15 @@ Holds the current offers:
 
 Field | Description | Example
 --- | --- | ---
-offer_id | Unique Id of the offer	 | 15
-offer_number | QBiC id of the offer <date_projectReference>	 | 20170815_QHUCW
-offer_project_reference | Id of the project	 | QHUCW
-offer_facility | Name of the prospect	 | Mr. John Doe
-offer_name | Name of the offer	 | Gene Expression Analysis of CD96 using RNA-Seq
-offer_description | Description of the offer	 | Objective: The CD96 receptor is presumed to be involved in the HIV molecular cascade in Human. [...]
+offer_id | Unique Id of the offer.	 | 15
+offer_number | QBiC id of the offer: <date\>_<projectReference\>	 | 20170815_QHUCW
+offer_project_reference | Id of the project.	 | QHUCW
+offer_facility | Name of the prospect.	 | Mr. John Doe
+offer_name | Name of the offer.	 | Gene Expression Analysis of CD96 using RNA-Seq
+offer_description | Description of the offer.	 | Objective: The CD96 receptor is presumed to be involved in the HIV molecular cascade in Human. [...]
 offer_group | Not in use.	 | -
 offer_price | Offer price in € without discounts/taxes. 	 | 11762
-offer_total | Total offer price in € including taxes/discounts (**NO** taxes/discounts are applied at the current state (05/2018) of the qOffer).	 | 11762
+offer_total | Total offer price in € including taxes/discounts (**NO** taxes/flat-rate discounts for the complete offer are applied at the current state (05/2018) of the qOffer).	 | 11762
 offer_date | Creation date of the offer	 | **Old format:** 2018-04-24;<br/> **New format:** 2018-04-24 11:24:05.0
 offer_status | Status of the offer 	 | Enum:<br/> ["In Progress", "Sent", "Accepted", "Rejected"]
 last_edited | Date of the latest edit	 | 2018-04-24 13:48:00.0
@@ -143,7 +143,7 @@ package_id | Id of the package.	 | 32
 package_addon_price | Total package price:<br/> ((base price * count) * (1-discount)).	 | 1595.24
 package_count | Package count; <br/> for sequencing packages = #samples. 	 | 95
 package_discount | Discount of the package in percent.	 | 69%
-package_price_type | What package price to use (internal, external academic, external_commercial)	 | Enum: <br/> ["internal", "external_academic", "external_commercial"]
+package_price_type | What package price to use (internal, external academic, external_commercial).	 | Enum: <br/> ["internal", "external_academic", "external_commercial"]
 
 
 ## Known issues/bugs:
@@ -155,6 +155,9 @@ package_price_type | What package price to use (internal, external academic, ext
     - PackageManager.java: Getting all the offer_ids where the package
     is in use takes 5-10s of time. Thus it has been disabled.
     (See: "// TODO: offer_ids currently not in use; since it's extremely slow..")
+    - Opening the inline-editor via double click is sometimes a bit tricky,
+    since vaadin often fails to grab the selected row, but I guess there's
+    not much one do about it (except using shift + enter to open it)..
 
 ## TODO:
 

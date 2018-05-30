@@ -46,6 +46,10 @@ Template.docx file using the Docx4jUtils class
 * Saving the resulting .docx file and enabling the download via the
 FileResourceHandler
 
+**Note:** If you run the portlet on your local machine, you probably
+need to change the variable *pathOnServer* at the top (~l. 50) of the
+*OfferManagerTab.java* according to your file system.
+
 ### Automatic price calculation:
 
 The following table shows the price modifiers used for the different

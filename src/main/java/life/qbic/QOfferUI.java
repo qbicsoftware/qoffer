@@ -11,9 +11,9 @@ import life.qbic.components.qOfferManager;
 @Theme("mytheme")
 @SuppressWarnings("serial")
 @Widgetset("life.qbic.AppWidgetSet")
-public class MyPortletUI extends UI {
+public class QOfferUI extends UI {
 
-    private static Log log = LogFactoryUtil.getLog(MyPortletUI.class);
+    private static Log log = LogFactoryUtil.getLog(QOfferUI.class);
 
     @Override
     protected void init(VaadinRequest request) {

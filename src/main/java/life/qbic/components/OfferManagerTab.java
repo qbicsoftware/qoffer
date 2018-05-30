@@ -49,6 +49,7 @@ final class OfferManagerTab {
   private static RefreshableGrid offerManagerGrid;
   private static VerticalLayout detailsLayout;
   private static ComboBox packageGroupComboBox;
+  private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
 
   static RefreshableGrid getOfferManagerGrid() {
     return offerManagerGrid;
@@ -60,6 +61,10 @@ final class OfferManagerTab {
 
   static String getPackageGroupComboBoxValue() {
     return packageGroupComboBox.getValue().toString();
+  }
+
+  static String getPathOnServer() {
+    return pathOnServer;
   }
 
   /**
@@ -359,7 +364,7 @@ final class OfferManagerTab {
    */
   private static void setupTableExportFunctionality(SQLContainer container, Button exportGridButton) throws IOException {
     // setup the export as .csv file functionality
-    String exportOffersFileName = "offers.csv";
+    String exportOffersFileName = pathOnServer + "offers.csv";
     exportFileDownloader = new FileDownloader(new FileResource(new File(exportOffersFileName)))
     {
       @Override
@@ -560,11 +565,7 @@ final class OfferManagerTab {
     // apply the bindings to the .docx template file
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName);
 
-    // TODO: output filename needs probably to be changed when running on the server
-    String outputFilename = projectQuotationNumber + ".docx";
-/*
-        String outputFilename = "/home/tomcat-liferay/liferay_production/tmp/" + projectQuotationNumber + ".docx";
-*/
+    String outputFilename = pathOnServer + projectQuotationNumber + ".docx";
 
     // save updated document to output file
     try {

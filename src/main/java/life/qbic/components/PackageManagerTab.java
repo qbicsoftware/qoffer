@@ -35,7 +35,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.Arrays;
 
-import static life.qbic.components.OfferManagerTab.getPathOnServer;
+//import static life.qbic.components.OfferManagerTab.getPathOnServer;
 import static life.qbic.utils.qOfferManagerUtils.createExportContent;
 import static life.qbic.utils.qOfferManagerUtils.displayNotification;
 
@@ -49,14 +49,15 @@ final class PackageManagerTab {
   private static BigDecimal externalPriceModifier = new BigDecimal("1.1");
 
   private static FileDownloader fileDownloader;
-  private static String pathOnServer = getPathOnServer();
+  //private static String pathOnServer = getPathOnServer();
 
   /**
    * creates the tab for creating new packages
    * @return vaadin component
    * @throws SQLException:
+ * @throws IOException 
    */
-  static Component createPackageManagerTab() throws SQLException {
+  static Component createPackageManagerTab() throws SQLException, IOException {
 
     Database db = qOfferManager.getDb();
 
@@ -309,10 +310,11 @@ final class PackageManagerTab {
    * @param container: SQLContainer holding the data from the database
    * @param packageGrid: grid holding the packages
    * @param exportTableButton: button for exporting the grid as csv
+ * @throws IOException 
    */
   private static void addListeners(Database db, Button addPackageButton, ComboBox updatePackageGroupComboBox,
                                    Button updateSelectedPackageButton, Button deleteSelectedPackageButton,
-                                   SQLContainer container, RefreshableGrid packageGrid, Button exportTableButton) {
+                                   SQLContainer container, RefreshableGrid packageGrid, Button exportTableButton) throws IOException {
 
     addPackageButton.addClickListener(new Button.ClickListener() {
 
@@ -382,13 +384,16 @@ final class PackageManagerTab {
     });
 
     // setup the export as .csv file functionality
-    String exportPackagesFileName =  pathOnServer + "packages.csv";
-    fileDownloader = new FileDownloader(new FileResource(new File(exportPackagesFileName)))
+    //String exportPackagesFileName =  pathOnServer + "packages.csv";
+    File tempFile = File.createTempFile("packages", ".csv");
+    String filePath = tempFile.getAbsolutePath();
+    fileDownloader = new FileDownloader(new FileResource(tempFile))
+    
     {
       @Override
       public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException
       {
-        createExportContent(container, exportPackagesFileName, fileDownloader);
+        createExportContent(container, filePath, fileDownloader);
         return super.handleConnectorRequest(request, response, path);
       }
     };

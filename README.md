@@ -25,7 +25,7 @@ to create the offer for in the ComboBox.
 2. **Add the desired packages to the project** by either double clicking
 or using the arrow buttons. The packages can also be filtered by their
 name and/or their id using the TextField.
-3. **Generate the offer** by hitting the comple button.
+3. **Generate the offer** by hitting the complete button.
 
 
 ### Offer Manager

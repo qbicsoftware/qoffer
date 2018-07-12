@@ -49,7 +49,7 @@ final class OfferManagerTab {
   private static RefreshableGrid offerManagerGrid;
   private static VerticalLayout detailsLayout;
   private static ComboBox packageGroupComboBox;
-  private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
+  //private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
 
   static RefreshableGrid getOfferManagerGrid() {
     return offerManagerGrid;
@@ -63,9 +63,9 @@ final class OfferManagerTab {
     return packageGroupComboBox.getValue().toString();
   }
 
-  static String getPathOnServer() {
+/*  static String getPathOnServer() {
     return pathOnServer;
-  }
+  }*/
 
   /**
    * creates the tab for displaying and modifying the offers in a vaadin grid
@@ -364,13 +364,15 @@ final class OfferManagerTab {
    */
   private static void setupTableExportFunctionality(SQLContainer container, Button exportGridButton) throws IOException {
     // setup the export as .csv file functionality
-    String exportOffersFileName = pathOnServer + "offers.csv";
-    exportFileDownloader = new FileDownloader(new FileResource(new File(exportOffersFileName)))
+    //String exportOffersFileName = pathOnServer + "offers.csv";
+    File tempFile = File.createTempFile("offers", ".csv");
+    String filePath = tempFile.getAbsolutePath();
+	exportFileDownloader = new FileDownloader(new FileResource(tempFile))
     {
       @Override
       public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException
       {
-        createExportContent(container, exportOffersFileName, exportFileDownloader);
+        createExportContent(container, filePath, exportFileDownloader);
         return super.handleConnectorRequest(request, response, path);
       }
     };
@@ -424,11 +426,12 @@ final class OfferManagerTab {
    * @param packageTotalPrices: list of the total package prices (package_unit_price*count)*discount
    * @param fileDownloader: file downloader for enabling the download of the file
    * @return whether or not creating the file has worked
+ * @throws IOException 
    */
   private static boolean generateOfferFile(SQLContainer container, Database db, List<String> packageNames,
                                         List<String> packageDescriptions, List<String> packageCounts,
                                         List<String> packageUnitPrices, List<String> packageTotalPrices,
-                                        FileDownloader fileDownloader) {
+                                        FileDownloader fileDownloader) throws IOException {
 
     if (offerManagerGrid.getSelectedRow() == null) {
       displayNotification("oOps! Forgot something?!",
@@ -565,16 +568,18 @@ final class OfferManagerTab {
     // apply the bindings to the .docx template file
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName);
 
-    String outputFilename = pathOnServer + projectQuotationNumber + ".docx";
-
+   // String outputFilename = pathOnServer + projectQuotationNumber + ".docx";
+    File tempFile = File.createTempFile(projectQuotationNumber, ".doc");
+    String filePath = tempFile.getAbsolutePath();
+    
     // save updated document to output file
     try {
       assert wordProcessor != null;
-      wordProcessor.save(new File(outputFilename), Docx4J.FLAG_SAVE_ZIP_FILE);
+      wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
     } catch (Docx4JException e) {
       e.printStackTrace();
     }
-    fileDownloader.setFileDownloadResource(new FileResource(new File(outputFilename)));
+    fileDownloader.setFileDownloadResource(new FileResource(tempFile));
 
     return true;
   }

@@ -57,10 +57,19 @@ public class QofferUIPortlet extends QBiCPortletUI {
     protected Layout getPortletContent(final VaadinRequest request) {
         LOG.info("Generating content for {}", QofferUIPortlet.class);
         
-        qOfferManager pManager = new qOfferManager();
-        HorizontalLayout pLayout = new HorizontalLayout(pManager);
-        pLayout.setWidth("100%");
+        HorizontalLayout pLayout = new HorizontalLayout();
         
+		try {
+			qOfferManager pManager = new qOfferManager();
+			pManager.setSizeFull();
+	        pLayout = new HorizontalLayout(pManager);
+	        pLayout.setWidth("100%");
+	        
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
   
         return pLayout;
     }    

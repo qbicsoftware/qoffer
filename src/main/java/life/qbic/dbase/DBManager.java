@@ -19,8 +19,8 @@ package life.qbic.dbase;
 import com.vaadin.data.util.sqlcontainer.connection.JDBCConnectionPool;
 import com.vaadin.data.util.sqlcontainer.connection.SimpleJDBCConnectionPool;
 import com.vaadin.server.VaadinService;
-import life.qbic.portal.liferayandvaadinhelpers.main.ConfigurationManager;
-import life.qbic.portal.liferayandvaadinhelpers.main.ConfigurationManagerFactory;
+import life.qbic.portal.utils.ConfigurationManager;
+import life.qbic.portal.utils.ConfigurationManagerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,7 +28,7 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import static life.qbic.portal.liferayandvaadinhelpers.main.LiferayAndVaadinUtils.isLiferayPortlet;
+import static life.qbic.portal.utils.PortalUtils.isLiferayPortlet;
 
 public class DBManager {
 

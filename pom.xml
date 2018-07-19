@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project 
-	xmlns="http://maven.apache.org/POM/4.0.0" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>life.qbic</groupId>
 		<artifactId>portlet-parent-pom</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<version>1.1.2</version>
 	</parent>
 	<groupId>life.qbic</groupId>
 	<artifactId>qoffer-portlet</artifactId>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.1.0-SNAPSHOT</version>
 	<name>qOffer-Portlet</name>
 	<url>http://github.com/qbicsoftware/qoffer</url>
-	<description>Allows the user to create offers, manage and print offers and create and mange packages for the offers.</description>
+	<description>Allows the user to create offers, manage and print offers and create and manage packages for the offers.</description>
 	<packaging>war</packaging>
-	<!-- we only need to tell maven where to find our parent pom and other QBiC dependencies -->
+	<!-- we only need to tell maven where to find our parent pom and other QBiC 
+		dependencies -->
 	<repositories>
 		<repository>
 			<id>liferay-releases</id>
@@ -50,61 +50,66 @@
 	</repositories>
 
 	<dependencies>
-	
+
+		<dependency>
+			<groupId>life.qbic</groupId>
+			<artifactId>portal-utils-lib</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.6</version>
 		</dependency>
-				
+
 		<!-- openBIS client (version defined in parent POM) -->
 		<dependency>
 			<groupId>life.qbic</groupId>
 			<artifactId>openbis-client-lib</artifactId>
+			<version>1.1.4</version>
 		</dependency>
-		
-				
+
+
 		<!-- openBIS API (version defined in parent POM) -->
 		<dependency>
-        	<groupId>life.qbic.openbis</groupId>
-            <artifactId>openbis_api</artifactId>
-        </dependency>
-		
-		
-		<!-- Access to our custom databases (portlets use direct JDBC to access data for now),
-			 but we will create a client library that portlets will use 
-			 (version  is defined in the parent POM hierarchy (/portal/pom.xml)) -->
+			<groupId>life.qbic.openbis</groupId>
+			<artifactId>openbis_api</artifactId>
+			<version>3-S253.0</version>
+		</dependency>
+
+
+		<!-- Access to our custom databases (portlets use direct JDBC to access 
+			data for now), but we will create a client library that portlets will use 
+			(version is defined in the parent POM hierarchy (/portal/pom.xml)) -->
 		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
 		</dependency>
-		
+
 		<!-- https://mvnrepository.com/artifact/org.vaadin.addons/vaadin-grid-util -->
 		<dependency>
 			<groupId>org.vaadin.addons</groupId>
 			<artifactId>vaadin-grid-util</artifactId>
-			<version>1.0.0</version>
 		</dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.docx4j/docx4j -->
-        <dependency>
-            <groupId>org.docx4j</groupId>
-            <artifactId>docx4j</artifactId>
-            <version>3.3.6</version>
-        </dependency>
+		<!-- https://mvnrepository.com/artifact/org.docx4j/docx4j -->
+		<dependency>
+			<groupId>org.docx4j</groupId>
+			<artifactId>docx4j</artifactId>
+		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>3.17</version>
-        </dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+		</dependency>
 
-        <!-- https://mvnrepository.com/artifact/commons-lang/commons-lang -->
-        <dependency>
+		<!-- https://mvnrepository.com/artifact/commons-lang/commons-lang -->
+		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 		</dependency>
-		
+
 	</dependencies>
 </project>

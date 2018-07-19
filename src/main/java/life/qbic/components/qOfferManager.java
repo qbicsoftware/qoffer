@@ -23,6 +23,7 @@ import com.vaadin.ui.themes.ValoTheme;
 import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -75,11 +76,16 @@ public class qOfferManager extends CustomComponent {
     return packageTotalPrices;
   }
 
-  public qOfferManager() {
-    init();
+  public qOfferManager() throws IOException {
+	  try {
+		init(); 
+	  }catch(IOException e) {
+		  e.printStackTrace();
+	  }
+
   }
 
-  private void init() {
+  private void init() throws IOException {
 
     DBManager.setCredentials();
     DBManager.getDatabaseInstance();

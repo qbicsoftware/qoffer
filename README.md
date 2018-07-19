@@ -1,10 +1,15 @@
-# QBiC Offer Manager (qOffer)
+# Qoffer-Portlet
 
-The QBiC Offer Manager allows the user to create offers via the Offer
-Generator Tab, manage and print existing offers via the Offer Manager Tab
+[![Build Status](https://travis-ci.com/qbicsoftware/qoffer-portlet.svg?branch=development)](https://travis-ci.com/qbicsoftware/qoffer-portlet)[![Code Coverage]( https://codecov.io/gh/qbicsoftware/qoffer-portlet/branch/development/graph/badge.svg)](https://codecov.io/gh/qbicsoftware/qoffer-portlet)
+
+Qoffer-Portlet, version 1.1-SNAPSHOT - The QBiC Offer Manager allows the user to create offers via the Offer Generator Tab, manage and print existing offers via the Offer Manager Tab
 and create and manage packages for the offers via the Package Manager Tab.
 
-## Offer Generator
+## Author
+Created by Benjamin Sailer, Jennifer Boedker (jennifer.boedker@student.uni-tuebingen.de).
+
+## Description
+### Offer Generator
 
 The Offer Generator Tab allows the user to generate offers for the
 available openBIS projects and also to add the packages at the same time.
@@ -12,7 +17,7 @@ The packages can then be edited via Offer Generator tab (change quantity,
 add/remove packages) or via the Package Manager tab (change package name,
 description, price, etc.).
 
-### Generating an offer:
+#### Generating an offer:
 
 1. **Select a project** from the list of available projects. Note: You can
 filter the projects by typing the openBIS id of the project you want
@@ -20,10 +25,10 @@ to create the offer for in the ComboBox.
 2. **Add the desired packages to the project** by either double clicking
 or using the arrow buttons. The packages can also be filtered by their
 name and/or their id using the TextField.
-3. **Generate the offer** by hitting the comple button.
+3. **Generate the offer** by hitting the complete button.
 
 
-## Offer Manager
+### Offer Manager
 
 The Offer Manager Tab allows the user to view all the offers stored in the
 database, edit some fields (e.g. offer name, description, etc.) and
@@ -33,7 +38,7 @@ change the price (internal/external academic/external commercial) the
 package should use. Additionally the user can
 generate a .docx file for the current offer and download it.
 
-### Editing an offer:
+#### Editing an offer:
 
 The following operations are supported via the edit menu (opens
 by either selecting an offer and hitting shift + enter or by double
@@ -69,7 +74,7 @@ commercial):** Select the package you want to update the price type for
 and the new price type via the the *External/Internal Price* ComboBox and
 hit the *Update price type* button.
 
-### Generating the .docx file:
+#### Generating the .docx file:
 
 Generating the .docx file is rather easy:
  1. **Select an offer**.
@@ -79,12 +84,12 @@ Generating the .docx file is rather easy:
 The implementation details can be found [here](https://github.com/qbicsoftware/qoffer/blob/master/src/README.md).
 
 
-## Package Manager
+### Package Manager
 
 The package manager allows the user to add new packages and also to edit
 or delete existing ones.
 
-### Package management:
+#### Package management:
 
 The following operations are supported for the packages:
 
@@ -117,7 +122,7 @@ section *Automatic price calculation* below.
 hit the *Update* button.
 
 
-### Automatic price calculation:
+#### Automatic price calculation:
 
 qOffer supports automatic calculation of the external academic and
 external commercial price based on the internal price. To enable this
@@ -127,3 +132,6 @@ necessary to open the inline editor via selecting the row and hitting
 shift \+ enter rather than double clicking, since Vaadin sometimes fails
 to grab the currently selected row if selected via double click. The
 detailed README on the implementation details can be found [here](https://github.com/qbicsoftware/qoffer/blob/master/src/README.md).
+
+
+## How to Install

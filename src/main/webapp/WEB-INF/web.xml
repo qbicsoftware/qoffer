@@ -10,7 +10,7 @@
   		<param-value>true</param-value>
 	</context-param>
 
-	<display-name>Qoffer-Portlet</display-name>
+	<display-name>qOffer Portlet</display-name>
 	<servlet>
 		<servlet-name>${project.artifactId}</servlet-name>
 		<servlet-class>com.vaadin.server.VaadinServlet</servlet-class>

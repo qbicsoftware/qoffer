@@ -12,7 +12,7 @@
 
 	<display-name>Qoffer-Portlet</display-name>
 	<servlet>
-		<servlet-name>qoffer-portlet</servlet-name>
+		<servlet-name>${project.artifactId}</servlet-name>
 		<servlet-class>com.vaadin.server.VaadinServlet</servlet-class>
 
 		<init-param>
@@ -23,7 +23,7 @@
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>qoffer-portlet</servlet-name>
+		<servlet-name>${project.artifactId}</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
 </web-app>

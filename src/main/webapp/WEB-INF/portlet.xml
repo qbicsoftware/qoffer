@@ -8,7 +8,7 @@
 
 	<portlet>
 		<description>Allows the user to create offers, manage and print offers and create and mange packages for the offers.</description>
-		<portlet-name>qoffer-portlet</portlet-name>
+		<portlet-name>${project.artifactId}</portlet-name>
 		<display-name>Qoffer-Portlet</display-name>
 
 		<portlet-class>com.vaadin.server.VaadinPortlet</portlet-class>

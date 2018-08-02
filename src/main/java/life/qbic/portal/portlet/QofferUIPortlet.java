@@ -44,7 +44,7 @@ import org.jsoup.nodes.Element;
 /**
  * Entry point for portlet qoffer-portlet. This class derives from {@link QBiCPortletUI}, which is found in the {@code portal-utils-lib} library.
  * 
- * @see https://github.com/qbicsoftware/portal-utils-lib
+ * @see <a href="https://github.com/qbicsoftware/portal-utils-lib">portal-utils-lib</a>
  */
 @Theme("mytheme")
 @SuppressWarnings("serial")

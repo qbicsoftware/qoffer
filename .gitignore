@@ -25,3 +25,6 @@ logs/
 
 # compiled Vaadin widgetsets
 src/main/webapp/VAADIN/widgetsets
+
+# ignore credentials file, but keep Credentials.properties.example
+src/main/webapp/WEB-INF/resourceFiles/Credentials.properties

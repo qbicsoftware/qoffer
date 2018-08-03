@@ -21,6 +21,7 @@ import com.vaadin.data.util.sqlcontainer.connection.SimpleJDBCConnectionPool;
 import com.vaadin.server.VaadinService;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
+import life.qbic.portal.utils.LiferayConfigurationManager;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,8 +33,8 @@ import static life.qbic.portal.utils.PortalUtils.isLiferayPortlet;
 
 public class DBManager {
 
-  private static String hostname = "portal-testing.am10.uni-tuebingen.de";
-  private static String port = "3306";
+  private static String hostname;
+  private static String port;
   private static String sql_database = "facs_facility";
   private static String username;
   private static String password;
@@ -53,6 +54,8 @@ public class DBManager {
     if (isLiferayPortlet()) {
       username = conf.getMysqlUser();
       password = conf.getMysqlPass();
+      hostname = conf.getMsqlHost();
+      port = conf.getMysqlPort();
     } else {
       parseCredentials(propertyFilePath);
     }
@@ -73,8 +76,10 @@ public class DBManager {
       // load a properties file
       prop.load(input);
 
-      username = prop.getProperty("mysql.username");
-      password = prop.getProperty("mysql.password");
+      username = prop.getProperty(LiferayConfigurationManager.MSQL_USER);
+      password = prop.getProperty(LiferayConfigurationManager.MSQL_PASS);
+      hostname = prop.getProperty(LiferayConfigurationManager.MSQL_HOST);
+      port = prop.getProperty(LiferayConfigurationManager.MSQL_PORT);
 
     } catch (IOException ex) {
       ex.printStackTrace();

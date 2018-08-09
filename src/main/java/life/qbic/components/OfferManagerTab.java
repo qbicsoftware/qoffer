@@ -454,7 +454,7 @@ final class OfferManagerTab {
     // file holding the content controls for the bindings
     String contentControlFilename = basepath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
     // template .docx file containing the bindings
-    String templateFileName = basepath + "/WEB-INF/resourceFiles/Template.docx";
+    String templateFileName = basepath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
 
     String clientName =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
@@ -566,10 +566,10 @@ final class OfferManagerTab {
     removeRowInTable(contentControlDocument, packageNames.size());
 
     // apply the bindings to the .docx template file
-    WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName);
+    WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
 
    // String outputFilename = pathOnServer + projectQuotationNumber + ".docx";
-    File tempFile = File.createTempFile(projectQuotationNumber, ".doc");
+    File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
     String filePath = tempFile.getAbsolutePath();
     
     // save updated document to output file

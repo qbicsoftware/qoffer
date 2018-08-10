@@ -16,6 +16,8 @@
 
 package life.qbic.utils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.docx4j.Docx4J;
 import org.docx4j.model.datastorage.RemovalHandler;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
@@ -28,6 +30,7 @@ import java.io.File;
 
 public final class Docx4jUtils {
 
+  private static final Logger LOG = LogManager.getLogger(Docx4jUtils.class);
   /**
    * Applies the bindings from the Document holding the content control (a xml file) to the template file and returns
    * the WordprocessingMLPackage for it.
@@ -41,7 +44,8 @@ public final class Docx4jUtils {
     // get the template file
     WordprocessingMLPackage wordProcessor = null;
     try {
-      wordProcessor = WordprocessingMLPackage.load(new File(templateFilename));
+      File templateFile = new File(templateFilename);
+      wordProcessor = WordprocessingMLPackage.load(templateFile);
     } catch (Docx4JException e) {
       e.printStackTrace();
     }

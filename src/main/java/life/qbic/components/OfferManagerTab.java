@@ -24,9 +24,12 @@ import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
 import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
+import life.qbic.portal.portlet.QofferUIPortlet;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.docx4j.Docx4J;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -50,6 +53,7 @@ final class OfferManagerTab {
   private static VerticalLayout detailsLayout;
   private static ComboBox packageGroupComboBox;
   //private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
+  private static final Logger LOG = LogManager.getLogger(OfferManagerTab.class);
 
   static RefreshableGrid getOfferManagerGrid() {
     return offerManagerGrid;
@@ -449,12 +453,13 @@ final class OfferManagerTab {
       packageGroupComboBox.setValue("All");
     }
 
-    String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+    String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+    LOG.info("Path"+basePath);
 
     // file holding the content controls for the bindings
-    String contentControlFilename = basepath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
+    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
     // template .docx file containing the bindings
-    String templateFileName = basepath + "/WEB-INF/resourceFiles/Template.docx";
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
 
     String clientName =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
@@ -565,21 +570,28 @@ final class OfferManagerTab {
     // remove the placeholder row in the .xml file
     removeRowInTable(contentControlDocument, packageNames.size());
 
+    LOG.info("TYPE {}", contentControlDocument.getDoctype());
+    if(contentControlDocument.getDoctype() != null){
+      throw new NullPointerException();
+    }
     // apply the bindings to the .docx template file
-    WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName);
+    WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
 
    // String outputFilename = pathOnServer + projectQuotationNumber + ".docx";
-    File tempFile = File.createTempFile(projectQuotationNumber, ".doc");
+    File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
     String filePath = tempFile.getAbsolutePath();
+    LOG.info(filePath);
     
     // save updated document to output file
     try {
       assert wordProcessor != null;
       wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
+      LOG.info("SAVE FILE: done saving the File");
     } catch (Docx4JException e) {
       e.printStackTrace();
     }
     fileDownloader.setFileDownloadResource(new FileResource(tempFile));
+    LOG.info("FILE DOWNLOADER: opened File downloader");
 
     return true;
   }

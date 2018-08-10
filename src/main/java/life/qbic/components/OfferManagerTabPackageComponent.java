@@ -29,6 +29,8 @@ import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
 import life.qbic.utils.CsvParserUtils;
 import life.qbic.utils.RefreshableGrid;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -44,6 +46,8 @@ final class OfferManagerTabPackageComponent {
   private static String csvFileName = basePath + "/WEB-INF/resourceFiles/discount_per_sample_size.csv";
   private static ArrayList<Float> discountPerSampleSize = CsvParserUtils.parseCsvFile(csvFileName, ",", true);
   private static RefreshableGrid selectedPacksInOfferGrid;
+
+  private static final Logger LOG = LogManager.getLogger(OfferManagerTabPackageComponent.class);
 
   /**
    * creates the component showing the packages of the respective package type of the currently selected offer in a
@@ -294,6 +298,10 @@ final class OfferManagerTabPackageComponent {
           if (Objects.equals(packageGroup, "Sequencing")) {
             // get the package discount based on the number of samples
             packageDiscount = discountPerSampleSize.get(packageCount);
+            //TODO here delete the logging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            LOG.info("Package discount!!!");
+            LOG.info("Value of FLOAT "+packageDiscount);
+            LOG.info("Value of CSV "+discountPerSampleSize.get(packageCount));
           }
 
           Property packagePriceTypeProperty =
@@ -306,7 +314,7 @@ final class OfferManagerTabPackageComponent {
           }
 
           // update the database
-          db.updatePackageQuantityAndRecalcalculatePrice(packageQuantityComboBox.getValue().toString(), selectedOfferID,
+          db.updatePackageQuantityAndRecalculatePrice(packageQuantityComboBox.getValue().toString(), selectedOfferID,
               packageId, packagePriceType, packageDiscount);
 
           packsContainer.refresh();
@@ -425,7 +433,7 @@ final class OfferManagerTabPackageComponent {
         // update the package price type
         db.updatePackagePriceTypeForPackage(selectedOfferID, packageId, packagePriceType);
 
-        // due to a lack of time we simply use the updatePackageQuantityAndRecalcalculatePrice function to
+        // due to a lack of time we simply use the updatePackageQuantityAndRecalculatePrice function to
         // recalculate the prices, although the quantity has not changed
         // TODO: write function to recalculate the price without the quantity to save some computation power
         String packageDiscountString = packsContainer.getContainerProperty(rowContainerId,
@@ -433,7 +441,7 @@ final class OfferManagerTabPackageComponent {
         String packageCount = packsContainer.getContainerProperty(rowContainerId,
             "package_count").getValue().toString();
 
-        db.updatePackageQuantityAndRecalcalculatePrice(packageCount, selectedOfferID,
+        db.updatePackageQuantityAndRecalculatePrice(packageCount, selectedOfferID,
             packageId, packagePriceType, 1-Float.valueOf(packageDiscountString)/100);
 
         packsContainer.refresh();

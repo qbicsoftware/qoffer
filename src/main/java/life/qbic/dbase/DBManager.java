@@ -39,8 +39,8 @@ public class DBManager {
   private static String username;
   private static String password;
 
-  private static String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-  private static String propertyFilePath = basepath + "/WEB-INF/resourceFiles/Credentials.properties";
+  private static String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+  private static String propertyFilePath = basePath + "/WEB-INF/resourceFiles/Credentials.properties";
 
   private static ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
 

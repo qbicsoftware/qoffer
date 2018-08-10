@@ -570,8 +570,7 @@ final class OfferManagerTab {
     // remove the placeholder row in the .xml file
     removeRowInTable(contentControlDocument, packageNames.size());
 
-    //LOG.info("TYPE "+contentControlDocument.getDoctype());
-    LOG.info("TYPE "+contentControlDocument.getDoctype().getName());
+    LOG.info("TYPE {}", contentControlDocument.getDoctype());
     if(contentControlDocument.getDoctype() != null){
       throw new NullPointerException();
     }

@@ -16,6 +16,8 @@
 package life.qbic.dbase;
 
 import life.qbic.model.packageBean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.*;
 import java.text.DecimalFormat;
@@ -31,6 +33,8 @@ public enum Database {
   private String user;
   private String host;
   Connection conn = null;
+
+  private static final Logger LOG = LogManager.getLogger(Database.class);
 
   public void init(String user, String password, String host) {
     // check if com.mysql.jdbc.Driver exists. If not try to add it
@@ -744,8 +748,8 @@ public enum Database {
     return success;
   }
 
-  public void updatePackageQuantityAndRecalcalculatePrice(String package_count, String offer_id, String package_id,
-                                                             String packagePriceType, float packageDiscount) {
+  public void updatePackageQuantityAndRecalculatePrice(String package_count, String offer_id, String package_id,
+                                                       String packagePriceType, float packageDiscount) {
 
 
 
@@ -783,7 +787,7 @@ public enum Database {
     DecimalFormat df = new DecimalFormat("#");
     String packageDiscountFormatted = df.format((1 - packageDiscount) * 100) + "%";
 
-    // update the package_count, the package_addon_price and the package_disocunt in the offers_packages table
+    // update the package_count, the package_addon_price and the package_discount in the offers_packages table
     String sql =
         "UPDATE offers_packages SET package_count = ?, package_addon_price = ?, package_discount = ? " +
             "WHERE offer_id = ? AND package_id = ? ";
@@ -795,7 +799,8 @@ public enum Database {
       statement.setString(3, packageDiscountFormatted);
       statement.setString(4, offer_id);
       statement.setString(5, package_id);
-      int result = statement.executeUpdate();
+      statement.executeUpdate();
+      LOG.info("Updated id "+offer_id);
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -820,7 +825,7 @@ public enum Database {
       offerPriceFormatted = offerPriceFormatted.replaceAll(",", ".");
       statementF.setString(1, offerPriceFormatted);
       statementF.setString(2, offer_id);
-      int result = statementF.executeUpdate();
+      statementF.executeUpdate();
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -831,9 +836,15 @@ public enum Database {
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statementD = conn.prepareStatement(sqlD)) {
       statementD.setString(1, offer_id);
+      //one represents the first '?' within the PreparedStatement --> insert the variable offer_id here
       ResultSet rs = statementD.executeQuery();
       if (rs.next())
-        offerDiscount = rs.getInt(1);
+        //offerDiscount = rs.getInt(1);
+        LOG.info("Get String for discount "+rs.getNString(1));
+      //column discount is VARCHAR() --> get String --> cut '%' --> convert to integer
+        String discount = rs.getString(1);
+        offerDiscount = Integer.parseInt(discount.split("%")[0]);
+
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -848,7 +859,7 @@ public enum Database {
       offerTotalPriceFormatted = offerTotalPriceFormatted.replaceAll(",", ".");
       statementT.setString(1, offerTotalPriceFormatted);
       statementT.setString(2, offer_id);
-      int result = statementT.executeUpdate();
+      statementT.executeUpdate();
     } catch (SQLException e) {
       e.printStackTrace();
     }

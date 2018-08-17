@@ -298,10 +298,7 @@ final class OfferManagerTabPackageComponent {
           if (Objects.equals(packageGroup, "Sequencing")) {
             // get the package discount based on the number of samples
             packageDiscount = discountPerSampleSize.get(packageCount);
-            //TODO here delete the logging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            LOG.info("Package discount!!!");
-            LOG.info("Value of FLOAT "+packageDiscount);
-            LOG.info("Value of CSV "+discountPerSampleSize.get(packageCount));
+
           }
 
           Property packagePriceTypeProperty =

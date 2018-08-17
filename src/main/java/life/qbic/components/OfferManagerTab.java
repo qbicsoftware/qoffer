@@ -436,7 +436,6 @@ final class OfferManagerTab {
                                         List<String> packageDescriptions, List<String> packageCounts,
                                         List<String> packageUnitPrices, List<String> packageTotalPrices,
                                         FileDownloader fileDownloader) throws IOException {
-
     if (offerManagerGrid.getSelectedRow() == null) {
       displayNotification("oOps! Forgot something?!",
           "Please make sure that you select an offer.", "error");
@@ -457,9 +456,10 @@ final class OfferManagerTab {
     LOG.info("Path"+basePath);
 
     // file holding the content controls for the bindings
-    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
+    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate_new.xml";
     // template .docx file containing the bindings
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
+    //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX(1).docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX(1).docx"; //changed TempFile
 
     String clientName =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
@@ -567,17 +567,16 @@ final class OfferManagerTab {
           formatCurrency(packageTotalPrices.get(i)), String.valueOf(i+1));
     }
 
-    // remove the placeholder row in the .xml file
+    // remove the placeholder rows in the .xml file
     removeRowInTable(contentControlDocument, packageNames.size());
+    removeRowInTable(contentControlDocument, packageNames.size()-1);
+    removeRowInTable(contentControlDocument, packageNames.size()-2);
+    removeRowInTable(contentControlDocument, packageNames.size()-3);
+    removeRowInTable(contentControlDocument, packageNames.size()-4);
 
-    LOG.info("TYPE {}", contentControlDocument.getDoctype());
-    if(contentControlDocument.getDoctype() != null){
-      throw new NullPointerException();
-    }
     // apply the bindings to the .docx template file
-    WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
+    WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName);
 
-   // String outputFilename = pathOnServer + projectQuotationNumber + ".docx";
     File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
     String filePath = tempFile.getAbsolutePath();
     LOG.info(filePath);

@@ -24,7 +24,6 @@ import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
 import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
-import life.qbic.portal.portlet.QofferUIPortlet;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
@@ -457,10 +456,10 @@ final class OfferManagerTab {
 
     //TODO for templates change files here:
     // file holding the content controls for the bindings
-    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlNEW.xml";
+    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControl.xml";
     // template .docx file containing the bindings
     //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX(1).docx"; //changed TempFile
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_bound.docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_save.docx"; //changed TempFile
 
     String clientName =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
@@ -545,21 +544,23 @@ final class OfferManagerTab {
     org.w3c.dom.Document contentControlDocument = readXMLFile(contentControlFilename);
 
     // change the fields of the content control document according to the values obtained in the grid
-    changeNodeTextContent(contentControlDocument, "name", clientName);
-    changeNodeTextContent(contentControlDocument, "organization", groupAcronym);
-    changeNodeTextContent(contentControlDocument, "department", institute);
-    changeNodeTextContent(contentControlDocument, "university", umbrellaOrganization);
-    changeNodeTextContent(contentControlDocument, "adress", street);
-    changeNodeTextContent(contentControlDocument, "town", cityZipCodeAndCounty);
+    changeNodeTextContent(contentControlDocument, "client_name", clientName);
+    changeNodeTextContent(contentControlDocument, "client_organization", groupAcronym);
+    changeNodeTextContent(contentControlDocument, "client_department", institute);
+    changeNodeTextContent(contentControlDocument, "client_university", umbrellaOrganization);
+    changeNodeTextContent(contentControlDocument, "client_address", street);
+    changeNodeTextContent(contentControlDocument, "client_town", cityZipCodeAndCounty);
     changeNodeTextContent(contentControlDocument, "client_email", clientEmail);
     changeNodeTextContent(contentControlDocument, "project_reference", projectReference);
     changeNodeTextContent(contentControlDocument, "quotation_number", projectQuotationNumber);
-    changeNodeTextContent(contentControlDocument, "scientist", projectManager);
+    changeNodeTextContent(contentControlDocument, "name", projectManager);
     changeNodeTextContent(contentControlDocument, "email", projectManagerMail);
-    changeNodeTextContent(contentControlDocument, "project_titel", projectTitle);
+    changeNodeTextContent(contentControlDocument, "project_title", projectTitle);
     changeNodeTextContent(contentControlDocument, "objective", projectDescription);
     changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
+
+    LOG.info(clientEmail," ",groupAcronym);
 
     // iterate over the packages and add them to the content control .xml file
     for (int i = packageNames.size()-1; i >= 0; i--) {

@@ -26,12 +26,13 @@
 		<offer_description>This offer includes costs for library sequencing, data analysis, project- and data mangement and the development of a singlecell RNA-Seq pipeline. The samples will be tracked throughout the project by unique barcodes that will be provided by QBiC. A FPKM table will be provided.
 		Adjust the text above as required by the project.</offer_description>
 	</project_description>
-	<work_pages_table>
+	<work_packages_table>
 		<row>
 			<work_package_name>Sequencing by Sequencing Provider... (internal offer no.: 2017-7816)</work_package_name>
 			<work_package_quantity>1</work_package_quantity>
 			<work_package_unit_price>4165.00</work_package_unit_price>
 			<work_package_amount>1465.00</work_package_amount>
+			<work_package_number>1</work_package_number>
 		</row>
-	</work_pages_table>
+	</work_packages_table>
 </yourxml>

@@ -455,11 +455,12 @@ final class OfferManagerTab {
     String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
     LOG.info("Path"+basePath);
 
+    //TODO for templates change files here:
     // file holding the content controls for the bindings
-    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate_new.xml";
+    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlNEW.xml";
     // template .docx file containing the bindings
     //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX(1).docx"; //changed TempFile
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX(1).docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_bound.docx"; //changed TempFile
 
     String clientName =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
@@ -544,18 +545,18 @@ final class OfferManagerTab {
     org.w3c.dom.Document contentControlDocument = readXMLFile(contentControlFilename);
 
     // change the fields of the content control document according to the values obtained in the grid
-    changeNodeTextContent(contentControlDocument, "client_name", clientName);
-    changeNodeTextContent(contentControlDocument, "client_organization", groupAcronym);
-    changeNodeTextContent(contentControlDocument, "client_department", institute);
-    changeNodeTextContent(contentControlDocument, "client_university", umbrellaOrganization);
-    changeNodeTextContent(contentControlDocument, "client_address", street);
-    changeNodeTextContent(contentControlDocument, "client_address_town", cityZipCodeAndCounty);
+    changeNodeTextContent(contentControlDocument, "name", clientName);
+    changeNodeTextContent(contentControlDocument, "organization", groupAcronym);
+    changeNodeTextContent(contentControlDocument, "department", institute);
+    changeNodeTextContent(contentControlDocument, "university", umbrellaOrganization);
+    changeNodeTextContent(contentControlDocument, "adress", street);
+    changeNodeTextContent(contentControlDocument, "town", cityZipCodeAndCounty);
     changeNodeTextContent(contentControlDocument, "client_email", clientEmail);
     changeNodeTextContent(contentControlDocument, "project_reference", projectReference);
-    changeNodeTextContent(contentControlDocument, "project_quotation_number", projectQuotationNumber);
-    changeNodeTextContent(contentControlDocument, "name", projectManager);
+    changeNodeTextContent(contentControlDocument, "quotation_number", projectQuotationNumber);
+    changeNodeTextContent(contentControlDocument, "scientist", projectManager);
     changeNodeTextContent(contentControlDocument, "email", projectManagerMail);
-    changeNodeTextContent(contentControlDocument, "project_title", projectTitle);
+    changeNodeTextContent(contentControlDocument, "project_titel", projectTitle);
     changeNodeTextContent(contentControlDocument, "objective", projectDescription);
     changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
@@ -569,10 +570,6 @@ final class OfferManagerTab {
 
     // remove the placeholder rows in the .xml file
     removeRowInTable(contentControlDocument, packageNames.size());
-    removeRowInTable(contentControlDocument, packageNames.size()-1);
-    removeRowInTable(contentControlDocument, packageNames.size()-2);
-    removeRowInTable(contentControlDocument, packageNames.size()-3);
-    removeRowInTable(contentControlDocument, packageNames.size()-4);
 
     // apply the bindings to the .docx template file
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName);

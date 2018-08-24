@@ -456,10 +456,10 @@ final class OfferManagerTab {
 
     //TODO for templates change files here:
     // file holding the content controls for the bindings
-    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControl.xml";
+    String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
     // template .docx file containing the bindings
-    //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX(1).docx"; //changed TempFile
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_save.docx"; //changed TempFile
+    //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable.docx"; //changed TempFile
 
     String clientName =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
@@ -499,6 +499,10 @@ final class OfferManagerTab {
     String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1);
 
     String clientEmail = db.getClientEmailFromProjectRef(projectReference);
+    //TODO test, delete later
+    if(clientEmail.equals("")){
+      clientEmail = " ";
+    }
 
     // TODO: for liferay it probably needs some adjustments, since I couldn't test this properly..
     String projectManager;
@@ -560,13 +564,12 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
-    LOG.info(clientEmail," ",groupAcronym);
 
     // iterate over the packages and add them to the content control .xml file
     for (int i = packageNames.size()-1; i >= 0; i--) {
       addRowToTable(contentControlDocument, 1, packageNames.get(i) + ": "+
               packageDescriptions.get(i), packageCounts.get(i), formatCurrency(packageUnitPrices.get(i)),
-          formatCurrency(packageTotalPrices.get(i)), String.valueOf(i+1));
+          formatCurrency(packageTotalPrices.get(i)));
     }
 
     // remove the placeholder rows in the .xml file
@@ -576,9 +579,7 @@ final class OfferManagerTab {
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName);
 
     File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
-    String filePath = tempFile.getAbsolutePath();
-    LOG.info(filePath);
-    
+
     // save updated document to output file
     try {
       assert wordProcessor != null;

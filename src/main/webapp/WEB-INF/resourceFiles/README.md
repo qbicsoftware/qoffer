@@ -46,7 +46,7 @@ Keep in mind that after that you cannot use the same XPath for another node agai
 If you want to bind a table you need to make use of content repeats.
 The nodes for the offer table are predefined in the code (see XMLUtils.java). The table is represented in the XML as **'work_package_table'** a new row is indicated with **'row'**:
 
-'''xml
+```xml
 <myXML>
 	<work_packages_table>
 		<row>
@@ -57,7 +57,7 @@ The nodes for the offer table are predefined in the code (see XMLUtils.java). Th
 		</row>
 </work_packages_table>
 	</myXML>
-'''xml 
+``` 
 
 Now we need to tell Word that row can multiply appear in our XML. 
 First, contents of each column of the example row are separately bound as text. Then, the complete row is selected. Click "Wrap with Repeat". 

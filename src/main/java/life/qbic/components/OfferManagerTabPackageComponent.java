@@ -298,7 +298,6 @@ final class OfferManagerTabPackageComponent {
           if (Objects.equals(packageGroup, "Sequencing")) {
             // get the package discount based on the number of samples
             packageDiscount = discountPerSampleSize.get(packageCount);
-
           }
 
           Property packagePriceTypeProperty =

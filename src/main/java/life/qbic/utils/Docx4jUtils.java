@@ -36,7 +36,7 @@ public final class Docx4jUtils {
    * the WordprocessingMLPackage for it.
    * @param contentControlFilename: w3c document holding the content controls (modified xml file
    *                              (see contentControlTemplate.xml for an example))
-   * @param templateFilename: file name of the .docx file holding the template (here: Template.docx)
+   * @param templateFilename: file name of the .docx file holding the template (here: YYYYMMDD_PiName_QXXXX_resizedTable.docx)
    * @return WordprocessingMLPackage which allows us to save the generated .docx file
    */
   public static WordprocessingMLPackage applyBindings(org.w3c.dom.Document contentControlFilename, String templateFilename) {

@@ -436,7 +436,6 @@ final class OfferManagerTab {
                                         List<String> packageDescriptions, List<String> packageCounts,
                                         List<String> packageUnitPrices, List<String> packageTotalPrices,
                                         FileDownloader fileDownloader) throws IOException {
-
     if (offerManagerGrid.getSelectedRow() == null) {
       displayNotification("oOps! Forgot something?!",
           "Please make sure that you select an offer.", "error");
@@ -456,10 +455,14 @@ final class OfferManagerTab {
     String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
     LOG.info("Path"+basePath);
 
+    //TODO for templates change files here:
     // file holding the content controls for the bindings
     String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
     // template .docx file containing the bindings
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
+    //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
+    //String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable.docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable_updated.docx"; //changed TempFile
+
 
     String clientName =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
@@ -499,6 +502,10 @@ final class OfferManagerTab {
     String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1);
 
     String clientEmail = db.getClientEmailFromProjectRef(projectReference);
+    //TODO test, delete later
+    if(clientEmail.equals("")){
+      clientEmail = " ";
+    }
 
     // TODO: for liferay it probably needs some adjustments, since I couldn't test this properly..
     String projectManager;
@@ -549,10 +556,10 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "client_department", institute);
     changeNodeTextContent(contentControlDocument, "client_university", umbrellaOrganization);
     changeNodeTextContent(contentControlDocument, "client_address", street);
-    changeNodeTextContent(contentControlDocument, "client_address_town", cityZipCodeAndCounty);
+    changeNodeTextContent(contentControlDocument, "client_town", cityZipCodeAndCounty);
     changeNodeTextContent(contentControlDocument, "client_email", clientEmail);
     changeNodeTextContent(contentControlDocument, "project_reference", projectReference);
-    changeNodeTextContent(contentControlDocument, "project_quotation_number", projectQuotationNumber);
+    changeNodeTextContent(contentControlDocument, "quotation_number", projectQuotationNumber);
     changeNodeTextContent(contentControlDocument, "name", projectManager);
     changeNodeTextContent(contentControlDocument, "email", projectManagerMail);
     changeNodeTextContent(contentControlDocument, "project_title", projectTitle);
@@ -560,14 +567,15 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
+
     // iterate over the packages and add them to the content control .xml file
     for (int i = packageNames.size()-1; i >= 0; i--) {
       addRowToTable(contentControlDocument, 1, packageNames.get(i) + ": "+
               packageDescriptions.get(i), packageCounts.get(i), formatCurrency(packageUnitPrices.get(i)),
-          formatCurrency(packageTotalPrices.get(i)), String.valueOf(i+1));
+          formatCurrency(packageTotalPrices.get(i)));
     }
 
-    // remove the placeholder row in the .xml file
+    // remove the placeholder rows in the .xml file
     removeRowInTable(contentControlDocument, packageNames.size());
 
     LOG.info("TYPE {}", contentControlDocument.getDoctype());
@@ -577,11 +585,8 @@ final class OfferManagerTab {
     // apply the bindings to the .docx template file
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
 
-   // String outputFilename = pathOnServer + projectQuotationNumber + ".docx";
     File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
-    String filePath = tempFile.getAbsolutePath();
-    LOG.info(filePath);
-    
+
     // save updated document to output file
     try {
       assert wordProcessor != null;

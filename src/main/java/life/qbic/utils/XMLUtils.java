@@ -15,6 +15,8 @@
  *******************************************************************************/
 package life.qbic.utils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -36,7 +38,7 @@ import java.io.IOException;
 /**
  * This class holds several functions to modify the .xml document which holds the content for the bindings of the
  * template .docx file:
- *      - {@link XMLUtils#addRowToTable(Document, int, String, String, String, String, String)}: Adds a new row to
+ *      - {@link XMLUtils#addRowToTable(Document, int, String, String, String, String)}: Adds a new row to
  *      the table within the xml document
  *      - {@link XMLUtils#removeRowInTable(Document, int)}: Removes the row with index rowIndex from the table
  *      - {@link XMLUtils#changeRowInTable(Document, int, String, String, String, String, String)}: Changes the text
@@ -49,6 +51,7 @@ import java.io.IOException;
  */
 public class XMLUtils {
 
+
   /**
    * Adds a new row to the table within the xml document
    * @param doc: xml document to modify
@@ -59,7 +62,7 @@ public class XMLUtils {
    * @param workPackageAmount: text content of the work package amount node
    */
   public static void addRowToTable(Document doc, int rowIndex, String workPackageName, String workPackageQuantity,
-                                   String workPackageUnitPrice, String workPackageAmount, String workPackageNumber) {
+                                   String workPackageUnitPrice, String workPackageAmount) {
 
     // create the element we want to insert
     Element rowToInsert = doc.createElement("row");
@@ -81,9 +84,9 @@ public class XMLUtils {
     workPackageAmountElement.setTextContent(workPackageAmount);
     rowToInsert.appendChild(workPackageAmountElement);
 
-    Element workPackageNumberElement = doc.createElement("work_package_number");
+/*    Element workPackageNumberElement = doc.createElement("work_package_number");
     workPackageNumberElement.setTextContent(workPackageNumber);
-    rowToInsert.appendChild(workPackageNumberElement);
+    rowToInsert.appendChild(workPackageNumberElement); --> no longer within new Template*/
 
     // Insert the "row" into the "table"
     insertRowToTable(doc, rowIndex, rowToInsert);
@@ -163,7 +166,7 @@ public class XMLUtils {
       nodeElement.getElementsByTagName("work_package_quantity").item(0).setTextContent(workPackageQuantity);
       nodeElement.getElementsByTagName("work_package_unit_price").item(0).setTextContent(workPackageUnitPrice);
       nodeElement.getElementsByTagName("work_package_amount").item(0).setTextContent(workPackageAmount);
-      nodeElement.getElementsByTagName("work_package_number").item(0).setTextContent(workPackageNumber);
+      //nodeElement.getElementsByTagName("work_package_number").item(0).setTextContent(workPackageNumber); --> not in new template
 
     } else {
       System.err.println("Error: Node is not an element!");

@@ -24,6 +24,7 @@ import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
 import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
+import life.qbic.portal.portlet.QofferUIPortlet;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
@@ -577,8 +578,12 @@ final class OfferManagerTab {
     // remove the placeholder rows in the .xml file
     removeRowInTable(contentControlDocument, packageNames.size());
 
+    LOG.info("TYPE {}", contentControlDocument.getDoctype());
+    if(contentControlDocument.getDoctype() != null){
+      throw new NullPointerException();
+    }
     // apply the bindings to the .docx template file
-    WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName);
+    WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
 
     File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
 

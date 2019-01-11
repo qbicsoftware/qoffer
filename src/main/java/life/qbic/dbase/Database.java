@@ -325,7 +325,10 @@ public enum Database {
   public ArrayList<String> getPackageIdsAndNames() {
 
     ArrayList<String> list = new ArrayList<>();
-    String sql = "SELECT package_id, package_name FROM packages ORDER BY package_name";
+//    String sql = "SELECT package_id, package_name FROM packages ORDER BY package_name";
+    //as requested order Packages by their ID
+    String sql = "SELECT package_id, package_name FROM packages ORDER BY package_id";
+
     // The following statement is an try-with-devices statement, which declares two devices,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); Statement statement = conn.createStatement()) {
@@ -800,7 +803,7 @@ public enum Database {
       statement.setString(4, offer_id);
       statement.setString(5, package_id);
       statement.executeUpdate();
-      LOG.info("Updated id "+offer_id);
+      LOG.info("Updated offer with id "+offer_id);
     } catch (SQLException e) {
       e.printStackTrace();
     }

@@ -137,6 +137,8 @@ final class OfferManagerTab {
     SQLContainer container = new SQLContainer(tq);
     container.setAutoCommit(true);
 
+    //manually add a "estimated delivery" col -> unsupportedOperationException
+    //container.addContainerProperty("offer_estimated_delivery", String.class, null);
     offerManagerGrid = new RefreshableGrid(container);
 
     // add the filters to the grid
@@ -168,6 +170,9 @@ final class OfferManagerTab {
     offerManagerGrid.getColumn("offer_date").setHeaderCaption("Date").setEditable(false);
     offerManagerGrid.getColumn("last_edited").setHeaderCaption("Last edited").setEditable(false);
     offerManagerGrid.getColumn("added_by").setHeaderCaption("Added by").setEditable(false);
+    //add estimated delivery time TODO include into DB?
+//    offerManagerGrid.addColumn("offer_estimated_delivery").setHeaderCaption("Estimated Delivery");
+
 
     offerManagerGrid.setColumnOrder("offer_id", "offer_project_reference", "offer_number", "offer_name",
         "offer_description", "offer_total", "offer_facility", "offer_status", "offer_date", "last_edited", "added_by");
@@ -341,7 +346,22 @@ final class OfferManagerTab {
       }
     });
 
-    // adds the file creation and the export functionality to the print offer button
+    // adds the file creation and the export functionality to the print offer button (without FileDownloader)
+    generateOfferButton.addClickListener((Button.ClickListener) event -> {
+      try {
+        generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
+                packageTotalPrices, fileDownloader);
+        displayNotification("Successfully downloaded", "The File can be found in the Downloads folder","success");
+      }
+      catch(IOException io){
+        displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
+                "again.", "error");
+        io.printStackTrace();
+      }
+
+    });
+
+/* uncomment this if you want to use the FileDownloader BUT then it will generate two files
     try {
       setupOfferFileExportFunctionality(db, generateOfferButton, container, packageNames, packageDescriptions, packageCounts,
           packageUnitPrices, packageTotalPrices);
@@ -350,6 +370,7 @@ final class OfferManagerTab {
           "again.", "error");
       e.printStackTrace();
     }
+*/
 
     try {
       setupTableExportFunctionality(container, exportTableButton);
@@ -585,18 +606,20 @@ final class OfferManagerTab {
     // apply the bindings to the .docx template file
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
 
-    File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
-
+    //File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
+    String home = System.getProperty("user.home");
+    File file = new File(home+"/Downloads/" + projectQuotationNumber + ".docx");
     // save updated document to output file
     try {
       assert wordProcessor != null;
-      wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
+      wordProcessor.save(file, Docx4J.FLAG_SAVE_ZIP_FILE);
       LOG.info("SAVE FILE: done saving the File");
     } catch (Docx4JException e) {
       e.printStackTrace();
     }
-    fileDownloader.setFileDownloadResource(new FileResource(tempFile));
-    LOG.info("FILE DOWNLOADER: opened File downloader");
+
+    //fileDownloader.setFileDownloadResource(new FileResource(file));
+    //LOG.info("FILE DOWNLOADER: opened File downloader");
 
     return true;
   }

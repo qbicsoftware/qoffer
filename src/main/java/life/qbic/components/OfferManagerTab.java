@@ -24,7 +24,6 @@ import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
 import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
-import life.qbic.portal.portlet.QofferUIPortlet;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
@@ -170,12 +169,15 @@ final class OfferManagerTab {
     offerManagerGrid.getColumn("offer_date").setHeaderCaption("Date").setEditable(false);
     offerManagerGrid.getColumn("last_edited").setHeaderCaption("Last edited").setEditable(false);
     offerManagerGrid.getColumn("added_by").setHeaderCaption("Added by").setEditable(false);
-    //add estimated delivery time TODO include into DB?
-//    offerManagerGrid.addColumn("offer_estimated_delivery").setHeaderCaption("Estimated Delivery");
+    //add estimated delivery also for OpenBIS (done for mariaDB)
+
+    offerManagerGrid.getColumn("estimated_delivery_weeks").setHeaderCaption("Estimated Delivery");
+
+
 
 
     offerManagerGrid.setColumnOrder("offer_id", "offer_project_reference", "offer_number", "offer_name",
-        "offer_description", "offer_total", "offer_facility", "offer_status", "offer_date", "last_edited", "added_by");
+        "offer_description", "offer_total", "offer_facility", "offer_status", "offer_date", "estimated_delivery_weeks", "last_edited", "added_by");
 
     offerManagerGrid.removeColumn("discount");
     offerManagerGrid.removeColumn("internal");
@@ -346,7 +348,7 @@ final class OfferManagerTab {
       }
     });
 
-    // adds the file creation and the export functionality to the print offer button (without FileDownloader)
+/*    // adds the file creation and the export functionality to the print offer button (without FileDownloader)
     generateOfferButton.addClickListener((Button.ClickListener) event -> {
       try {
         generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
@@ -359,9 +361,8 @@ final class OfferManagerTab {
         io.printStackTrace();
       }
 
-    });
+    });*/
 
-/* uncomment this if you want to use the FileDownloader BUT then it will generate two files
     try {
       setupOfferFileExportFunctionality(db, generateOfferButton, container, packageNames, packageDescriptions, packageCounts,
           packageUnitPrices, packageTotalPrices);
@@ -370,7 +371,7 @@ final class OfferManagerTab {
           "again.", "error");
       e.printStackTrace();
     }
-*/
+
 
     try {
       setupTableExportFunctionality(container, exportTableButton);
@@ -482,7 +483,7 @@ final class OfferManagerTab {
     // template .docx file containing the bindings
     //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
     //String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable_updated.docx"; //changed TempFile
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable_updated.docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_recolored.docx"; //changed TempFile
 
 
     String clientName =
@@ -492,6 +493,12 @@ final class OfferManagerTab {
     String offerNumber =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_number").getValue()
             .toString();
+
+    String estimatedDeliveryWeeks = null;
+
+    if(container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue() != null){
+      estimatedDeliveryWeeks = container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue().toString()+" weeks";
+    }
 
     String[] address = db.getAddressForPerson(clientName);
     String groupAcronym = null;
@@ -545,6 +552,7 @@ final class OfferManagerTab {
       displayNotification("Offer name is null", "Warning: The offer name for the current offer is null." +
           "The respective fields in the .docx file will thus hold the placeholder values. Please consider " +
           "setting the offer name in the Offer Manager tab.", "warning");
+      //added to prevent fail if titel is null -> no download should be triggered
       return false;
     }
 
@@ -555,6 +563,7 @@ final class OfferManagerTab {
       displayNotification("Offer description is null.", "Warning: The offer description for the current " +
           "offer is null. The respective fields in the .docx file will thus hold the placeholder values. Please " +
           "consider setting the offer name in the Offer Manager tab.", "warning");
+      //added to prevent fail if description is null -> no download should be triggered
       return false;
     }
 
@@ -569,6 +578,9 @@ final class OfferManagerTab {
 
     SimpleDateFormat currentDateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy", Locale.ENGLISH);
     String currentDate = currentDateFormat.format(new Date());
+
+    //todo exchange delivery time in offer -> change in double clicked field is saved and written to file
+   // db.getDeliveryTime(db);
 
     // get the xml document holding the content for the bindings in the docx template file
     org.w3c.dom.Document contentControlDocument = readXMLFile(contentControlFilename);
@@ -590,6 +602,14 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
+    if (estimatedDeliveryWeeks != null){
+      changeNodeTextContent(contentControlDocument, "delivery_time", estimatedDeliveryWeeks);
+    }else {
+      //the default value will be written
+      //but give a warning!
+      displayNotification("Estimated Delivery Time not entered", "The estimated delivery time will be set to the default value", "warning");
+    }
+
 
     // iterate over the packages and add them to the content control .xml file
     for (int i = packageNames.size()-1; i >= 0; i--) {
@@ -601,27 +621,40 @@ final class OfferManagerTab {
     // remove the placeholder rows in the .xml file
     removeRowInTable(contentControlDocument, packageNames.size());
 
-    LOG.info("TYPE {}", contentControlDocument.getDoctype());
     if(contentControlDocument.getDoctype() != null){
       throw new NullPointerException();
     }
+
     // apply the bindings to the .docx template file
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
 
-    //File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
-    String home = System.getProperty("user.home");
-    File file = new File(home+"/Downloads/" + projectQuotationNumber + ".docx");
+    File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
+    //String home = System.getProperty("user.home");
+    //File file = new File(home+"/Downloads/" + projectQuotationNumber + ".docx");
     // save updated document to output file
     try {
       assert wordProcessor != null;
-      wordProcessor.save(file, Docx4J.FLAG_SAVE_ZIP_FILE);
+      wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
       LOG.info("SAVE FILE: done saving the File");
+
+      fileDownloader.setFileDownloadResource(new StreamResource(new StreamResource.StreamSource() {
+        @Override
+        public InputStream getStream () {
+          try {
+            return new FileInputStream(tempFile);
+          } catch (FileNotFoundException e) {
+            e.printStackTrace();
+          }
+          return null;
+        }
+      }, projectQuotationNumber+".docx"));
+      LOG.info("FILE DOWNLOADER: opened File downloader");
+      //new FileResource(tempFile)
+
     } catch (Docx4JException e) {
       e.printStackTrace();
     }
 
-    //fileDownloader.setFileDownloadResource(new FileResource(file));
-    //LOG.info("FILE DOWNLOADER: opened File downloader");
 
     return true;
   }

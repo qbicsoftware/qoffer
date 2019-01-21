@@ -936,6 +936,46 @@ public enum Database {
     return success;
   }
 
+//  public boolean updateDeliveryStatus(int delivery_time, String offer_id) {
+//    boolean success = false;
+//    String sql = "UPDATE offers SET estimated_delivery_weeks = ? WHERE offer_id = ? ";
+//    // The following statement is an try-with-resources statement, which declares two resources,
+//    // conn and statement, which will be automatically closed when the try block terminates
+//    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
+//      statement.setInt(1, delivery_time);
+//      statement.setString(2, offer_id);
+//      int result = statement.executeUpdate();
+//      success = (result > 0);
+//    } catch (SQLException e) {
+//      e.printStackTrace();
+//    }
+//    try {
+//      conn.close();
+//    } catch (Exception e) { /* ignored */
+//    }
+//    return success;
+//  }
+//
+//  public int getDeliveryTime(int offer_id) {
+//    int time = 0;
+//    String sql = "SELECT estimated_delivery_weeks FROM offers WHERE offer_id = ?";
+//    // The following statement is an try-with-resources statement, which declares two resources,
+//    // conn and statement, which will be automatically closed when the try block terminates
+//    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
+//      statement.setInt(1, offer_id);
+//      ResultSet rs = statement.executeQuery();
+//      if (rs.next())
+//        time = rs.getInt(1);
+//    } catch (SQLException e) {
+//      e.printStackTrace();
+//    }
+//    try {
+//      conn.close();
+//    } catch (Exception e) { /* ignored */
+//    }
+//    return time;
+//  }
+
   public String getOfferDiscount(String offer_id) {
     String discount = "0%";
     String sql = "SELECT discount FROM offers WHERE offer_id = ?";
@@ -1433,4 +1473,5 @@ public enum Database {
       e.printStackTrace();
     }
   }
+
 }

@@ -27,8 +27,7 @@ import com.vaadin.ui.themes.ValoTheme;
 import life.qbic.dbase.Database;
 
 import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
+import java.util.*;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -60,6 +59,10 @@ final class OfferGeneratorTab {
 		completeButton.setDescription("Click here to finalize the offer and save it into the DB!");
 		completeButton.setIcon(FontAwesome.CHECK_CIRCLE);
 		completeButton.setEnabled(false);
+
+		Button refreshButton = new Button("Refresh");
+		refreshButton.setDescription("Refresh the listed available packages");
+		refreshButton.setIcon(FontAwesome.SPINNER);
 
 		// get the package ids and names as a bean container
 		final BeanItemContainer<String> packageIdsAndNamesContainer = new BeanItemContainer<>(String.class);
@@ -108,7 +111,7 @@ final class OfferGeneratorTab {
 		right.addComponent(packageDetailsLabel);
 
 		addListeners(db, managerTabs, selectedProjectComboBox, completeButton, addPackLayout,
-				selectPackagesTwinColSelect, packageDescriptionPanel, packageDetailsLabel, twinColSelectFilter);
+				selectPackagesTwinColSelect, packageDescriptionPanel, packageDetailsLabel, twinColSelectFilter, refreshButton);
 
 		addPackLayout.addComponent(selectedProjectComboBox);
 
@@ -131,7 +134,7 @@ final class OfferGeneratorTab {
 	private static void addListeners(Database db, TabSheet managerTabs, ComboBox selectedProjectComboBox,
 			Button completeButton, VerticalLayout addPackLayout,
 			TwinColSelect selectPackagesTwinColSelect, Panel packageDescriptionPanel,
-			Label packageDescriptionLabel, TextField twinColSelectFilter) {
+			Label packageDescriptionLabel, TextField twinColSelectFilter, Button refreshButton) {
 
 		final float[] totalPrice = new float[1];
 		final String[] descriptionText = new String[1];
@@ -155,6 +158,7 @@ final class OfferGeneratorTab {
 				} else {
 					addPackLayout.addComponent(twinColSelectFilter);
 					addPackLayout.addComponent(selectPackagesTwinColSelect);
+					addPackLayout.addComponent(refreshButton);
 					addPackLayout.addComponent(packageDescriptionPanel);
 					addPackLayout.addComponent(completeButton);
 				}
@@ -245,6 +249,25 @@ final class OfferGeneratorTab {
 				}
 			}
 
+		});
+
+		refreshButton.addClickListener(new Button.ClickListener() {
+
+			@Override
+			public void buttonClick(Button.ClickEvent event){
+				//refresh the content of the left TwinCol (read DB again)
+				final BeanItemContainer<String> packageIdsAndNamesContainer = new BeanItemContainer<>(String.class);
+				ArrayList<String> completePackageList = db.getPackageIdsAndNames();
+
+				packageIdsAndNamesContainer.addAll(completePackageList);
+				Object selectedValues = selectPackagesTwinColSelect.getValue();
+
+				//update list:
+				selectPackagesTwinColSelect.setContainerDataSource(packageIdsAndNamesContainer);
+				//select what was already selected
+				selectPackagesTwinColSelect.setValue(selectedValues);
+
+			}
 		});
 
 		completeButton.addClickListener(new Button.ClickListener() {

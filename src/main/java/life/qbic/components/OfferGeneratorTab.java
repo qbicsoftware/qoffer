@@ -27,7 +27,9 @@ import com.vaadin.ui.themes.ValoTheme;
 import life.qbic.dbase.Database;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -252,6 +254,9 @@ final class OfferGeneratorTab {
 		});
 
 		refreshButton.addClickListener(new Button.ClickListener() {
+
+			//private static final long serialVersionUID = 8181926819540586585L;
+
 
 			@Override
 			public void buttonClick(Button.ClickEvent event){

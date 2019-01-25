@@ -16,6 +16,8 @@
 
 package life.qbic.components;
 
+import life.qbic.portal.portlet.QofferUIPortlet;
+
 import com.vaadin.data.Property;
 import com.vaadin.data.util.sqlcontainer.SQLContainer;
 import com.vaadin.data.util.sqlcontainer.query.TableQuery;
@@ -177,7 +179,7 @@ final class OfferManagerTab {
 
 
     offerManagerGrid.setColumnOrder("offer_id", "offer_project_reference", "offer_number", "offer_name",
-        "offer_description", "offer_total", "offer_facility", "offer_status", "offer_date", "estimated_delivery_weeks", "last_edited", "added_by");
+        "offer_description", "offer_total", "offer_facility", "offer_status", "offer_date", "estimated_delivery_weeks", "last_edited", "added_by"); // "estimated_delivery_weeks",
 
     offerManagerGrid.removeColumn("discount");
     offerManagerGrid.removeColumn("internal");
@@ -348,7 +350,7 @@ final class OfferManagerTab {
       }
     });
 
-/*    // adds the file creation and the export functionality to the print offer button (without FileDownloader)
+/*
     generateOfferButton.addClickListener((Button.ClickListener) event -> {
       try {
         generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
@@ -550,8 +552,7 @@ final class OfferManagerTab {
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_name").getValue().toString();
     if (projectTitle == null) {
       displayNotification("Offer name is null", "Warning: The offer name for the current offer is null." +
-          "The respective fields in the .docx file will thus hold the placeholder values. Please consider " +
-          "setting the offer name in the Offer Manager tab.", "warning");
+          "Please consider setting the offer name in the Offer Manager tab.", "warning");
       //added to prevent fail if titel is null -> no download should be triggered
       return false;
     }
@@ -561,8 +562,7 @@ final class OfferManagerTab {
     String projectDescription = projectDescriptionObject == null ? null : projectDescriptionObject.toString();
     if (projectDescription == null) {
       displayNotification("Offer description is null.", "Warning: The offer description for the current " +
-          "offer is null. The respective fields in the .docx file will thus hold the placeholder values. Please " +
-          "consider setting the offer name in the Offer Manager tab.", "warning");
+          "offer is null. Please consider setting the offer name in the Offer Manager tab.", "warning");
       //added to prevent fail if description is null -> no download should be triggered
       return false;
     }

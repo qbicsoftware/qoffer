@@ -22,6 +22,8 @@ import com.vaadin.ui.GridLayout.OverlapsException;
 import com.vaadin.ui.themes.ValoTheme;
 import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -42,6 +44,9 @@ public class qOfferManager extends CustomComponent {
   private static List<String> packageCounts = new ArrayList<>();
   private static List<String> packageUnitPrices = new ArrayList<>();
   private static List<String> packageTotalPrices = new ArrayList<>();
+
+  private static final Logger LOG = LogManager.getLogger(qOfferManager.class);
+
 
   /**
    * 

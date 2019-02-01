@@ -485,7 +485,7 @@ final class OfferManagerTab {
     // template .docx file containing the bindings
     //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
     //String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable_updated.docx"; //changed TempFile
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_recolored.docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_TEMPLATE_FINAL_bound.docx"; //changed TempFile
 
 
     String clientName =
@@ -548,11 +548,21 @@ final class OfferManagerTab {
       projectManagerMail = "Mail not found";
     }
 
+    //TODO inserted this not tested yet
+    String projectID= //look-up: is there a thing as "offer_id" or how is it called?
+            container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_id").getValue().toString();
+    if (projectID == null) {
+      displayNotification("Offer ID is null", "Warning: The offer ID for the current offer is null." +
+              "Please consider setting the offer ID in the Offer Manager tab.", "error");
+      //added to prevent fail if ID is null -> no download should be triggered
+      return false;
+    }
+
     String projectTitle =
         container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_name").getValue().toString();
     if (projectTitle == null) {
       displayNotification("Offer name is null", "Warning: The offer name for the current offer is null." +
-          "Please consider setting the offer name in the Offer Manager tab.", "warning");
+          "Please consider setting the offer name in the Offer Manager tab.", "error");
       //added to prevent fail if titel is null -> no download should be triggered
       return false;
     }
@@ -562,7 +572,7 @@ final class OfferManagerTab {
     String projectDescription = projectDescriptionObject == null ? null : projectDescriptionObject.toString();
     if (projectDescription == null) {
       displayNotification("Offer description is null.", "Warning: The offer description for the current " +
-          "offer is null. Please consider setting the offer name in the Offer Manager tab.", "warning");
+          "offer is null. Please consider setting the offer name in the Offer Manager tab.", "error");
       //added to prevent fail if description is null -> no download should be triggered
       return false;
     }
@@ -592,7 +602,7 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "client_university", umbrellaOrganization);
     changeNodeTextContent(contentControlDocument, "client_address", street);
     changeNodeTextContent(contentControlDocument, "client_town", cityZipCodeAndCounty);
-    changeNodeTextContent(contentControlDocument, "client_email", clientEmail);
+    //changeNodeTextContent(contentControlDocument, "client_email", clientEmail);
     changeNodeTextContent(contentControlDocument, "project_reference", projectReference);
     changeNodeTextContent(contentControlDocument, "quotation_number", projectQuotationNumber);
     changeNodeTextContent(contentControlDocument, "name", projectManager);
@@ -603,7 +613,7 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
     if (estimatedDeliveryWeeks != null){
-      changeNodeTextContent(contentControlDocument, "delivery_time", estimatedDeliveryWeeks);
+      changeNodeTextContent(contentControlDocument, "delivery_time", "Approx. "+estimatedDeliveryWeeks+" upon data retrieval.");
     }else {
       //the default value will be written
       //but give a warning!
@@ -613,7 +623,7 @@ final class OfferManagerTab {
 
     // iterate over the packages and add them to the content control .xml file
     for (int i = packageNames.size()-1; i >= 0; i--) {
-      addRowToTable(contentControlDocument, 1, packageNames.get(i) + ": "+
+      addRowToTable(contentControlDocument, 1, "add the workpackage id",packageNames.get(i) + ": "+
               packageDescriptions.get(i), packageCounts.get(i), formatCurrency(packageUnitPrices.get(i)),
           formatCurrency(packageTotalPrices.get(i)));
     }

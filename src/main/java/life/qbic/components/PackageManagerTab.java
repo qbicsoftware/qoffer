@@ -46,7 +46,7 @@ final class PackageManagerTab {
   private static BigDecimal externalCommercialPriceModifier = new BigDecimal("2.0");
 
   // price modifier for sequencing and mass spectrometry packages
-  private static BigDecimal externalPriceModifier = new BigDecimal("1.1");
+  private static BigDecimal externalPriceModifier = new BigDecimal("1.5");
 
   private static FileDownloader fileDownloader;
   //private static String pathOnServer = getPathOnServer();

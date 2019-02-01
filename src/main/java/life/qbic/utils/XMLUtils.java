@@ -38,7 +38,7 @@ import java.io.IOException;
 /**
  * This class holds several functions to modify the .xml document which holds the content for the bindings of the
  * template .docx file:
- *      - {@link XMLUtils#addRowToTable(Document, int, String, String, String, String)}: Adds a new row to
+ *      - {@link XMLUtils#addRowToTable(Document, int, String, String, String, String, String)}: Adds a new row to
  *      the table within the xml document
  *      - {@link XMLUtils#removeRowInTable(Document, int)}: Removes the row with index rowIndex from the table
  *      - {@link XMLUtils#changeRowInTable(Document, int, String, String, String, String, String)}: Changes the text
@@ -61,11 +61,17 @@ public class XMLUtils {
    * @param workPackageUnitPrice: text content of the work package unit price node
    * @param workPackageAmount: text content of the work package amount node
    */
-  public static void addRowToTable(Document doc, int rowIndex, String workPackageName, String workPackageQuantity,
+  public static void addRowToTable(Document doc, int rowIndex, String workPackageID, String workPackageName, String workPackageQuantity,
                                    String workPackageUnitPrice, String workPackageAmount) {
 
     // create the element we want to insert
     Element rowToInsert = doc.createElement("row");
+
+    // add the row elements to the row element we want to insert
+    Element workPackageIDElement = doc.createElement("id");
+    workPackageIDElement.setTextContent(workPackageID);
+    rowToInsert.appendChild(workPackageIDElement);
+
 
     // add the row elements to the row element we want to insert
     Element workPackageNameElement = doc.createElement("work_package_name");

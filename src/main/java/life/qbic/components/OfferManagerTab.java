@@ -238,6 +238,8 @@ final class OfferManagerTab {
     List<String> packageCounts = qOfferManager.getPackageCounts();
     List<String> packageUnitPrices = qOfferManager.getPackageUnitPrices();
     List<String> packageTotalPrices = qOfferManager.getPackageTotalPrices();
+    List<String> packageIDs = qOfferManager.getPackageIDs();
+
 
     offerManagerGrid.addSelectionListener(selectionEvent -> {
 
@@ -367,7 +369,7 @@ final class OfferManagerTab {
 
     try {
       setupOfferFileExportFunctionality(db, generateOfferButton, container, packageNames, packageDescriptions, packageCounts,
-          packageUnitPrices, packageTotalPrices);
+          packageUnitPrices, packageTotalPrices, packageIDs);
     } catch (IOException e) {
       displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
           "again.", "error");
@@ -422,19 +424,23 @@ final class OfferManagerTab {
   private static void setupOfferFileExportFunctionality(Database db, Button printOfferButton, SQLContainer container,
                                                         List<String> packageNames, List<String> packageDescriptions,
                                                         List<String> packageCounts, List<String> packageUnitPrices,
-                                                        List<String> packageTotalPrices) throws IOException {
+                                                        List<String> packageTotalPrices, List<String> packageIDs) throws IOException{
     // init with some non-existent file
     fileDownloader = new FileDownloader(new FileResource(new File("temp"))) {
       @Override
       public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException {
 
-        // fails if no offer has been selected
-        boolean success = generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
-            packageTotalPrices, fileDownloader);
+        try {
+          // fails if no offer has been selected
+          boolean success = generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
+                  packageTotalPrices, packageIDs, fileDownloader);
 
-        // offer file could not be generated, so we return nothing
-        if (!success) {
-          return false;
+          // offer file could not be generated, so we return nothing
+          if (!success) {
+            return false;
+          }
+        } catch (InterruptedException ie){
+          ie.printStackTrace();
         }
         // handle the download of the file
         return super.handleConnectorRequest(request, response, path);
@@ -458,8 +464,8 @@ final class OfferManagerTab {
    */
   private static boolean generateOfferFile(SQLContainer container, Database db, List<String> packageNames,
                                         List<String> packageDescriptions, List<String> packageCounts,
-                                        List<String> packageUnitPrices, List<String> packageTotalPrices,
-                                        FileDownloader fileDownloader) throws IOException {
+                                        List<String> packageUnitPrices, List<String> packageTotalPrices, List<String> packageIDs,
+                                        FileDownloader fileDownloader) throws IOException, InterruptedException {
     if (offerManagerGrid.getSelectedRow() == null) {
       displayNotification("oOps! Forgot something?!",
           "Please make sure that you select an offer.", "error");
@@ -529,13 +535,14 @@ final class OfferManagerTab {
       cityZipCodeAndCounty = zipCode + " " + city + ", " + country;
     }
 
-    String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1);
+    String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1).split("_")[0];
 
+    /* deleted for 1.1.0-SNAPSHOT
     String clientEmail = db.getClientEmailFromProjectRef(projectReference);
     //TODO test, delete later
     if(clientEmail.equals("")){
       clientEmail = " ";
-    }
+    }*/
 
     // TODO: for liferay it probably needs some adjustments, since I couldn't test this properly..
     String projectManager;
@@ -549,7 +556,7 @@ final class OfferManagerTab {
     }
 
     //TODO inserted this not tested yet
-    String projectID= //look-up: is there a thing as "offer_id" or how is it called?
+    String projectID = //look-up: is there a thing as "offer_id" or how is it called?
             container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_id").getValue().toString();
     if (projectID == null) {
       displayNotification("Offer ID is null", "Warning: The offer ID for the current offer is null." +
@@ -623,7 +630,7 @@ final class OfferManagerTab {
 
     // iterate over the packages and add them to the content control .xml file
     for (int i = packageNames.size()-1; i >= 0; i--) {
-      addRowToTable(contentControlDocument, 1, "add the workpackage id",packageNames.get(i) + ": "+
+      addRowToTable(contentControlDocument, 1, packageIDs.get(i),packageNames.get(i) + ": "+
               packageDescriptions.get(i), packageCounts.get(i), formatCurrency(packageUnitPrices.get(i)),
           formatCurrency(packageTotalPrices.get(i)));
     }
@@ -665,6 +672,7 @@ final class OfferManagerTab {
       e.printStackTrace();
     }
 
+    Thread.sleep(1000);
 
     return true;
   }

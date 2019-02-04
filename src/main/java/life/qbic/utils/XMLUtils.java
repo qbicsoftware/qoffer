@@ -68,7 +68,7 @@ public class XMLUtils {
     Element rowToInsert = doc.createElement("row");
 
     // add the row elements to the row element we want to insert
-    Element workPackageIDElement = doc.createElement("id");
+    Element workPackageIDElement = doc.createElement("work_package_id");
     workPackageIDElement.setTextContent(workPackageID);
     rowToInsert.appendChild(workPackageIDElement);
 

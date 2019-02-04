@@ -44,6 +44,8 @@ public class qOfferManager extends CustomComponent {
   private static List<String> packageCounts = new ArrayList<>();
   private static List<String> packageUnitPrices = new ArrayList<>();
   private static List<String> packageTotalPrices = new ArrayList<>();
+  private static List<String> packageIDs = new ArrayList<>();
+
 
   private static final Logger LOG = LogManager.getLogger(qOfferManager.class);
 
@@ -79,6 +81,10 @@ public class qOfferManager extends CustomComponent {
 
   static List<String> getPackageTotalPrices() {
     return packageTotalPrices;
+  }
+
+  static List<String> getPackageIDs() {
+    return packageIDs;
   }
 
   public qOfferManager() throws IOException {

@@ -53,6 +53,7 @@ final class OfferManagerTab {
   private static RefreshableGrid offerManagerGrid;
   private static VerticalLayout detailsLayout;
   private static ComboBox packageGroupComboBox;
+
   //private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
   private static final Logger LOG = LogManager.getLogger(OfferManagerTab.class);
 
@@ -176,8 +177,6 @@ final class OfferManagerTab {
     offerManagerGrid.getColumn("estimated_delivery_weeks").setHeaderCaption("Estimated Delivery");
 
 
-
-
     offerManagerGrid.setColumnOrder("offer_id", "offer_project_reference", "offer_number", "offer_name",
         "offer_description", "offer_total", "offer_facility", "offer_status", "offer_date", "estimated_delivery_weeks", "last_edited", "added_by"); // "estimated_delivery_weeks",
 
@@ -247,7 +246,6 @@ final class OfferManagerTab {
       Object selected = ((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow();
 
       if (selected != null) {
-
         // check if any of the packages in the current offer has no package_grp (e.g. "Bioinformatics Analysis",
         // "Project Management", etc.) associated with it and display a warning for the user
         ArrayList<String> packageIdsWithoutPackageGroup =
@@ -352,17 +350,19 @@ final class OfferManagerTab {
       }
     });
 
-/*
-    generateOfferButton.addClickListener((Button.ClickListener) event -> {
+
+/*    generateOfferButton.addClickListener((Button.ClickListener) event -> {
       try {
-        generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
-                packageTotalPrices, fileDownloader);
+        setupOfferFileExportFunctionality(db, generateOfferButton, container, packageNames, packageDescriptions, packageCounts,
+          packageUnitPrices, packageTotalPrices, packageIDs);
         displayNotification("Successfully downloaded", "The File can be found in the Downloads folder","success");
       }
       catch(IOException io){
         displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
                 "again.", "error");
         io.printStackTrace();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
       }
 
     });*/
@@ -425,10 +425,14 @@ final class OfferManagerTab {
                                                         List<String> packageNames, List<String> packageDescriptions,
                                                         List<String> packageCounts, List<String> packageUnitPrices,
                                                         List<String> packageTotalPrices, List<String> packageIDs) throws IOException{
+
+
     // init with some non-existent file
     fileDownloader = new FileDownloader(new FileResource(new File("temp"))) {
       @Override
       public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException {
+
+        UI.getCurrent().setPollInterval(500);
 
         try {
           // fails if no offer has been selected
@@ -436,14 +440,17 @@ final class OfferManagerTab {
                   packageTotalPrices, packageIDs, fileDownloader);
 
           // offer file could not be generated, so we return nothing
-          if (!success) {
-            return false;
-          }
+          //if (!success) {
+          //  return false;
+          //}
         } catch (InterruptedException ie){
           ie.printStackTrace();
+        } finally {
+          UI.getCurrent().setPollInterval(-1);
+          // handle the download of the file
+          return super.handleConnectorRequest(request, response, path);
         }
-        // handle the download of the file
-        return super.handleConnectorRequest(request, response, path);
+
       }
     };
     fileDownloader.extend(printOfferButton);
@@ -475,6 +482,9 @@ final class OfferManagerTab {
     displayNotification("File is being generated", "Please wait a few seconds while the file is " +
             "being generated..", "warning");
 
+    Object selected = ((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow();
+
+
     // since we take the package specific values from the grid showing the packages for the current offers,
     // we need to check whether all packages are displayed or e.g. only the sequencing packages
     String selectedPackageGroup = packageGroupComboBox.getValue().toString();
@@ -495,17 +505,18 @@ final class OfferManagerTab {
 
 
     String clientName =
-        container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
+        container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_facility").getValue()
             .toString();
 
+    //offerManagerGrid.getSelectedRow()
     String offerNumber =
-        container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_number").getValue()
+        container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_number").getValue()
             .toString();
 
     String estimatedDeliveryWeeks = null;
 
-    if(container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue() != null){
-      estimatedDeliveryWeeks = container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue().toString()+" weeks";
+    if(container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue() != null){
+      estimatedDeliveryWeeks = container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue().toString()+" weeks";
     }
 
     String[] address = db.getAddressForPerson(clientName);
@@ -557,7 +568,7 @@ final class OfferManagerTab {
 
     //TODO inserted this not tested yet
     String projectID = //look-up: is there a thing as "offer_id" or how is it called?
-            container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_id").getValue().toString();
+            container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_id").getValue().toString();
     if (projectID == null) {
       displayNotification("Offer ID is null", "Warning: The offer ID for the current offer is null." +
               "Please consider setting the offer ID in the Offer Manager tab.", "error");
@@ -566,7 +577,7 @@ final class OfferManagerTab {
     }
 
     String projectTitle =
-        container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_name").getValue().toString();
+        container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_name").getValue().toString();
     if (projectTitle == null) {
       displayNotification("Offer name is null", "Warning: The offer name for the current offer is null." +
           "Please consider setting the offer name in the Offer Manager tab.", "error");
@@ -574,7 +585,7 @@ final class OfferManagerTab {
       return false;
     }
 
-    Object projectDescriptionObject = container.getItem(offerManagerGrid.getSelectedRow())
+    Object projectDescriptionObject = container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow())
         .getItemProperty("offer_description").getValue();
     String projectDescription = projectDescriptionObject == null ? null : projectDescriptionObject.toString();
     if (projectDescription == null) {
@@ -586,7 +597,7 @@ final class OfferManagerTab {
 
     DecimalFormat offerPriceFormatter = new DecimalFormat("###,###.###");
     String offerTotal =
-        offerPriceFormatter.format(Float.valueOf(container.getItem(offerManagerGrid.getSelectedRow())
+        offerPriceFormatter.format(Float.valueOf(container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow())
             .getItemProperty("offer_total").getValue().toString()));
 
     String clientSurname = clientName.split(" ")[clientName.split(" ").length-1];
@@ -654,7 +665,37 @@ final class OfferManagerTab {
       wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
       LOG.info("SAVE FILE: done saving the File");
 
+      /*
+      DownloadStream stream = new DownloadStream(getStreamSource().getStream(), "", "");
+      stream.setParameter("Content-Disposition", "attachment;filename=" + "");
+      // This magic incantation should prevent anyone from caching the data
+      stream.setParameter("Cache-Control", "private,no-cache,no-store");
+      // In theory <=0 disables caching. In practice Chrome, Safari (and, apparently, IE) all ignore <=0. Set to 1s
+      stream.setCacheTime(1000);
+
+      oder:
+
+      StreamResource.setCacheTime(0)
+
+      */
+
+     // fileDownloader.setFileDownloadResource();
+      //FileResource fr = new FileResource(tempFile);
+      //fr.setCacheTime(0);
+
+      //final DownloadStream ds = new DownloadStream(new FileInputStream(tempFile),tempFile.getPath(), projectQuotationNumber+".docx");
+
+      //ds.setParameter("Content-Disposition", "attachment;filename=" + "");
+      // This magic incantation should prevent anyone from caching the data
+      //ds.setParameter("Cache-Control", "private,no-cache,no-store");
+      // In theory <=0 disables caching. In practice Chrome, Safari (and, apparently, IE) all ignore <=0. Set to 1s
+      //ds.setCacheTime(1000);
+
+      //fileDownloader.setFileDownloadResource(ds.getClass().getResource("test"));
+
       fileDownloader.setFileDownloadResource(new StreamResource(new StreamResource.StreamSource() {
+
+
         @Override
         public InputStream getStream () {
           try {
@@ -664,7 +705,10 @@ final class OfferManagerTab {
           }
           return null;
         }
+
       }, projectQuotationNumber+".docx"));
+
+
       LOG.info("FILE DOWNLOADER: opened File downloader");
       //new FileResource(tempFile)
 

@@ -22,6 +22,7 @@ import com.vaadin.server.FileResource;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Page;
 import com.vaadin.shared.Position;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.themes.ValoTheme;
 
 import java.io.File;
@@ -73,7 +74,7 @@ public final class qOfferManagerUtils {
     com.vaadin.ui.Notification notify = new com.vaadin.ui.Notification(title, description);
     notify.setPosition(Position.TOP_CENTER);
     switch (type) {
-      case "error":
+      case "error": //16000
         notify.setDelayMsec(16000);
         notify.setIcon(FontAwesome.FROWN_O);
         notify.setStyleName(ValoTheme.NOTIFICATION_ERROR + " " + ValoTheme.NOTIFICATION_CLOSABLE);
@@ -94,7 +95,11 @@ public final class qOfferManagerUtils {
         notify.setStyleName(ValoTheme.NOTIFICATION_TRAY + " " + ValoTheme.NOTIFICATION_CLOSABLE);
         break;
     }
-    notify.show(Page.getCurrent());
+    // make sure that, if we are running this from a background thread, we are accessing the UI in a thread-safe way
+    UI.getCurrent().access(() -> {
+        notify.show(Page.getCurrent());
+    });
+
   }
 
   /**

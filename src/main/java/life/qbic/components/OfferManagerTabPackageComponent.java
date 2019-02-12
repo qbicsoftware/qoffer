@@ -504,6 +504,7 @@ final class OfferManagerTabPackageComponent {
     List<String> packageCounts = qOfferManager.getPackageCounts();
     List<String> packageUnitPrices = qOfferManager.getPackageUnitPrices();
     List<String> packageTotalPrices = qOfferManager.getPackageTotalPrices();
+    List<String> packageIDs = qOfferManager.getPackageIDs();
 
     // clear all the lists from the qOfferManager
     packageNames.clear();
@@ -511,11 +512,13 @@ final class OfferManagerTabPackageComponent {
     packageCounts.clear();
     packageUnitPrices.clear();
     packageTotalPrices.clear();
+    packageIDs.clear();
 
     for (Object packsContainerRowId : packsContainer.getItemIds()) {
 
       String packageId = packsContainer
           .getContainerProperty(packsContainerRowId, "package_id").getValue().toString();
+      packageIDs.add(packageId);
 
       // package description can be empty, since it's not really needed
       Object packageDescription = packsContainer

@@ -60,7 +60,7 @@ is no automatic price calculation available.
 Package group | Internal | External Academic | External Commercial
 --- | --- | --- | ---
 Bioinformatics Analysis/Project Management | 1.0 | 1.3 | 2.0
-Sequencing/Mass Spectrometry | 1.0 | 1.1 | 1.1
+Sequencing/Mass Spectrometry | 1.0 | 1.5 | 1.5
 Other | 1.0 | - | -
 
 The prices are automatically calculated when the check box

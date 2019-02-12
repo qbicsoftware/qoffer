@@ -16,6 +16,8 @@
 
 package life.qbic.components;
 
+import life.qbic.portal.portlet.QofferUIPortlet;
+
 import com.vaadin.data.Property;
 import com.vaadin.data.util.sqlcontainer.SQLContainer;
 import com.vaadin.data.util.sqlcontainer.query.TableQuery;
@@ -24,7 +26,6 @@ import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
 import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
-import life.qbic.portal.portlet.QofferUIPortlet;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
@@ -52,6 +53,7 @@ final class OfferManagerTab {
   private static RefreshableGrid offerManagerGrid;
   private static VerticalLayout detailsLayout;
   private static ComboBox packageGroupComboBox;
+
   //private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
   private static final Logger LOG = LogManager.getLogger(OfferManagerTab.class);
 
@@ -137,6 +139,8 @@ final class OfferManagerTab {
     SQLContainer container = new SQLContainer(tq);
     container.setAutoCommit(true);
 
+    //manually add a "estimated delivery" col -> unsupportedOperationException
+    //container.addContainerProperty("offer_estimated_delivery", String.class, null);
     offerManagerGrid = new RefreshableGrid(container);
 
     // add the filters to the grid
@@ -168,9 +172,13 @@ final class OfferManagerTab {
     offerManagerGrid.getColumn("offer_date").setHeaderCaption("Date").setEditable(false);
     offerManagerGrid.getColumn("last_edited").setHeaderCaption("Last edited").setEditable(false);
     offerManagerGrid.getColumn("added_by").setHeaderCaption("Added by").setEditable(false);
+    //add estimated delivery also for OpenBIS (done for mariaDB)
+
+    offerManagerGrid.getColumn("estimated_delivery_weeks").setHeaderCaption("Estimated Delivery");
+
 
     offerManagerGrid.setColumnOrder("offer_id", "offer_project_reference", "offer_number", "offer_name",
-        "offer_description", "offer_total", "offer_facility", "offer_status", "offer_date", "last_edited", "added_by");
+        "offer_description", "offer_total", "offer_facility", "offer_status", "offer_date", "estimated_delivery_weeks", "last_edited", "added_by"); // "estimated_delivery_weeks",
 
     offerManagerGrid.removeColumn("discount");
     offerManagerGrid.removeColumn("internal");
@@ -229,6 +237,8 @@ final class OfferManagerTab {
     List<String> packageCounts = qOfferManager.getPackageCounts();
     List<String> packageUnitPrices = qOfferManager.getPackageUnitPrices();
     List<String> packageTotalPrices = qOfferManager.getPackageTotalPrices();
+    List<String> packageIDs = qOfferManager.getPackageIDs();
+
 
     offerManagerGrid.addSelectionListener(selectionEvent -> {
 
@@ -236,7 +246,6 @@ final class OfferManagerTab {
       Object selected = ((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow();
 
       if (selected != null) {
-
         // check if any of the packages in the current offer has no package_grp (e.g. "Bioinformatics Analysis",
         // "Project Management", etc.) associated with it and display a warning for the user
         ArrayList<String> packageIdsWithoutPackageGroup =
@@ -341,15 +350,32 @@ final class OfferManagerTab {
       }
     });
 
-    // adds the file creation and the export functionality to the print offer button
+
+/*    generateOfferButton.addClickListener((Button.ClickListener) event -> {
+      try {
+        setupOfferFileExportFunctionality(db, generateOfferButton, container, packageNames, packageDescriptions, packageCounts,
+          packageUnitPrices, packageTotalPrices, packageIDs);
+        displayNotification("Successfully downloaded", "The File can be found in the Downloads folder","success");
+      }
+      catch(IOException io){
+        displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
+                "again.", "error");
+        io.printStackTrace();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+
+    });*/
+
     try {
       setupOfferFileExportFunctionality(db, generateOfferButton, container, packageNames, packageDescriptions, packageCounts,
-          packageUnitPrices, packageTotalPrices);
+          packageUnitPrices, packageTotalPrices, packageIDs);
     } catch (IOException e) {
       displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
           "again.", "error");
       e.printStackTrace();
     }
+
 
     try {
       setupTableExportFunctionality(container, exportTableButton);
@@ -398,22 +424,33 @@ final class OfferManagerTab {
   private static void setupOfferFileExportFunctionality(Database db, Button printOfferButton, SQLContainer container,
                                                         List<String> packageNames, List<String> packageDescriptions,
                                                         List<String> packageCounts, List<String> packageUnitPrices,
-                                                        List<String> packageTotalPrices) throws IOException {
+                                                        List<String> packageTotalPrices, List<String> packageIDs) throws IOException{
+
+
     // init with some non-existent file
     fileDownloader = new FileDownloader(new FileResource(new File("temp"))) {
       @Override
       public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException {
 
-        // fails if no offer has been selected
-        boolean success = generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
-            packageTotalPrices, fileDownloader);
+        UI.getCurrent().setPollInterval(500);
 
-        // offer file could not be generated, so we return nothing
-        if (!success) {
-          return false;
+        try {
+          // fails if no offer has been selected
+          boolean success = generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
+                  packageTotalPrices, packageIDs, fileDownloader);
+
+          // offer file could not be generated, so we return nothing
+          //if (!success) {
+          //  return false;
+          //}
+        } catch (InterruptedException ie){
+          ie.printStackTrace();
+        } finally {
+          UI.getCurrent().setPollInterval(-1);
+          // handle the download of the file
+          return super.handleConnectorRequest(request, response, path);
         }
-        // handle the download of the file
-        return super.handleConnectorRequest(request, response, path);
+
       }
     };
     fileDownloader.extend(printOfferButton);
@@ -434,8 +471,8 @@ final class OfferManagerTab {
    */
   private static boolean generateOfferFile(SQLContainer container, Database db, List<String> packageNames,
                                         List<String> packageDescriptions, List<String> packageCounts,
-                                        List<String> packageUnitPrices, List<String> packageTotalPrices,
-                                        FileDownloader fileDownloader) throws IOException {
+                                        List<String> packageUnitPrices, List<String> packageTotalPrices, List<String> packageIDs,
+                                        FileDownloader fileDownloader) throws IOException, InterruptedException {
     if (offerManagerGrid.getSelectedRow() == null) {
       displayNotification("oOps! Forgot something?!",
           "Please make sure that you select an offer.", "error");
@@ -444,6 +481,9 @@ final class OfferManagerTab {
 
     displayNotification("File is being generated", "Please wait a few seconds while the file is " +
             "being generated..", "warning");
+
+    Object selected = ((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow();
+
 
     // since we take the package specific values from the grid showing the packages for the current offers,
     // we need to check whether all packages are displayed or e.g. only the sequencing packages
@@ -460,17 +500,24 @@ final class OfferManagerTab {
     String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
     // template .docx file containing the bindings
     //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
-    //String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable.docx"; //changed TempFile
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable_updated.docx"; //changed TempFile
+    //String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_resizedTable_updated.docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_TEMPLATE_FINAL_bound.docx"; //changed TempFile
 
 
     String clientName =
-        container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_facility").getValue()
+        container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_facility").getValue()
             .toString();
 
+    //offerManagerGrid.getSelectedRow()
     String offerNumber =
-        container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_number").getValue()
+        container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_number").getValue()
             .toString();
+
+    String estimatedDeliveryWeeks = null;
+
+    if(container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue() != null){
+      estimatedDeliveryWeeks = container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue().toString()+" weeks";
+    }
 
     String[] address = db.getAddressForPerson(clientName);
     String groupAcronym = null;
@@ -499,13 +546,14 @@ final class OfferManagerTab {
       cityZipCodeAndCounty = zipCode + " " + city + ", " + country;
     }
 
-    String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1);
+    String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1).split("_")[0];
 
+    /* deleted for 1.1.0-SNAPSHOT
     String clientEmail = db.getClientEmailFromProjectRef(projectReference);
     //TODO test, delete later
     if(clientEmail.equals("")){
       clientEmail = " ";
-    }
+    }*/
 
     // TODO: for liferay it probably needs some adjustments, since I couldn't test this properly..
     String projectManager;
@@ -518,26 +566,38 @@ final class OfferManagerTab {
       projectManagerMail = "Mail not found";
     }
 
-    String projectTitle =
-        container.getItem(offerManagerGrid.getSelectedRow()).getItemProperty("offer_name").getValue().toString();
-    if (projectTitle == null) {
-      displayNotification("Offer name is null", "Warning: The offer name for the current offer is null." +
-          "The respective fields in the .docx file will thus hold the placeholder values. Please consider " +
-          "setting the offer name in the Offer Manager tab.", "warning");
+    //TODO inserted this not tested yet
+    String projectID = //look-up: is there a thing as "offer_id" or how is it called?
+            container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_id").getValue().toString();
+    if (projectID == null) {
+      displayNotification("Offer ID is null", "Warning: The offer ID for the current offer is null." +
+              "Please consider setting the offer ID in the Offer Manager tab.", "error");
+      //added to prevent fail if ID is null -> no download should be triggered
+      return false;
     }
 
-    Object projectDescriptionObject = container.getItem(offerManagerGrid.getSelectedRow())
+    String projectTitle =
+        container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_name").getValue().toString();
+    if (projectTitle == null) {
+      displayNotification("Offer name is null", "Warning: The offer name for the current offer is null." +
+          "Please consider setting the offer name in the Offer Manager tab.", "error");
+      //added to prevent fail if titel is null -> no download should be triggered
+      return false;
+    }
+
+    Object projectDescriptionObject = container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow())
         .getItemProperty("offer_description").getValue();
     String projectDescription = projectDescriptionObject == null ? null : projectDescriptionObject.toString();
     if (projectDescription == null) {
       displayNotification("Offer description is null.", "Warning: The offer description for the current " +
-          "offer is null. The respective fields in the .docx file will thus hold the placeholder values. Please " +
-          "consider setting the offer name in the Offer Manager tab.", "warning");
+          "offer is null. Please consider setting the offer name in the Offer Manager tab.", "error");
+      //added to prevent fail if description is null -> no download should be triggered
+      return false;
     }
 
     DecimalFormat offerPriceFormatter = new DecimalFormat("###,###.###");
     String offerTotal =
-        offerPriceFormatter.format(Float.valueOf(container.getItem(offerManagerGrid.getSelectedRow())
+        offerPriceFormatter.format(Float.valueOf(container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow())
             .getItemProperty("offer_total").getValue().toString()));
 
     String clientSurname = clientName.split(" ")[clientName.split(" ").length-1];
@@ -546,6 +606,9 @@ final class OfferManagerTab {
 
     SimpleDateFormat currentDateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy", Locale.ENGLISH);
     String currentDate = currentDateFormat.format(new Date());
+
+    //todo exchange delivery time in offer -> change in double clicked field is saved and written to file
+   // db.getDeliveryTime(db);
 
     // get the xml document holding the content for the bindings in the docx template file
     org.w3c.dom.Document contentControlDocument = readXMLFile(contentControlFilename);
@@ -557,7 +620,7 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "client_university", umbrellaOrganization);
     changeNodeTextContent(contentControlDocument, "client_address", street);
     changeNodeTextContent(contentControlDocument, "client_town", cityZipCodeAndCounty);
-    changeNodeTextContent(contentControlDocument, "client_email", clientEmail);
+    //changeNodeTextContent(contentControlDocument, "client_email", clientEmail);
     changeNodeTextContent(contentControlDocument, "project_reference", projectReference);
     changeNodeTextContent(contentControlDocument, "quotation_number", projectQuotationNumber);
     changeNodeTextContent(contentControlDocument, "name", projectManager);
@@ -567,10 +630,18 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
+    if (estimatedDeliveryWeeks != null){
+      changeNodeTextContent(contentControlDocument, "delivery_time", "Approx. "+estimatedDeliveryWeeks+" upon data retrieval.");
+    }else {
+      //the default value will be written
+      //but give a warning!
+      displayNotification("Estimated Delivery Time not entered", "The estimated delivery time will be set to the default value", "warning");
+    }
+
 
     // iterate over the packages and add them to the content control .xml file
     for (int i = packageNames.size()-1; i >= 0; i--) {
-      addRowToTable(contentControlDocument, 1, packageNames.get(i) + ": "+
+      addRowToTable(contentControlDocument, 1, packageIDs.get(i),packageNames.get(i) + ": "+
               packageDescriptions.get(i), packageCounts.get(i), formatCurrency(packageUnitPrices.get(i)),
           formatCurrency(packageTotalPrices.get(i)));
     }
@@ -578,25 +649,74 @@ final class OfferManagerTab {
     // remove the placeholder rows in the .xml file
     removeRowInTable(contentControlDocument, packageNames.size());
 
-    LOG.info("TYPE {}", contentControlDocument.getDoctype());
     if(contentControlDocument.getDoctype() != null){
       throw new NullPointerException();
     }
+
     // apply the bindings to the .docx template file
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
 
     File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
-
+    //String home = System.getProperty("user.home");
+    //File file = new File(home+"/Downloads/" + projectQuotationNumber + ".docx");
     // save updated document to output file
     try {
       assert wordProcessor != null;
       wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
       LOG.info("SAVE FILE: done saving the File");
+
+      /*
+      DownloadStream stream = new DownloadStream(getStreamSource().getStream(), "", "");
+      stream.setParameter("Content-Disposition", "attachment;filename=" + "");
+      // This magic incantation should prevent anyone from caching the data
+      stream.setParameter("Cache-Control", "private,no-cache,no-store");
+      // In theory <=0 disables caching. In practice Chrome, Safari (and, apparently, IE) all ignore <=0. Set to 1s
+      stream.setCacheTime(1000);
+
+      oder:
+
+      StreamResource.setCacheTime(0)
+
+      */
+
+     // fileDownloader.setFileDownloadResource();
+      //FileResource fr = new FileResource(tempFile);
+      //fr.setCacheTime(0);
+
+      //final DownloadStream ds = new DownloadStream(new FileInputStream(tempFile),tempFile.getPath(), projectQuotationNumber+".docx");
+
+      //ds.setParameter("Content-Disposition", "attachment;filename=" + "");
+      // This magic incantation should prevent anyone from caching the data
+      //ds.setParameter("Cache-Control", "private,no-cache,no-store");
+      // In theory <=0 disables caching. In practice Chrome, Safari (and, apparently, IE) all ignore <=0. Set to 1s
+      //ds.setCacheTime(1000);
+
+      //fileDownloader.setFileDownloadResource(ds.getClass().getResource("test"));
+
+      fileDownloader.setFileDownloadResource(new StreamResource(new StreamResource.StreamSource() {
+
+
+        @Override
+        public InputStream getStream () {
+          try {
+            return new FileInputStream(tempFile);
+          } catch (FileNotFoundException e) {
+            e.printStackTrace();
+          }
+          return null;
+        }
+
+      }, projectQuotationNumber+".docx"));
+
+
+      LOG.info("FILE DOWNLOADER: opened File downloader");
+      //new FileResource(tempFile)
+
     } catch (Docx4JException e) {
       e.printStackTrace();
     }
-    fileDownloader.setFileDownloadResource(new FileResource(tempFile));
-    LOG.info("FILE DOWNLOADER: opened File downloader");
+
+    Thread.sleep(1000);
 
     return true;
   }

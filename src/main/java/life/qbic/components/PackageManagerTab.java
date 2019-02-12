@@ -46,7 +46,7 @@ final class PackageManagerTab {
   private static BigDecimal externalCommercialPriceModifier = new BigDecimal("2.0");
 
   // price modifier for sequencing and mass spectrometry packages
-  private static BigDecimal externalPriceModifier = new BigDecimal("1.1");
+  private static BigDecimal externalPriceModifier = new BigDecimal("1.5");
 
   private static FileDownloader fileDownloader;
   //private static String pathOnServer = getPathOnServer();
@@ -193,7 +193,7 @@ final class PackageManagerTab {
     }
 
     addListeners(db, addPackageButton, updatePackageGroupComboBox, updateSelectedPackageButton, deleteSelectedPackageButton,
-        container, packageGrid, exportTableButton);
+        container, packageGrid, exportTableButton, calculatePricesAutomaticallyCheckBox);
 
     packManHorizontalLayout.addComponent(addPackageButton);
     packManHorizontalLayout.addComponent(updatePackageGroupComboBox);
@@ -238,8 +238,9 @@ final class PackageManagerTab {
 
       @Override
       public void postCommit(FieldGroup.CommitEvent commitEvent) throws FieldGroup.CommitException {
+        calculatePrices(container,calculatePricesAutomatically,packageGrid);
 
-        if (calculatePricesAutomatically.getValue()) {
+ /*       if (calculatePricesAutomatically.getValue()) {
 
           // Get the internal package price from the selected row in the grid
           Object selected = ((Grid.SingleSelectionModel) packageGrid.getSelectionModel()).getSelectedRow();
@@ -295,7 +296,7 @@ final class PackageManagerTab {
           // set the respective fields in the grid, which also updates the database
           selectedRow.getItemProperty("package_price_external_academic").setValue(packagePriceExternalAcademic);
           selectedRow.getItemProperty("package_price_external_commercial").setValue(packagePriceExternalCommercial);
-        }
+        }*/
       }
     });
   }
@@ -314,7 +315,7 @@ final class PackageManagerTab {
    */
   private static void addListeners(Database db, Button addPackageButton, ComboBox updatePackageGroupComboBox,
                                    Button updateSelectedPackageButton, Button deleteSelectedPackageButton,
-                                   SQLContainer container, RefreshableGrid packageGrid, Button exportTableButton) throws IOException {
+                                   SQLContainer container, RefreshableGrid packageGrid, Button exportTableButton, CheckBox calculatePricesAutomaticallyCheckBox) throws IOException {
 
     addPackageButton.addClickListener(new Button.ClickListener() {
 
@@ -331,6 +332,8 @@ final class PackageManagerTab {
             "Please edit the package details! If the details are not complete, incompatibility " +
                 "issues are expected to happen.",
             "success");
+        container.refresh();
+        //packageGrid.
         packageGrid.clearSortOrder();
         packageGrid.sort("package_name", SortDirection.ASCENDING);
       }
@@ -350,6 +353,10 @@ final class PackageManagerTab {
         String selectedPackageGroup = updatePackageGroupComboBox.getValue().toString();
         String packageId = packageGrid.getSelectedRow().toString();
         db.updatePackageGroupForPackage(selectedPackageGroup, packageId);
+        //added: to update the price if the package group is changed
+        container.refresh();
+        //update price
+        calculatePrices(container,calculatePricesAutomaticallyCheckBox,packageGrid);
         container.refresh();
       }
     });
@@ -398,6 +405,74 @@ final class PackageManagerTab {
       }
     };
     fileDownloader.extend(exportTableButton);
+
+  }
+
+  /**
+   * Method to calculate the price for internal and external clients
+   * @param container
+   * @param calculatePricesAutomaticallyCheckBox
+   * @param packageGrid
+   */
+  private static void calculatePrices(SQLContainer container, CheckBox calculatePricesAutomaticallyCheckBox, RefreshableGrid packageGrid) {
+
+    if (calculatePricesAutomaticallyCheckBox.getValue()) {
+
+      // Get the internal package price from the selected row in the grid
+      Object selected = ((Grid.SingleSelectionModel) packageGrid.getSelectionModel()).getSelectedRow();
+      if (selected == null) {
+        displayNotification("Price could not be automatically calculated", "Vaadin couldn't get " +
+                "the selected row, so the external prices have NOT been automatically calculated. If you wanted to " +
+                "update the prices, please select the row via left click and then try shift + enter to open the edit " +
+                "menu. Unfortunately this seems to be a little buggy..", "warning");
+        return;
+      }
+      Item selectedRow = container.getItem(selected);
+      String packagePriceInternalString = selectedRow.getItemProperty("package_price_internal").getValue().toString();
+
+      // get the internal price as BigDecimal to deal with floating point issues
+      BigDecimal packagePriceInternal = new BigDecimal(packagePriceInternalString);
+
+      // check if we have a package group for the current package
+      Object packageGroupObject = selectedRow.getItemProperty("package_group").getValue();
+      if (packageGroupObject == null) {
+        displayNotification("No package group", "Package has no package group associated with it. " +
+                        "Thus an automatic calculation of the external packages is NOT possible. Please update the package group" +
+                        "or disable the Auto-calculate external prices checkbox.",
+                "warning");
+        return;
+      }
+
+      String packageGroup = packageGroupObject.toString();
+
+      // based on the package group we have differnet price modifiers:
+      Float packagePriceExternalAcademic;
+      Float packagePriceExternalCommercial;
+      switch (packageGroup) {
+        case "Bioinformatics Analysis":
+        case "Project Management":
+          // recalculate the two external prices (*1.3 and *2.0)
+          packagePriceExternalAcademic = packagePriceInternal.multiply(externalAcademicPriceModifier).floatValue();
+          packagePriceExternalCommercial = packagePriceInternal.multiply(externalCommercialPriceModifier).floatValue();
+          break;
+        case "Sequencing":
+        case "Mass spectrometry":
+          // recalculate the two external prices (*1.1)
+          packagePriceExternalAcademic = packagePriceInternal.multiply(externalPriceModifier).floatValue();
+          packagePriceExternalCommercial = packagePriceInternal.multiply(externalPriceModifier).floatValue();
+          break;
+        default:  // package group is "Other"
+          displayNotification("Wrong package group", "Package has package group \"Other\" " +
+                          "associated with it. Thus an automatic calculation of the external packages is NOT possible. " +
+                          "Please change the package group or disable the Auto-calculate external prices checkbox.",
+                  "warning");
+          return;
+      }
+
+      // set the respective fields in the grid, which also updates the database
+      selectedRow.getItemProperty("package_price_external_academic").setValue(packagePriceExternalAcademic);
+      selectedRow.getItemProperty("package_price_external_commercial").setValue(packagePriceExternalCommercial);
+    }
 
   }
 }

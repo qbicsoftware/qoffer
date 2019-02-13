@@ -21,6 +21,7 @@ import com.vaadin.server.FileDownloader;
 import com.vaadin.server.FileResource;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.Page;
+import com.vaadin.server.VaadinService;
 import com.vaadin.shared.Position;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.themes.ValoTheme;
@@ -31,6 +32,10 @@ import java.io.PrintStream;
 
 public final class qOfferManagerUtils {
 
+  /**
+   * Both DBManager and OpenBisProxy require this path to obtain configuration settings.
+   */
+  public static final String PROPERTIES_FILE_PATH = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath() + "/WEB-INF/resourceFiles/Credentials.properties";
 
   /**
    * Formats a given string to X,XXX.XX €.

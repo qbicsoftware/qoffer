@@ -211,67 +211,6 @@ public enum Database {
     return list;
   }
 
-  public ArrayList<String> getUsernames() {
-    ArrayList<String> list = new ArrayList<>();
-    String sql = "SELECT user_name FROM user";
-    // The following statement is an try-with-devices statement, which declares two devices,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); Statement statement = conn.createStatement()) {
-      ResultSet rs = statement.executeQuery(sql);
-      while (rs.next()) {
-        list.add(rs.getString("user_name"));
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return list;
-  }
-
-  public ArrayList<String> getProjects() {
-    ArrayList<String> list = new ArrayList<>();
-    String sql = "SELECT openbis_project_identifier FROM projects";
-    // The following statement is an try-with-devices statement, which declares two devices,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); Statement statement = conn.createStatement()) {
-      ResultSet rs = statement.executeQuery(sql);
-      while (rs.next()) {
-        list.add(rs.getString("openbis_project_identifier").replaceAll("/.*?/", ""));
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return list;
-  }
-
-  public ArrayList<String> getPackageNames() {
-
-    ArrayList<String> list = new ArrayList<>();
-    String sql = "SELECT package_name FROM packages ORDER BY package_name";
-    // The following statement is an try-with-devices statement, which declares two devices,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); Statement statement = conn.createStatement()) {
-      ResultSet rs = statement.executeQuery(sql);
-      while (rs.next()) {
-        list.add(rs.getString("package_name"));
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return list;
-  }
-
   /**
    * returns the package ids and names based on the package_group
    * @param package_group: one of ["Project Management", "Bioinformatics", "Sequencing", ""]
@@ -348,7 +287,11 @@ public enum Database {
     return list;
   }
 
-
+  /**
+   * Gets the organization id to which the person belongs to.
+   * @param person_id the id of the person.
+   * @return The id of the organization to which the given person belongs to.
+   */
   public int getOrganizationIdForPersonId(int person_id) {
 
     int organizationId = -1;
@@ -370,6 +313,11 @@ public enum Database {
     return organizationId;
   }
 
+  /**
+   * Gets the address for the given organization.
+   * @param organizationId the organization id.
+   * @return The address of the organization.
+   */
   public String[] getAddressForOrganizationId(int organizationId) {
 
     String[] address = new String[7];
@@ -417,6 +365,13 @@ public enum Database {
     return address;
   }
 
+  /**
+   * Gets the unique id of a person, given a name.
+   * @param title title.
+   * @param firstName first name.
+   * @param familyName family name.
+   * @return the unique id.
+   */
   public int getPersonIdForPersonName(String title, String firstName, String familyName) {
 
     int personId = -1;
@@ -472,6 +427,11 @@ public enum Database {
     return getAddressForOrganizationId(organizationId);
   }
 
+  /**
+   * Gets the email for the person registered under the given username.
+   * @param username the username.
+   * @return The email address.
+   */
   public String getUserEmail(String username) {
     String userEmail = "oops! no email address is available in the database.";
     String sql = "SELECT email FROM persons WHERE username = ?";
@@ -624,70 +584,6 @@ public enum Database {
     }
   }
 
-  public void printDatabaseTable(String tableName) {
-
-    String sql = "SELECT * FROM " + tableName;
-    // The following statement is an try-with-resources statement, which declares two resources,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-      ResultSet rs = statement.executeQuery();
-      ResultSetMetaData resultSetMetaData = rs.getMetaData();
-      int columnCount = resultSetMetaData.getColumnCount();
-
-      System.out.println("#############################################");
-      System.out.println("Displaying " + tableName);
-
-      // The column count starts from 1
-      for (int i = 1; i <= columnCount; i++) {
-        try {
-          String name = resultSetMetaData.getColumnName(i);
-          System.out.print(name + "\t");
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
-      }
-      System.out.println();
-
-      while (rs.next()) {
-        //Print one row
-        for (int i = 1; i <= columnCount; i++) {
-          try {
-            System.out.print(rs.getString(i) + "\t"); //Print one element of a row
-          } catch (SQLException e) {
-            e.printStackTrace();
-          }
-        }
-        System.out.println();//Move to the next line to print the next row.
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-  }
-
-  public boolean internalOfferCheck(String offer_id) {
-    boolean internal = true;
-    String sql = "SELECT internal FROM offers WHERE offer_id = ?";
-    // The following statement is an try-with-resources statement, which declares two resources,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-      statement.setString(1, offer_id);
-      ResultSet rs = statement.executeQuery();
-      if (rs.next())
-        internal = rs.getBoolean(1);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return internal;
-  }
-
   public void updateTotalOfferPrice(String offer_id, float offer_total) {
     String sql = "UPDATE offers SET offer_total = ? WHERE offer_id = ? ";
     // The following statement is an try-with-resources statement, which declares two resources,
@@ -708,53 +604,8 @@ public enum Database {
     }
   }
 
-  public boolean updateDiscount(String discount, String offer_id, float percentage) {
-    boolean success = false;
-    float updatedPrice = 0;
-
-    String sqlS = "SELECT offer_price FROM offers WHERE offer_id = ? ";
-    try (Connection conn = login(); PreparedStatement statementS = conn.prepareStatement(sqlS)) {
-      statementS.setString(1, offer_id);
-      ResultSet rs = statementS.executeQuery();
-      if (rs.next())
-        updatedPrice = rs.getFloat(1);
-      // TODO:
-      updatedPrice = updatedPrice * ((100 - percentage) / 100);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-
-    String sql = "UPDATE offers SET discount = ?, offer_total = ? WHERE offer_id = ? ";
-    // The following statement is an try-with-resources statement, which declares two resources,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-
-      String updatedPriceFormatted = String.format("%.02f", updatedPrice);
-      updatedPriceFormatted = updatedPriceFormatted.replaceAll(",", ".");
-      statement.setString(1, discount);
-      statement.setString(2, updatedPriceFormatted);
-      statement.setString(3, offer_id);
-      int result = statement.executeUpdate();
-      success = (result > 0);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return success;
-  }
-
   public void updatePackageQuantityAndRecalculatePrice(String package_count, String offer_id, String package_id,
                                                        String packagePriceType, float packageDiscount) {
-
-
 
     float updatedPackageAddOnPrice = 0;
     float offerPrice = 0;
@@ -874,29 +725,6 @@ public enum Database {
     }
   }
 
-  public boolean updateQuantityDiscountQuery(String package_discount, String offer_id,
-      String package_id) {
-    boolean success = false;
-    String sql =
-        "UPDATE offers_packages SET package_discount = ? WHERE offer_id = ? AND package_id = ? ";
-    // The following statement is an try-with-resources statement, which declares two resources,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-      statement.setString(1, package_discount);
-      statement.setString(2, offer_id);
-      statement.setString(3, package_id);
-      int result = statement.executeUpdate();
-      success = (result > 0);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return success;
-  }
-
   public void updatePackageGroupForPackage(String selectedPackageGroup, String packageId) {
 
     String sql = "UPDATE packages SET package_group = ? WHERE package_id = ? ";
@@ -934,66 +762,6 @@ public enum Database {
     } catch (Exception e) { /* ignored */
     }
     return success;
-  }
-
-//  public boolean updateDeliveryStatus(int delivery_time, String offer_id) {
-//    boolean success = false;
-//    String sql = "UPDATE offers SET estimated_delivery_weeks = ? WHERE offer_id = ? ";
-//    // The following statement is an try-with-resources statement, which declares two resources,
-//    // conn and statement, which will be automatically closed when the try block terminates
-//    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-//      statement.setInt(1, delivery_time);
-//      statement.setString(2, offer_id);
-//      int result = statement.executeUpdate();
-//      success = (result > 0);
-//    } catch (SQLException e) {
-//      e.printStackTrace();
-//    }
-//    try {
-//      conn.close();
-//    } catch (Exception e) { /* ignored */
-//    }
-//    return success;
-//  }
-//
-//  public int getDeliveryTime(int offer_id) {
-//    int time = 0;
-//    String sql = "SELECT estimated_delivery_weeks FROM offers WHERE offer_id = ?";
-//    // The following statement is an try-with-resources statement, which declares two resources,
-//    // conn and statement, which will be automatically closed when the try block terminates
-//    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-//      statement.setInt(1, offer_id);
-//      ResultSet rs = statement.executeQuery();
-//      if (rs.next())
-//        time = rs.getInt(1);
-//    } catch (SQLException e) {
-//      e.printStackTrace();
-//    }
-//    try {
-//      conn.close();
-//    } catch (Exception e) { /* ignored */
-//    }
-//    return time;
-//  }
-
-  public String getOfferDiscount(String offer_id) {
-    String discount = "0%";
-    String sql = "SELECT discount FROM offers WHERE offer_id = ?";
-    // The following statement is an try-with-resources statement, which declares two resources,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-      statement.setString(1, offer_id);
-      ResultSet rs = statement.executeQuery();
-      if (rs.next())
-        discount = rs.getString(1);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return discount;
   }
 
   public int getPackageCount(String offer_id, String package_id) {
@@ -1060,31 +828,6 @@ public enum Database {
     return status;
   }
 
-  public float getPriceFromPackageName(String package_name, boolean externalSelected) {
-    float package_price = 0;
-    String sql;
-    if (externalSelected) {
-      sql = "SELECT package_price_internal FROM packages WHERE package_name = ?";
-    } else {
-      sql = "SELECT package_price_external FROM packages WHERE package_name = ?";
-    }
-    // The following statement is an try-with-resources statement, which declares two resources,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-      statement.setString(1, package_name);
-      ResultSet rs = statement.executeQuery();
-      if (rs.next())
-        package_price = rs.getFloat(1);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return package_price;
-  }
-
   public String getPriceFromPackageId(int package_id, String packagePriceType) {
     // we use String for the price, since ResultSet.getFloat returns 0.0 if the value in the database is null
     String package_price = "-1";
@@ -1140,6 +883,11 @@ public enum Database {
     }
   }
 
+  /**
+   * Gets the project's short title (short name).
+   * @param openbis_project_identifier the identifier of the project.
+   * @return the project's short name.
+   */
   public String getShortTitleFromProjectRef(String openbis_project_identifier) {
     String short_title = "N/A";
     String sql = "SELECT short_title FROM projects WHERE openbis_project_identifier LIKE ?";
@@ -1160,58 +908,16 @@ public enum Database {
     return short_title;
   }
 
-  public String getLongDescFromProjectRef(String openbis_project_identifier) {
-    String long_description = "N/A";
-    String sql = "SELECT long_description FROM projects WHERE openbis_project_identifier LIKE ?";
-    // The following statement is an try-with-resources statement, which declares two resources,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-      statement.setString(1, "%" + openbis_project_identifier + "%");
-      ResultSet rs = statement.executeQuery();
-      if (rs.next())
-        long_description = rs.getString(1);
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return long_description;
-  }
-
-  public String getClientEmailFromProjectRef(String openbis_project_identifier) {
-
-    String clientEmail = "";
-
-    String sql =
-        "SELECT DISTINCT persons.email FROM projects INNER JOIN " +
-            "projects_persons ON projects.`id` = projects_persons.`project_id` INNER JOIN persons ON persons.`id` " +
-            "= projects_persons.`person_id` WHERE projects_persons.`project_role` = 'PI' AND " +
-            "`projects`.`openbis_project_identifier` LIKE ?";
-    // The following statement is an try-with-resources statement, which declares two resources,
-    // conn and statement, which will be automatically closed when the try block terminates
-    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-      statement.setString(1, "%" + openbis_project_identifier + "%");
-      ResultSet rs = statement.executeQuery();
-      if (rs.next()) {
-        clientEmail = rs.getString(1);
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
-    return clientEmail;
-  }
-
-  public String getPIFromProjectRef(String openbis_project_identifier) {
+  /**
+   * Retrieves the name of the person responsible for the given project.
+   * @param openbis_project_identifier the id of the project.
+   * @return the name of the person responsible for the given project.
+   */
+  public String getPIFromProjectRef(final String openbis_project_identifier) {
     String pi_title = "", pi_name = "", pi_surname = "", pi_fullname = "";
     String sql =
-        "SELECT DISTINCT persons.title, persons.first_name, persons.family_name FROM projects INNER JOIN " +
-            "projects_persons ON projects.`id` = projects_persons.`project_id` INNER JOIN persons ON persons.`id` " +
+        "SELECT DISTINCT persons.title, persons.first_name, persons.family_name FROM projects as projects INNER JOIN " +
+            "projects_persons as projects_persons ON projects.`id` = projects_persons.`project_id` INNER JOIN persons ON persons.`id` " +
             "= projects_persons.`person_id` WHERE projects_persons.`project_role` = 'PI' AND " +
             "`projects`.`openbis_project_identifier` LIKE ?";
     // The following statement is an try-with-resources statement, which declares two resources,

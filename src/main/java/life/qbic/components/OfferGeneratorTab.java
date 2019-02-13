@@ -16,6 +16,7 @@
 
 package life.qbic.components;
 
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import com.vaadin.data.Container;
 import com.vaadin.data.Item;
 import com.vaadin.data.Property;
@@ -24,6 +25,7 @@ import com.vaadin.event.FieldEvents;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.ui.*;
 import com.vaadin.ui.themes.ValoTheme;
+import java.util.List;
 import life.qbic.dbase.Database;
 
 import java.text.SimpleDateFormat;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
+import life.qbic.dbase.OpenBisProxy;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -54,7 +57,8 @@ final class OfferGeneratorTab {
 		ComboBox selectedProjectComboBox = new ComboBox("Select Project");
 		selectedProjectComboBox.setInputPrompt("No project selected!");
 		selectedProjectComboBox.setDescription("Please select a project before its too late! :P");
-		selectedProjectComboBox.addItems(db.getProjects());
+		fillSelectedProjectComboBox(selectedProjectComboBox);
+		//selectedProjectComboBox.addItems(db.getProjects());
 		selectedProjectComboBox.setWidth("300px");
 
 		Button completeButton = new Button("Complete");
@@ -118,6 +122,13 @@ final class OfferGeneratorTab {
 		addPackLayout.addComponent(selectedProjectComboBox);
 
 		return addPackLayout;
+	}
+
+	private static void fillSelectedProjectComboBox(final ComboBox comboBox)  {
+		final List<Project> projects = OpenBisProxy.getInstance().getProjects();
+		for (final Project project : projects) {
+			comboBox.addItem(project.getCode());
+		}
 	}
 
 	/**
@@ -291,7 +302,7 @@ final class OfferGeneratorTab {
 				String offerNumber = dateToday + "_" + offerProjectReference;
 				String offerFacility = db.getPIFromProjectRef(offerProjectReference);
 				String offerName = db.getShortTitleFromProjectRef(offerProjectReference);
-				String offerDescription = db.getLongDescFromProjectRef(offerProjectReference);
+				String offerDescription = OpenBisProxy.getInstance().getProjectDescription(offerProjectReference);
 				int offerId;
 				
 				LOG.info("is liferayPortlet()? "+PortalUtils.isLiferayPortlet());

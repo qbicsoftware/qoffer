@@ -1,5 +1,10 @@
 # Implementation details:
 
+## Installation
+This project requires both openBIS and a separate database. Make sure your configuration files (properties files) are up to date. 
+
+The SQL script under `src/main/resources/sql/tables.sql` contains the required tables. Run this script before deploying the portlet for the first time.
+
 ### Package discount based on package quantity:
 
 For the sequencing packages (packages with package group *Sequencing*)

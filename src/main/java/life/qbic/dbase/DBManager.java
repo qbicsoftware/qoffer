@@ -16,6 +16,7 @@
 
 package life.qbic.dbase;
 
+import ch.ethz.sis.openbis.generic.asapi.v3.IApplicationServerApi;
 import com.vaadin.data.util.sqlcontainer.connection.JDBCConnectionPool;
 import com.vaadin.data.util.sqlcontainer.connection.SimpleJDBCConnectionPool;
 import com.vaadin.server.VaadinService;
@@ -28,19 +29,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Properties;
+import life.qbic.utils.qOfferManagerUtils;
 
 import static life.qbic.portal.utils.PortalUtils.isLiferayPortlet;
 
+/**
+ * Contains credentials for SQL and openBIS.
+ */
 public class DBManager {
-
   private static String hostname;
   private static String port;
-  private static String sql_database = "facs_facility";
+  private static String sql_database;
   private static String username;
   private static String password;
 
-  private static String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-  private static String propertyFilePath = basePath + "/WEB-INF/resourceFiles/Credentials.properties"; //uses: qbic-database.local
+  private static final String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
 
   private static ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
 
@@ -56,8 +59,9 @@ public class DBManager {
       password = conf.getMysqlPass();
       hostname = conf.getMsqlHost();
       port = conf.getMysqlPort();
+      sql_database = conf.getMysqlDB();
     } else {
-      parseCredentials(propertyFilePath);
+      parseCredentials(qOfferManagerUtils.PROPERTIES_FILE_PATH);
     }
   }
 
@@ -80,6 +84,7 @@ public class DBManager {
       password = prop.getProperty(LiferayConfigurationManager.MSQL_PASS);
       hostname = prop.getProperty(LiferayConfigurationManager.MSQL_HOST);
       port = prop.getProperty(LiferayConfigurationManager.MSQL_PORT);
+      sql_database = prop.getProperty(LiferayConfigurationManager.MSQL_DB);
 
     } catch (IOException ex) {
       ex.printStackTrace();

@@ -73,6 +73,11 @@
 			<artifactId>mariadb-java-client</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>life.qbic.openbis</groupId>
+			<artifactId>openbis_api</artifactId>
+		</dependency>
+
 		<!-- https://mvnrepository.com/artifact/org.vaadin.addons/vaadin-grid-util -->
 		<dependency>
 			<groupId>org.vaadin.addons</groupId>

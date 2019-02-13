@@ -22,6 +22,7 @@ import com.vaadin.ui.GridLayout.OverlapsException;
 import com.vaadin.ui.themes.ValoTheme;
 import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
+import life.qbic.dbase.OpenBisProxy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

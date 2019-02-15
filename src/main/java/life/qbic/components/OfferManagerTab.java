@@ -407,48 +407,6 @@ final class OfferManagerTab {
   }
 
   /**
-   * adds the functionality of generating the offer file and exporting it to the printOfferButton
-   * @param db: database to connect to
-   * @param printOfferButton: button where the functionality should be added
-   * @param container: SQLContainer holding the data
-   * @param packageNames: list of all the package names in the current offer
-   * @param packageDescriptions: list of all the package descriptions in the current offer
-   * @param packageCounts: list of all the package counts in the current offer
-   * @param packageUnitPrices: list of all the package prices in the current offer
-   * @param packageTotalPrices: list of all the package total prices in the current offer
-   * @throws IOException:
-   */
-  private static void setupOfferFileExportFunctionality(Database db, Button printOfferButton, SQLContainer container,
-                                                        List<String> packageNames, List<String> packageDescriptions,
-                                                        List<String> packageCounts, List<String> packageUnitPrices,
-                                                        List<String> packageTotalPrices, List<String> packageIDs) throws IOException{
-
-
-    // init with some non-existent file
-    fileDownloader = new FileDownloader(new FileResource(new File("temp"))) {
-      @Override
-      public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException {
-        try {
-          // fails if no offer has been selected
-          boolean success = generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
-                  packageTotalPrices, packageIDs, fileDownloader);
-
-          // offer file could not be generated, so we return nothing
-          //if (!success) {
-          //  return false;
-          //}
-        } finally {
-          UI.getCurrent().setPollInterval(-1);
-          // handle the download of the file
-          return super.handleConnectorRequest(request, response, path);
-        }
-
-      }
-    };
-    fileDownloader.extend(printOfferButton);
-  }
-
-  /**
    * generates the .docx file for the offer
    * @param container: sql container holding the offers
    * @param db: database instance
@@ -470,9 +428,6 @@ final class OfferManagerTab {
           "Please make sure that you select an offer.", "error");
       return false;
     }
-
-    Object selected = ((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow();
-
 
     // since we take the package specific values from the grid showing the packages for the current offers,
     // we need to check whether all packages are displayed or e.g. only the sequencing packages

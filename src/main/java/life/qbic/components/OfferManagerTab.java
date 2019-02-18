@@ -16,6 +16,7 @@
 
 package life.qbic.components;
 
+import java.util.concurrent.CompletableFuture;
 import life.qbic.portal.portlet.QofferUIPortlet;
 
 import com.vaadin.data.Property;
@@ -125,10 +126,16 @@ final class OfferManagerTab {
     editSettingsLayout.setComponentAlignment(packageGroupComboBox, Alignment.BOTTOM_CENTER);
     editSettingsLayout.setComponentAlignment(exportTableButton, Alignment.BOTTOM_CENTER);
 
+    final Button validateOfferButton = new Button("Validate offer");
+    validateOfferButton.setDescription("Download button will be active once offer is validated");
+    validateOfferButton.setIcon(FontAwesome.CHECK_CIRCLE);
+
     Button generateOfferButton = new Button("Download offer");
     generateOfferButton.setIcon(FontAwesome.DOWNLOAD);
-    generateOfferButton.setDescription("Select an offer from the grid then click here to download it as .docx!");
+    generateOfferButton.setDescription("Offer must be first validated!");
     generateOfferButton.setEnabled(false);
+    fileDownloader = new FileDownloader(new FileResource(new File("temporary_name")));
+    fileDownloader.extend(generateOfferButton);
 
     offerManLayout.setMargin(true);
     offerManLayout.setSpacing(true);
@@ -139,9 +146,8 @@ final class OfferManagerTab {
     SQLContainer container = new SQLContainer(tq);
     container.setAutoCommit(true);
 
-    //manually add a "estimated delivery" col -> unsupportedOperationException
-    //container.addContainerProperty("offer_estimated_delivery", String.class, null);
     offerManagerGrid = new RefreshableGrid(container);
+    offerManagerGrid.setImmediate(true);
 
     // add the filters to the grid
     GridCellFilter filter = new GridCellFilter(offerManagerGrid);
@@ -159,14 +165,14 @@ final class OfferManagerTab {
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
     addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton, container,
-        exportTableButton);
+        exportTableButton, validateOfferButton);
 
     offerManagerGrid.getColumn("offer_id").setHeaderCaption("Id").setWidth(100).setEditable(false);
     offerManagerGrid.getColumn("offer_number").setHeaderCaption("Quotation Number").setWidth(200).setEditable(false);
     offerManagerGrid.getColumn("offer_project_reference").setHeaderCaption("Project Reference").setEditable(false);
-    offerManagerGrid.getColumn("offer_name").setHeaderCaption("Offer Name").setWidth(200);
-    offerManagerGrid.getColumn("offer_facility").setHeaderCaption("Prospect");
-    offerManagerGrid.getColumn("offer_description").setHeaderCaption("Description").setWidth(300);
+    offerManagerGrid.getColumn("offer_name").setHeaderCaption("Offer Name").setWidth(200).setEditable(false);
+    offerManagerGrid.getColumn("offer_facility").setHeaderCaption("Prospect").setEditable(false);
+    offerManagerGrid.getColumn("offer_description").setHeaderCaption("Description").setWidth(300).setEditable(false);
     offerManagerGrid.getColumn("offer_total").setHeaderCaption("Price (€)").setEditable(false);
     offerManagerGrid.getColumn("offer_status").setHeaderCaption("Status").setEditable(false);
     offerManagerGrid.getColumn("offer_date").setHeaderCaption("Date").setEditable(false);
@@ -211,7 +217,12 @@ final class OfferManagerTab {
     offerManLayout.addComponent(offerManagerGrid);
     offerManLayout.addComponent(editSettingsLayout);
     offerManLayout.addComponent(detailsLayout);
-    offerManLayout.addComponent(generateOfferButton);
+
+    final HorizontalLayout buttonLayout = new HorizontalLayout();
+    buttonLayout.setSpacing(true);
+    buttonLayout.addComponent(validateOfferButton);
+    buttonLayout.addComponent(generateOfferButton);
+    offerManLayout.addComponent(buttonLayout);
 
     return offerManLayout;
   }
@@ -225,10 +236,11 @@ final class OfferManagerTab {
    * @param generateOfferButton: button for printing an offer
    * @param container: sql container holding the data from the database
    * @param exportTableButton: button for exporting the grid as csv
+   * @param validateOfferButton: button to validate offers
    */
   private static void addListeners(Database db, ComboBox updateStatusComboBox, Button updateButton,
                                    Button deleteOfferButton, Button generateOfferButton, SQLContainer container,
-                                   Button exportTableButton) {
+                                   Button exportTableButton, Button validateOfferButton) {
 
     // several lists holding the package names, descriptions, prices, etc. for the current offer
     // TODO: change to one list of packageBeans
@@ -241,6 +253,7 @@ final class OfferManagerTab {
 
 
     offerManagerGrid.addSelectionListener(selectionEvent -> {
+      generateOfferButton.setEnabled(false);
 
       // Get selection from the selection model
       Object selected = ((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow();
@@ -260,9 +273,6 @@ final class OfferManagerTab {
 
         updateStatusComboBox.select(db.getOfferStatus(container.getItem(selected)
             .getItemProperty("offer_id").getValue().toString()));
-
-        // enable the print offer button
-        generateOfferButton.setEnabled(true);
 
         Notification.show("Selected "
             + db.getOfferStatus(container.getItem(selected).getItemProperty("offer_id").getValue()
@@ -350,32 +360,19 @@ final class OfferManagerTab {
       }
     });
 
+    validateOfferButton.addClickListener(e -> {
+      generateOfferButton.setEnabled(false);
+      UI.getCurrent().setPollInterval(100);
+      CompletableFuture.supplyAsync(() ->
+        generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices, packageTotalPrices, packageIDs, fileDownloader)
+      ).thenAcceptAsync(success -> {
+        if (success) {
+          UI.getCurrent().access(() -> generateOfferButton.setEnabled(true));
+        }
+        UI.getCurrent().setPollInterval(-1);
+      });
 
-/*    generateOfferButton.addClickListener((Button.ClickListener) event -> {
-      try {
-        setupOfferFileExportFunctionality(db, generateOfferButton, container, packageNames, packageDescriptions, packageCounts,
-          packageUnitPrices, packageTotalPrices, packageIDs);
-        displayNotification("Successfully downloaded", "The File can be found in the Downloads folder","success");
-      }
-      catch(IOException io){
-        displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
-                "again.", "error");
-        io.printStackTrace();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-
-    });*/
-
-    try {
-      setupOfferFileExportFunctionality(db, generateOfferButton, container, packageNames, packageDescriptions, packageCounts,
-          packageUnitPrices, packageTotalPrices, packageIDs);
-    } catch (IOException e) {
-      displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
-          "again.", "error");
-      e.printStackTrace();
-    }
-
+    });
 
     try {
       setupTableExportFunctionality(container, exportTableButton);
@@ -410,53 +407,6 @@ final class OfferManagerTab {
   }
 
   /**
-   * adds the functionality of generating the offer file and exporting it to the printOfferButton
-   * @param db: database to connect to
-   * @param printOfferButton: button where the functionality should be added
-   * @param container: SQLContainer holding the data
-   * @param packageNames: list of all the package names in the current offer
-   * @param packageDescriptions: list of all the package descriptions in the current offer
-   * @param packageCounts: list of all the package counts in the current offer
-   * @param packageUnitPrices: list of all the package prices in the current offer
-   * @param packageTotalPrices: list of all the package total prices in the current offer
-   * @throws IOException:
-   */
-  private static void setupOfferFileExportFunctionality(Database db, Button printOfferButton, SQLContainer container,
-                                                        List<String> packageNames, List<String> packageDescriptions,
-                                                        List<String> packageCounts, List<String> packageUnitPrices,
-                                                        List<String> packageTotalPrices, List<String> packageIDs) throws IOException{
-
-
-    // init with some non-existent file
-    fileDownloader = new FileDownloader(new FileResource(new File("temp"))) {
-      @Override
-      public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException {
-
-        UI.getCurrent().setPollInterval(500);
-
-        try {
-          // fails if no offer has been selected
-          boolean success = generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices,
-                  packageTotalPrices, packageIDs, fileDownloader);
-
-          // offer file could not be generated, so we return nothing
-          //if (!success) {
-          //  return false;
-          //}
-        } catch (InterruptedException ie){
-          ie.printStackTrace();
-        } finally {
-          UI.getCurrent().setPollInterval(-1);
-          // handle the download of the file
-          return super.handleConnectorRequest(request, response, path);
-        }
-
-      }
-    };
-    fileDownloader.extend(printOfferButton);
-  }
-
-  /**
    * generates the .docx file for the offer
    * @param container: sql container holding the offers
    * @param db: database instance
@@ -472,18 +422,12 @@ final class OfferManagerTab {
   private static boolean generateOfferFile(SQLContainer container, Database db, List<String> packageNames,
                                         List<String> packageDescriptions, List<String> packageCounts,
                                         List<String> packageUnitPrices, List<String> packageTotalPrices, List<String> packageIDs,
-                                        FileDownloader fileDownloader) throws IOException, InterruptedException {
+                                        FileDownloader fileDownloader) {
     if (offerManagerGrid.getSelectedRow() == null) {
       displayNotification("oOps! Forgot something?!",
           "Please make sure that you select an offer.", "error");
       return false;
     }
-
-    displayNotification("File is being generated", "Please wait a few seconds while the file is " +
-            "being generated..", "warning");
-
-    Object selected = ((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow();
-
 
     // since we take the package specific values from the grid showing the packages for the current offers,
     // we need to check whether all packages are displayed or e.g. only the sequencing packages
@@ -547,13 +491,6 @@ final class OfferManagerTab {
     }
 
     String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1).split("_")[0];
-
-    /* deleted for 1.1.0-SNAPSHOT
-    String clientEmail = db.getClientEmailFromProjectRef(projectReference);
-    //TODO test, delete later
-    if(clientEmail.equals("")){
-      clientEmail = " ";
-    }*/
 
     // TODO: for liferay it probably needs some adjustments, since I couldn't test this properly..
     String projectManager;
@@ -656,68 +593,27 @@ final class OfferManagerTab {
     // apply the bindings to the .docx template file
     WordprocessingMLPackage wordProcessor = Docx4jUtils.applyBindings(contentControlDocument, templateFileName); //TODO error here!
 
-    File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
-    //String home = System.getProperty("user.home");
-    //File file = new File(home+"/Downloads/" + projectQuotationNumber + ".docx");
     // save updated document to output file
     try {
+      File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
+
       assert wordProcessor != null;
       wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
       LOG.info("SAVE FILE: done saving the File");
-
-      /*
-      DownloadStream stream = new DownloadStream(getStreamSource().getStream(), "", "");
-      stream.setParameter("Content-Disposition", "attachment;filename=" + "");
-      // This magic incantation should prevent anyone from caching the data
-      stream.setParameter("Cache-Control", "private,no-cache,no-store");
-      // In theory <=0 disables caching. In practice Chrome, Safari (and, apparently, IE) all ignore <=0. Set to 1s
-      stream.setCacheTime(1000);
-
-      oder:
-
-      StreamResource.setCacheTime(0)
-
-      */
-
-     // fileDownloader.setFileDownloadResource();
-      //FileResource fr = new FileResource(tempFile);
-      //fr.setCacheTime(0);
-
-      //final DownloadStream ds = new DownloadStream(new FileInputStream(tempFile),tempFile.getPath(), projectQuotationNumber+".docx");
-
-      //ds.setParameter("Content-Disposition", "attachment;filename=" + "");
-      // This magic incantation should prevent anyone from caching the data
-      //ds.setParameter("Cache-Control", "private,no-cache,no-store");
-      // In theory <=0 disables caching. In practice Chrome, Safari (and, apparently, IE) all ignore <=0. Set to 1s
-      //ds.setCacheTime(1000);
-
-      //fileDownloader.setFileDownloadResource(ds.getClass().getResource("test"));
-
       fileDownloader.setFileDownloadResource(new StreamResource(new StreamResource.StreamSource() {
-
-
         @Override
         public InputStream getStream () {
           try {
             return new FileInputStream(tempFile);
           } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Could not save offer", e);
           }
-          return null;
         }
-
-      }, projectQuotationNumber+".docx"));
-
-
-      LOG.info("FILE DOWNLOADER: opened File downloader");
-      //new FileResource(tempFile)
-
-    } catch (Docx4JException e) {
-      e.printStackTrace();
+      }, projectQuotationNumber + ".docx"));
+      displayNotification("File is ready", "Offer file is ready", "warning");
+      return true;
+    } catch (Docx4JException | IOException e) {
+      throw new RuntimeException("Could not generate offer file", e);
     }
-
-    Thread.sleep(1000);
-
-    return true;
   }
 }

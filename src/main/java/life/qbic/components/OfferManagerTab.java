@@ -43,30 +43,31 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static life.qbic.components.OfferManagerTabPackageComponent.createOfferManagerTabPackageComponent;
 import static life.qbic.utils.XMLUtils.*;
 import static life.qbic.utils.qOfferManagerUtils.*;
 
 final class OfferManagerTab {
 
-  private static FileDownloader fileDownloader;
-  private static FileDownloader exportFileDownloader;
-  private static RefreshableGrid offerManagerGrid;
-  private static VerticalLayout detailsLayout;
-  private static ComboBox packageGroupComboBox;
+  private FileDownloader fileDownloader;
+  private FileDownloader exportFileDownloader;
+  private RefreshableGrid offerManagerGrid;
+  private VerticalLayout detailsLayout;
+  private ComboBox packageGroupComboBox;
+  private qOfferManager qOfferManager;
+  private OfferManagerTabPackageComponent offerManagerTabPackageComponent;
 
   //private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
   private static final Logger LOG = LogManager.getLogger(OfferManagerTab.class);
 
-  static RefreshableGrid getOfferManagerGrid() {
+  RefreshableGrid getOfferManagerGrid() {
     return offerManagerGrid;
   }
 
-  static VerticalLayout getDetailsLayout() {
+  VerticalLayout getDetailsLayout() {
     return detailsLayout;
   }
 
-  static String getPackageGroupComboBoxValue() {
+  String getPackageGroupComboBoxValue() {
     return packageGroupComboBox.getValue().toString();
   }
 
@@ -74,12 +75,17 @@ final class OfferManagerTab {
     return pathOnServer;
   }*/
 
+  public OfferManagerTab(qOfferManager qom){
+    qOfferManager = qom;
+    offerManagerTabPackageComponent = new OfferManagerTabPackageComponent(qom,this);
+  }
+
   /**
    * creates the tab for displaying and modifying the offers in a vaadin grid
    * @return vaadin component
    * @throws SQLException:
    */
-  static Component createOfferManagerTab() throws SQLException {
+  Component createOfferManagerTab() throws SQLException {
 
     Database db = qOfferManager.getDb();
 
@@ -238,7 +244,7 @@ final class OfferManagerTab {
    * @param exportTableButton: button for exporting the grid as csv
    * @param validateOfferButton: button to validate offers
    */
-  private static void addListeners(Database db, ComboBox updateStatusComboBox, Button updateButton,
+  private void addListeners(Database db, ComboBox updateStatusComboBox, Button updateButton,
                                    Button deleteOfferButton, Button generateOfferButton, SQLContainer container,
                                    Button exportTableButton, Button validateOfferButton) {
 
@@ -280,7 +286,7 @@ final class OfferManagerTab {
 
         detailsLayout.removeAllComponents();
         try {
-          detailsLayout.addComponent(createOfferManagerTabPackageComponent(container, container.getItem(selected)
+          detailsLayout.addComponent(offerManagerTabPackageComponent.createOfferManagerTabPackageComponent(container, container.getItem(selected)
               .getItemProperty("offer_id").getValue().toString(), "All"));
         } catch (Exception e) {
           e.printStackTrace();
@@ -353,7 +359,7 @@ final class OfferManagerTab {
       // change the view to display only the packages for the selected package group
       detailsLayout.removeAllComponents();
       try {
-        detailsLayout.addComponent(createOfferManagerTabPackageComponent(container, container.getItem(selected)
+        detailsLayout.addComponent(offerManagerTabPackageComponent.createOfferManagerTabPackageComponent(container, container.getItem(selected)
             .getItemProperty("offer_id").getValue().toString(),  selectedPackageGroup));
       } catch (SQLException e) {
         e.printStackTrace();
@@ -389,7 +395,7 @@ final class OfferManagerTab {
    * @param exportGridButton: button the export functionality should be added to
    * @throws IOException:
    */
-  private static void setupTableExportFunctionality(SQLContainer container, Button exportGridButton) throws IOException {
+  private void setupTableExportFunctionality(SQLContainer container, Button exportGridButton) throws IOException {
     // setup the export as .csv file functionality
     //String exportOffersFileName = pathOnServer + "offers.csv";
     File tempFile = File.createTempFile("offers", ".csv");
@@ -419,7 +425,7 @@ final class OfferManagerTab {
    * @return whether or not creating the file has worked
  * @throws IOException 
    */
-  private static boolean generateOfferFile(SQLContainer container, Database db, List<String> packageNames,
+  private boolean generateOfferFile(SQLContainer container, Database db, List<String> packageNames,
                                         List<String> packageDescriptions, List<String> packageCounts,
                                         List<String> packageUnitPrices, List<String> packageTotalPrices, List<String> packageIDs,
                                         FileDownloader fileDownloader) {

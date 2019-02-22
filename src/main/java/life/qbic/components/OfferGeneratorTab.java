@@ -44,12 +44,17 @@ import life.qbic.portal.utils.PortalUtils;
 final class OfferGeneratorTab {
 	
 	private static final Logger LOG = LogManager.getLogger(OfferGeneratorTab.class);
+	private qOfferManager qOfferManager;
+
+	public OfferGeneratorTab(qOfferManager qom){
+		qOfferManager = qom;
+	}
 
 	/**
 	 * creates the tab to generate the offers with the respective packages
 	 * @return vaadin component holding the offer generator
 	 */
-	static Component createOfferGeneratorTab() {
+	Component createOfferGeneratorTab() {
 
 		Database db = qOfferManager.getDb();
 		TabSheet managerTabs = qOfferManager.getManagerTabs();

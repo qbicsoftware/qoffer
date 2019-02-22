@@ -30,22 +30,18 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
-import static life.qbic.components.OfferGeneratorTab.createOfferGeneratorTab;
-import static life.qbic.components.OfferManagerTab.createOfferManagerTab;
-import static life.qbic.components.PackageManagerTab.createPackageManagerTab;
-
 public class qOfferManager extends CustomComponent {
 
   private static Database db;
-  private static TabSheet managerTabs;
+  private TabSheet managerTabs;
 
   // TODO: use one list of packageBeans instead of multiple lists
-  private static List<String> packageNames = new ArrayList<>();
-  private static List<String> packageDescriptions = new ArrayList<>();
-  private static List<String> packageCounts = new ArrayList<>();
-  private static List<String> packageUnitPrices = new ArrayList<>();
-  private static List<String> packageTotalPrices = new ArrayList<>();
-  private static List<String> packageIDs = new ArrayList<>();
+  private List<String> packageNames = new ArrayList<>();
+  private List<String> packageDescriptions = new ArrayList<>();
+  private List<String> packageCounts = new ArrayList<>();
+  private List<String> packageUnitPrices = new ArrayList<>();
+  private List<String> packageTotalPrices = new ArrayList<>();
+  private List<String> packageIDs = new ArrayList<>();
 
 
   private static final Logger LOG = LogManager.getLogger(qOfferManager.class);
@@ -60,31 +56,31 @@ public class qOfferManager extends CustomComponent {
     return db;
   }
 
-  static TabSheet getManagerTabs() {
+  TabSheet getManagerTabs() {
     return managerTabs;
   }
 
-  static List<String> getPackageNames() {
+  List<String> getPackageNames() {
     return packageNames;
   }
 
-  static List<String> getPackageDescriptions() {
+  List<String> getPackageDescriptions() {
     return packageDescriptions;
   }
 
-  static List<String> getPackageCounts() {
+  List<String> getPackageCounts() {
     return packageCounts;
   }
 
-  static List<String> getPackageUnitPrices() {
+  List<String> getPackageUnitPrices() {
     return packageUnitPrices;
   }
 
-  static List<String> getPackageTotalPrices() {
+  List<String> getPackageTotalPrices() {
     return packageTotalPrices;
   }
 
-  static List<String> getPackageIDs() {
+  List<String> getPackageIDs() {
     return packageIDs;
   }
 
@@ -116,9 +112,13 @@ public class qOfferManager extends CustomComponent {
 
     try {
 
-      managerTabs.addTab(createOfferGeneratorTab(), "Offer Generator");
-      managerTabs.addTab(createOfferManagerTab(), "Offer Manager");
-      managerTabs.addTab(createPackageManagerTab(), "Package Manager");
+      OfferGeneratorTab offerGeneratorTab = new OfferGeneratorTab(this);
+      OfferManagerTab offerManagerTab = new OfferManagerTab(this);
+      PackageManagerTab packageManagerTab = new PackageManagerTab();
+
+      managerTabs.addTab(offerGeneratorTab.createOfferGeneratorTab(), "Offer Generator");
+      managerTabs.addTab(offerManagerTab.createOfferManagerTab(), "Offer Manager");
+      managerTabs.addTab(packageManagerTab.createPackageManagerTab(), "Package Manager");
 
       managerTabs.setSelectedTab(1);  // show the offer manager first, since this will probably be mostly in use
 
@@ -129,8 +129,8 @@ public class qOfferManager extends CustomComponent {
       // deselect the current offer (if any has been selected), so the user has to select the offer again -> information
       // for the database is queried again and e.g. the newly created packages are shown properly)
       managerTabs.addSelectedTabChangeListener((TabSheet.SelectedTabChangeListener) event -> {
-        OfferManagerTab.getOfferManagerGrid().deselectAll();
-        OfferManagerTab.getDetailsLayout().removeAllComponents();
+        offerManagerTab.getOfferManagerGrid().deselectAll();
+        offerManagerTab.getDetailsLayout().removeAllComponents();
       });
 
     } catch (SQLException e1) {

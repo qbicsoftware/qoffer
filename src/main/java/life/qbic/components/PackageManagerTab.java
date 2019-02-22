@@ -57,7 +57,7 @@ final class PackageManagerTab {
    * @throws SQLException:
  * @throws IOException 
    */
-  static Component createPackageManagerTab() throws SQLException, IOException {
+  Component createPackageManagerTab() throws SQLException, IOException {
 
     Database db = qOfferManager.getDb();
 

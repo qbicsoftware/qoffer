@@ -42,12 +42,19 @@ import static life.qbic.utils.qOfferManagerUtils.displayNotification;
 
 final class OfferManagerTabPackageComponent {
 
-  private static String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-  private static String csvFileName = basePath + "/WEB-INF/resourceFiles/discount_per_sample_size.csv";
-  private static ArrayList<Float> discountPerSampleSize = CsvParserUtils.parseCsvFile(csvFileName, ",", true);
-  private static RefreshableGrid selectedPacksInOfferGrid;
+  private String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+  private String csvFileName = basePath + "/WEB-INF/resourceFiles/discount_per_sample_size.csv";
+  private ArrayList<Float> discountPerSampleSize = CsvParserUtils.parseCsvFile(csvFileName, ",", true);
+  private RefreshableGrid selectedPacksInOfferGrid;
+  private OfferManagerTab offerManagerTab;
+  private qOfferManager qOfferManager;
 
   private static final Logger LOG = LogManager.getLogger(OfferManagerTabPackageComponent.class);
+
+  public OfferManagerTabPackageComponent(qOfferManager qom, OfferManagerTab omt){
+    offerManagerTab = omt;
+    qOfferManager = qom;
+  }
 
   /**
    * creates the component showing the packages of the respective package type of the currently selected offer in a
@@ -59,7 +66,7 @@ final class OfferManagerTabPackageComponent {
    * @return vaadin component
    * @throws SQLException :
    */
-  static Component createOfferManagerTabPackageComponent(SQLContainer offerGridContainer, String selectedOfferID,
+  Component createOfferManagerTabPackageComponent(SQLContainer offerGridContainer, String selectedOfferID,
                                                          String packagesType) throws SQLException {
 
     Database db = qOfferManager.getDb();
@@ -88,7 +95,7 @@ final class OfferManagerTabPackageComponent {
     ComboBox packagesAvailableForOfferComboBox = new ComboBox("Select package to add");
     packagesAvailableForOfferComboBox.setFilteringMode(FilteringMode.CONTAINS);
 
-    String selectedPackageGroup = OfferManagerTab.getPackageGroupComboBoxValue();
+    String selectedPackageGroup = offerManagerTab.getPackageGroupComboBoxValue();
     if (selectedPackageGroup.equals("All")) {
       packagesAvailableForOfferComboBox.addItems(db.getPackageIdsAndNames());
     } else {
@@ -234,7 +241,7 @@ final class OfferManagerTabPackageComponent {
    * @param addPackageButton: button for adding a package
    * @param packsContainer: sql container holding the data for the packages
    */
-  private static void addListeners(SQLContainer offerGridContainer, String selectedOfferID, Database db,
+  private void addListeners(SQLContainer offerGridContainer, String selectedOfferID, Database db,
                                    ComboBox packageQuantityComboBox, Button updateQuantityButton,
                                    Button removePackageButton, ComboBox packagesAvailableForOfferComboBox,
                                    Button addPackageButton, SQLContainer packsContainer,
@@ -452,7 +459,7 @@ final class OfferManagerTabPackageComponent {
    * @param selectedOfferID: id of the offer to update the price for
    * @param packsContainer: holds all the information about the offer
    */
-  private static void updateOfferPrice(String selectedOfferID, SQLContainer packsContainer) {
+  private void updateOfferPrice(String selectedOfferID, SQLContainer packsContainer) {
 
     Database db = qOfferManager.getDb();
 
@@ -495,7 +502,7 @@ final class OfferManagerTabPackageComponent {
    * updates the array lists holding the package names, descriptions, counts, unit prices and total prices
    * @param packsContainer: holds all the information of the currently used packages
    */
-  private static void updatePackageArrays(SQLContainer packsContainer) {
+  private void updatePackageArrays(SQLContainer packsContainer) {
 
     // TODO: later: use one list of packageBeans instead of multiple lists of strings
     // get the lists for the packages holding the package names, descriptions, etc.

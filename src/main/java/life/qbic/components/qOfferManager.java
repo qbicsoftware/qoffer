@@ -20,7 +20,6 @@ import com.vaadin.ui.*;
 import com.vaadin.ui.GridLayout.OutOfBoundsException;
 import com.vaadin.ui.GridLayout.OverlapsException;
 import com.vaadin.ui.themes.ValoTheme;
-import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
 import life.qbic.dbase.OpenBisProxy;
 import org.apache.logging.log4j.LogManager;
@@ -95,9 +94,7 @@ public class qOfferManager extends CustomComponent {
 
   private void init() throws IOException {
 
-    DBManager.setCredentials();
-    DBManager.getDatabaseInstance();
-    db = Database.Instance;
+    db = Database.getInstance();
     managerTabs = new TabSheet();
 
 /*    System.out.println(ft.format(dNow) + "  INFO  Offer Manager accessed! - User: "

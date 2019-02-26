@@ -1,155 +1,224 @@
 /*******************************************************************************
  * QBiC Offer Generator provides an infrastructure for creating offers using QBiC portal and
  * infrastructure. Copyright (C) 2017 Aydın Can Polatkan, 2018 Benjamin Sailer
- * 
+ *
  * This program is free software: you can redistribute it and/or modify it under the terms of the
  * GNU General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License along with this program. If
  * not, see http://www.gnu.org/licenses/.
  *******************************************************************************/
 package life.qbic.dbase;
 
+import com.vaadin.data.util.sqlcontainer.connection.JDBCConnectionPool;
+import com.vaadin.data.util.sqlcontainer.connection.SimpleJDBCConnectionPool;
+import com.vaadin.server.VaadinService;
 import life.qbic.model.packageBean;
+import life.qbic.portal.utils.ConfigurationManager;
+import life.qbic.portal.utils.ConfigurationManagerFactory;
+import life.qbic.portal.utils.LiferayConfigurationManager;
+import life.qbic.utils.qOfferManagerUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.*;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
+
+import static life.qbic.portal.utils.PortalUtils.isLiferayPortlet;
 
 public class Database {
 
   private static Database INSTANCE;
-  private String password;
-  private String user;
-  private String host;
-  Connection conn = null;
 
   private static final Logger LOG = LogManager.getLogger(Database.class);
+  private final String hostname;
+  private final String url; //was host
+  private final String port;
+  private final String sql_database;
+  private final String username;
+  private final String password;
+  private static SimpleJDBCConnectionPool connectionPool;
 
-  public void init(String user, String password, String host) {
-    // check if com.mysql.jdbc.Driver exists. If not try to add it
-    String mysqlDriverName = "com.mysql.jdbc.Driver";
-    Enumeration<Driver> tmp = DriverManager.getDrivers();
-    boolean existsDriver = false;
-    while (tmp.hasMoreElements()) {
-      Driver d = tmp.nextElement();
-      if (d.toString().equals(mysqlDriverName)) {
-        existsDriver = true;
-        break;
-      }
-    }
-    if (!existsDriver) {
-      // Register JDBC driver
-      // According http://docs.oracle.com/javase/6/docs/api/java/sql/DriverManager.html
-      // this should not be needed anymore. But without it I get the following error:
-      // java.sql.SQLException: No suitable driver found for
-      // jdbc:mysql://localhost:3306/facs_facility
-      // Does not work for servlets, just for portlets :(
-      try {
-        Class.forName(mysqlDriverName);
-      } catch (ClassNotFoundException e) {
-        e.printStackTrace();
-      }
-    }
-    this.setPassword(password);
-    this.setUser(user);
-    this.setHost(host);
+  //private static final String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+
+  private static ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
+
+  private Database(String user, String password, String host, String port, String sql_database){
+    username = user;
+    this.password = password;
+    this.hostname = host;
+    this.port = port;
+    this.sql_database = sql_database;
+    this.url = "jdbc:mysql://" + host + ":" + port + "/" + sql_database;
+
+    LOG.info("MySQL Database instance created");
   }
 
 
-  /*
-   * public static synchronized OpenBisProxy getInstance() {
-   *     init();
-   *     INSTANCE.activateSession();
-   *     return INSTANCE;
-   *   }
-   *
-   *   private static void init() {
-   *     LOG.info("Initializing OpenBisProxy");
-   *     if (INSTANCE == null) {
-   *       final String password, username, url;
-   *       if (isLiferayPortlet()) {
-   *         final ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
-   *         password = conf.getDataSourcePassword();
-   *         username = conf.getDataSourceUser();
-   *         url = conf.getDataSourceApiUrl() + IApplicationServerApi.SERVICE_URL;
-   *       } else {
-   *         try (final InputStream input = new FileInputStream(qOfferManagerUtils.PROPERTIES_FILE_PATH)) {
-   *
-   *           // load a properties file
-   *           final Properties prop = new Properties();
-   *           prop.load(input);
-   *
-   *           password = prop.getProperty(LiferayConfigurationManager.DATASOURCE_PASS);
-   *           username = prop.getProperty(LiferayConfigurationManager.DATASOURCE_USER);
-   *           url = prop.getProperty(LiferayConfigurationManager.DATASOURCE_API_URL) + IApplicationServerApi.SERVICE_URL;
-   *
-   *         } catch (IOException ex) {
-   *           throw new RuntimeException("Could not read configuration settings", ex);
-   *         }
-   *       }
-   *       INSTANCE = new OpenBisProxy(url, username, password);
-   *     }
-   *   }
-   */
+  //create the connection
 
-  /**
+  public static synchronized Database getInstance(){
+    init();
+    return INSTANCE;
+  }
+
+  //creates new connection pool each time called BUT static context..
+  public static JDBCConnectionPool getDatabaseInstanceAlternative() throws SQLException{
+
+    return new SimpleJDBCConnectionPool("com.mysql.jdbc.Driver",
+            "jdbc:mysql://" + INSTANCE.hostname + ":" + INSTANCE.port + "/" + INSTANCE.sql_database, INSTANCE.username, INSTANCE.password,
+            2, 5);
+  }
+
+
+  private static void init() {
+    LOG.info("Initializing MySQL Database");
+    if(INSTANCE == null) {
+      String user = "";
+      String pw = "";
+      String host = "";
+      String port = "";
+      String sql_database = "";
+
+      if (isLiferayPortlet()) {
+        user = conf.getMysqlUser();
+        pw = conf.getMysqlPass();
+        host = conf.getMsqlHost();
+        port = conf.getMysqlPort();
+        sql_database = conf.getMysqlDB();
+
+      } else {
+        Properties prop = new Properties();
+        InputStream input = null;
+
+        try {
+
+          input = new FileInputStream(qOfferManagerUtils.PROPERTIES_FILE_PATH);
+
+          // load a properties file
+          prop.load(input);
+
+          user = prop.getProperty(LiferayConfigurationManager.MSQL_USER);
+          pw = prop.getProperty(LiferayConfigurationManager.MSQL_PASS);
+          host = prop.getProperty(LiferayConfigurationManager.MSQL_HOST);
+          port = prop.getProperty(LiferayConfigurationManager.MSQL_PORT);
+          sql_database = prop.getProperty(LiferayConfigurationManager.MSQL_DB);
+
+        } catch (IOException ex) {
+          ex.printStackTrace();
+        } finally {
+          if (input != null) {
+            try {
+              input.close();
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+      INSTANCE = new Database(user,pw,host,port,sql_database);
+
+      // check if com.mysql.jdbc.Driver exists. If not try to add it
+      String mysqlDriverName = "com.mysql.jdbc.Driver";
+      Enumeration<Driver> tmp = DriverManager.getDrivers();
+      boolean existsDriver = false;
+      while (tmp.hasMoreElements()) {
+        Driver d = tmp.nextElement();
+        if (d.toString().equals(mysqlDriverName)) {
+          existsDriver = true;
+          break;
+        }
+      }
+      if (!existsDriver) {
+        // Register JDBC driver
+        // According http://docs.oracle.com/javase/6/docs/api/java/sql/DriverManager.html
+        // this should not be needed anymore. But without it I get the following error:
+        // java.sql.SQLException: No suitable driver found for
+        // jdbc:mysql://localhost:3306/facs_facility
+        // Does not work for servlets, just for portlets :(
+        try {
+          Class.forName(mysqlDriverName);
+        } catch (ClassNotFoundException e) {
+          e.printStackTrace();
+        }
+      }
+
+    }
+  }
+
+
+/*
+
+  */
+/**
    * @return the password
-   */
+   *//*
+
   public String getPassword() {
     return password;
   }
 
-  /**
+  */
+/**
    * @param password the password to set
-   */
+   *//*
+
   public void setPassword(String password) {
     this.password = password;
   }
 
-  /**
+  */
+/**
    * @return the user
-   */
+   *//*
+
   public String getUser() {
-    return user;
+    return username;
   }
 
-  /**
+  */
+/**
    * @param user the user to set
-   */
+   *//*
+
   public void setUser(String user) {
-    this.user = user;
+    this.username = user;
   }
 
-  /**
+  */
+/**
    * @return the host
-   */
+   *//*
+
   public String getHost() {
     return host;
   }
 
-  /**
+  */
+/**
    * @param host the host to set
-   */
+   *//*
+
   public void setHost(String host) {
     this.host = host;
   }
+*/
 
   /**
-   * 
+   *
    * Undoes all changes made in the current transaction. Does not undo, if conn IS in auto commit
    * mode
-   * 
+   *
    * @param conn:
    * @param closeConnection:
    */
@@ -171,18 +240,18 @@ public class Database {
 
   /**
    * logs into database with the parameters given in init()
-   * 
+   *
    * @return Connection, otherwise null if connecting to the database fails
    * @exception SQLException if a database access error occurs or the url is
    * {@code null}
    */
   private Connection login() throws SQLException {
-    return DriverManager.getConnection(host, user, password);
+    return DriverManager.getConnection(url, username, password);
   }
 
   /**
    * tries to close the given connection and release it
-   * 
+   *
    * From java documentation: It is strongly recommended that an application explicitly commits or
    * rolls back an active transaction prior to calling the close method. If the close method is
    * called and there is an active transaction, the results are implementation-defined.
@@ -217,13 +286,8 @@ public class Database {
         p.setpackage_date(rs.getTimestamp("package_date"));
         pbean.add(p);
       }
-      statement.close();
     } catch (SQLException e) {
       e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
     }
     return pbean;
   }
@@ -240,10 +304,6 @@ public class Database {
       }
     } catch (SQLException e) {
       e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
     }
     return list;
   }
@@ -270,10 +330,6 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
     return list;
   }
 
@@ -290,10 +346,6 @@ public class Database {
         packageName = rs.getString(1);
     } catch (SQLException e) {
       e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
     }
     return packageName;
   }
@@ -317,10 +369,6 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
     return list;
   }
 
@@ -343,10 +391,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return organizationId;
   }
 
@@ -359,7 +404,7 @@ public class Database {
 
     String[] address = new String[7];
     String sql = "SELECT group_acronym, institute, umbrella_organization, street, zip_code, city, country " +
-        "FROM organizations WHERE id = ?";
+            "FROM organizations WHERE id = ?";
 
     String group_acronym = "";
     String institute = "";
@@ -395,10 +440,6 @@ public class Database {
     address[5] = city;
     address[6] = country;
 
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
     return address;
   }
 
@@ -425,10 +466,6 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
 
     return personId;
   }
@@ -445,21 +482,16 @@ public class Database {
     // the person could not be found, so we return the notification message
     if (personId == -1)
       return new String[]{"There is no entry in the persons table for the person " + personFullName + ". The address " +
-          "fields in the generated .docx file will thus be placeholders. Please consider creating the user before " +
-          "creating the offer."};
+              "fields in the generated .docx file will thus be placeholders. Please consider creating the user before " +
+              "creating the offer."};
 
     int organizationId = getOrganizationIdForPersonId(personId);
 
     // the organization could not be found, so we return the notification message
     if (organizationId == -1)
       return new String[]{"There is no entry in the persons_organizations table for the person with id " +
-          Integer.toString(personId) + ". The address fields in the generated .docx file will thus be placeholders. " +
-          "Please consider linking the user to his organization before creating the offer."};
-
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+              Integer.toString(personId) + ". The address fields in the generated .docx file will thus be placeholders. " +
+              "Please consider linking the user to his organization before creating the offer."};
 
     return getAddressForOrganizationId(organizationId);
   }
@@ -482,10 +514,6 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
 
     return userEmail;
   }
@@ -503,10 +531,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return package_description;
   }
 
@@ -523,10 +548,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return package_id;
   }
 
@@ -536,7 +558,7 @@ public class Database {
 
     try (Connection connCheck = login();
          PreparedStatement statementCheck =
-             connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
+                 connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
       statementCheck.setInt(1, package_id);
       ResultSet resultCheck = statementCheck.executeQuery();
       // System.out.println("Exists: " + statementCheck);
@@ -546,11 +568,6 @@ public class Database {
       // System.out.println("resultCheck: " + count);
     } catch (SQLException e) {
       e.printStackTrace();
-    }
-
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
     }
 
     return offerIds;
@@ -567,10 +584,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
 
     sql = "DELETE FROM offers WHERE offer_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
@@ -581,10 +595,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
   }
 
   public void deletePackage(int packageId) {
@@ -598,10 +609,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
   }
 
   public void removePackageFromOffer(int packageId, int selectedOfferId) {
@@ -615,10 +623,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
   }
 
   public void updateTotalOfferPrice(String offer_id, float offer_total) {
@@ -635,10 +640,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
   }
 
   public void updatePackageQuantityAndRecalculatePrice(String package_count, String offer_id, String package_id,
@@ -680,8 +682,8 @@ public class Database {
 
     // update the package_count, the package_addon_price and the package_discount in the offers_packages table
     String sql =
-        "UPDATE offers_packages SET package_count = ?, package_addon_price = ?, package_discount = ? " +
-            "WHERE offer_id = ? AND package_id = ? ";
+            "UPDATE offers_packages SET package_count = ?, package_addon_price = ?, package_discount = ? " +
+                    "WHERE offer_id = ? AND package_id = ? ";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -733,8 +735,8 @@ public class Database {
         //offerDiscount = rs.getInt(1);
         LOG.info("Get String for discount "+rs.getNString(1));
       //column discount is VARCHAR() --> get String --> cut '%' --> convert to integer
-        String discount = rs.getString(1);
-        offerDiscount = Integer.parseInt(discount.split("%")[0]);
+      String discount = rs.getString(1);
+      offerDiscount = Integer.parseInt(discount.split("%")[0]);
 
     } catch (SQLException e) {
       e.printStackTrace();
@@ -755,11 +757,6 @@ public class Database {
       e.printStackTrace();
     }
 
-    // TODO: probably not needed
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
   }
 
   public void updatePackageGroupForPackage(String selectedPackageGroup, String packageId) {
@@ -774,10 +771,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
   }
 
 
@@ -794,10 +788,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return success;
   }
 
@@ -816,17 +807,14 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return count;
   }
 
   public String getPackageDiscount(String offer_id, String package_id) {
     String count = null;
     String sql =
-        "SELECT package_discount FROM offers_packages WHERE offer_id = ? AND package_id = ?";
+            "SELECT package_discount FROM offers_packages WHERE offer_id = ? AND package_id = ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -838,10 +826,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return count;
   }
 
@@ -858,10 +843,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return status;
   }
 
@@ -895,10 +877,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return package_price;
   }
 
@@ -907,17 +886,14 @@ public class Database {
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login();
-        PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+         PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
       statement.setString(1, name);
       statement.execute();
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
   }
 
   /**
@@ -938,10 +914,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return short_title;
   }
 
@@ -953,10 +926,10 @@ public class Database {
   public String getPIFromProjectRef(final String openbis_project_identifier) {
     String pi_title = "", pi_name = "", pi_surname = "", pi_fullname = "";
     String sql =
-        "SELECT DISTINCT persons.title, persons.first_name, persons.family_name FROM projects as projects INNER JOIN " +
-            "projects_persons as projects_persons ON projects.`id` = projects_persons.`project_id` INNER JOIN persons ON persons.`id` " +
-            "= projects_persons.`person_id` WHERE projects_persons.`project_role` = 'PI' AND " +
-            "`projects`.`openbis_project_identifier` LIKE ?";
+            "SELECT DISTINCT persons.title, persons.first_name, persons.family_name FROM projects as projects INNER JOIN " +
+                    "projects_persons as projects_persons ON projects.`id` = projects_persons.`project_id` INNER JOIN persons ON persons.`id` " +
+                    "= projects_persons.`person_id` WHERE projects_persons.`project_role` = 'PI' AND " +
+                    "`projects`.`openbis_project_identifier` LIKE ?";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -972,31 +945,27 @@ public class Database {
       e.printStackTrace();
     }
 
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
     return pi_fullname;
   }
 
 
   public int registerNewOffer(String offer_number, String offer_project_reference,
-      String offer_facility, String offer_name, String offer_description, float offer_price,
-      Date offer_date, String added_by, boolean internal) {
+                              String offer_facility, String offer_name, String offer_description, float offer_price,
+                              Date offer_date, String added_by, boolean internal) {
 
     Timestamp sql_offer_date = new Timestamp(offer_date.getTime());
 
     int offer_id = 0;
 
     String sql =
-        "INSERT INTO offers (offer_number, offer_project_reference, offer_facility, offer_name, offer_description," +
-            " offer_price, offer_total, offer_date, added_by, offer_status, discount, internal) " +
-            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+            "INSERT INTO offers (offer_number, offer_project_reference, offer_facility, offer_name, offer_description," +
+                    " offer_price, offer_total, offer_date, added_by, offer_status, discount, internal) " +
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
 
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login();
-        PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+         PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       statement.setString(1, offer_number);
       statement.setString(2, offer_project_reference);
       statement.setString(3, offer_facility);
@@ -1017,8 +986,8 @@ public class Database {
     // query the database for the current offer to get the offer id (there is probably a better way..)
     String sql2 = "SELECT offer_id FROM offers WHERE offer_project_reference = ? AND offer_price = ?";
     try (Connection conn = login();
-        PreparedStatement statement2 =
-            conn.prepareStatement(sql2, Statement.RETURN_GENERATED_KEYS)) {
+         PreparedStatement statement2 =
+                 conn.prepareStatement(sql2, Statement.RETURN_GENERATED_KEYS)) {
       statement2.setString(1, offer_project_reference);
       statement2.setFloat(2, offer_price);
       ResultSet rs = statement2.executeQuery();
@@ -1033,17 +1002,14 @@ public class Database {
     String sql3 = "UPDATE offers SET offer_number = ? WHERE offer_id = ?";
     try (Connection conn = login();
          PreparedStatement statement3 =
-             conn.prepareStatement(sql3, Statement.RETURN_GENERATED_KEYS)) {
+                 conn.prepareStatement(sql3, Statement.RETURN_GENERATED_KEYS)) {
       statement3.setString(1, offer_number);
       statement3.setInt(2, offer_id);
       int rs = statement3.executeUpdate();
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return offer_id;
   }
 
@@ -1052,7 +1018,7 @@ public class Database {
     int offerID = -1;
     try (Connection connCheck = login();
          PreparedStatement statementCheck =
-             connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
+                 connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
       statementCheck.setInt(1, package_id);
       ResultSet resultCheck = statementCheck.executeQuery();
       if (resultCheck.next()) {
@@ -1061,10 +1027,7 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return offerID;
   }
 
@@ -1072,7 +1035,7 @@ public class Database {
     String sqlCheck = "SELECT * FROM offers_packages WHERE package_id = ?";
     try (Connection connCheck = login();
          PreparedStatement statementCheck =
-             connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
+                 connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
       statementCheck.setInt(1, package_id);
       ResultSet resultCheck = statementCheck.executeQuery();
       if (resultCheck.next()) {
@@ -1080,10 +1043,6 @@ public class Database {
       }
     } catch (SQLException e) {
       e.printStackTrace();
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
     }
 
     return false;
@@ -1096,7 +1055,7 @@ public class Database {
 
     try (Connection connCheck = login();
          PreparedStatement statementCheck =
-             connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
+                 connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
       statementCheck.setInt(1, offer_id);
       statementCheck.setInt(2, package_id);
       ResultSet resultCheck = statementCheck.executeQuery();
@@ -1105,11 +1064,6 @@ public class Database {
       }
     } catch (SQLException e) {
       e.printStackTrace();
-    }
-
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
     }
     return count > 0;
   }
@@ -1121,8 +1075,8 @@ public class Database {
     // check if we need to update or insert the package
     String sqlCheck = "SELECT COUNT(*) FROM offers_packages WHERE offer_id = ? AND package_id = ?";
     try (Connection connCheck = login();
-        PreparedStatement statementCheck =
-            connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
+         PreparedStatement statementCheck =
+                 connCheck.prepareStatement(sqlCheck, Statement.RETURN_GENERATED_KEYS)) {
       statementCheck.setInt(1, offer_id);
       statementCheck.setInt(2, package_id);
       ResultSet resultCheck = statementCheck.executeQuery();
@@ -1135,9 +1089,9 @@ public class Database {
 
     if (count > 0) {
       String sqlUpdate =
-          "UPDATE offers_packages SET package_id = ?, package_addon_price = ? WHERE offer_id = ?";
+              "UPDATE offers_packages SET package_id = ?, package_addon_price = ? WHERE offer_id = ?";
       try (Connection connUpdate = login();
-          PreparedStatement statementUpdate = connUpdate.prepareStatement(sqlUpdate)) {
+           PreparedStatement statementUpdate = connUpdate.prepareStatement(sqlUpdate)) {
         statementUpdate.setInt(1, package_id);
         statementUpdate.setFloat(2, package_unit_price);
         statementUpdate.setInt(3, offer_id);
@@ -1149,10 +1103,10 @@ public class Database {
       }
     } else {
       String sqlInsert =
-          "INSERT INTO offers_packages (offer_id, package_id, package_addon_price, package_count, package_discount) " +
-              "VALUES (?,?,?,?,?)";
+              "INSERT INTO offers_packages (offer_id, package_id, package_addon_price, package_count, package_discount) " +
+                      "VALUES (?,?,?,?,?)";
       try (Connection connInsert = login();
-          PreparedStatement statementInsert = connInsert.prepareStatement(sqlInsert)) {
+           PreparedStatement statementInsert = connInsert.prepareStatement(sqlInsert)) {
         statementInsert.setInt(1, offer_id);
         statementInsert.setInt(2, package_id);
         statementInsert.setFloat(3, package_unit_price);
@@ -1163,10 +1117,6 @@ public class Database {
       } catch (SQLException e) {
         e.printStackTrace();
       }
-    }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
     }
     return success;
   }
@@ -1182,12 +1132,12 @@ public class Database {
 
     // returns the package_id from the packages of the current offer where package_group is null
     String sql = "SELECT packages.`package_id` " + "FROM packages " +
-        "INNER JOIN offers_packages ON packages.`package_id` = offers_packages.`package_id` " +
-        "WHERE offers_packages.`offer_id` = " + offer_id + " AND packages.`package_group` IS NULL";
+            "INNER JOIN offers_packages ON packages.`package_id` = offers_packages.`package_id` " +
+            "WHERE offers_packages.`offer_id` = " + offer_id + " AND packages.`package_group` IS NULL";
 
     try (Connection connCheck = login();
          PreparedStatement statementCheck =
-             connCheck.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                 connCheck.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ResultSet resultCheck = statementCheck.executeQuery();
       while (resultCheck.next()) {
         packageIdsArray.add(resultCheck.getString(1));
@@ -1195,17 +1145,14 @@ public class Database {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    try {
-      conn.close();
-    } catch (Exception e) { /* ignored */
-    }
+
     return packageIdsArray;
   }
 
   public void updatePackagePriceTypeForPackage(String offerId, String packageId, String packagePriceType) {
 
     String sqlUpdate =
-        "UPDATE offers_packages SET package_price_type = ? WHERE offer_id = ? AND package_id = ?";
+            "UPDATE offers_packages SET package_price_type = ? WHERE offer_id = ? AND package_id = ?";
     try (Connection connUpdate = login();
          PreparedStatement statementUpdate = connUpdate.prepareStatement(sqlUpdate)) {
       statementUpdate.setString(1, packagePriceType);

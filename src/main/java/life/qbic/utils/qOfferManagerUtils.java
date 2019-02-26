@@ -33,7 +33,7 @@ import java.io.PrintStream;
 public final class qOfferManagerUtils {
 
   /**
-   * Both DBManager and OpenBisProxy require this path to obtain configuration settings.
+   * Both Database and OpenBisProxy require this path to obtain configuration settings.
    */
   public static final String PROPERTIES_FILE_PATH = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath() + "/WEB-INF/resourceFiles/Credentials.properties";
 

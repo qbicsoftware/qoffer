@@ -25,7 +25,6 @@ import com.vaadin.server.VaadinService;
 import com.vaadin.shared.ui.combobox.FilteringMode;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.*;
-import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
 import life.qbic.utils.CsvParserUtils;
 import life.qbic.utils.RefreshableGrid;
@@ -149,7 +148,7 @@ final class OfferManagerTabPackageComponent {
     }
 
     FreeformQuery query =
-        new FreeformQuery(freeformQueryString, DBManager.getDatabaseInstanceAlternative());
+        new FreeformQuery(freeformQueryString, db.getDatabaseInstanceAlternative());
 
     SQLContainer packsContainer = new SQLContainer(query);
     packsContainer.setAutoCommit(true);

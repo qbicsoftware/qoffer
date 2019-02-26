@@ -25,7 +25,6 @@ import com.vaadin.data.util.sqlcontainer.query.TableQuery;
 import com.vaadin.server.*;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
-import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
 import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.Docx4jUtils;
@@ -147,7 +146,7 @@ final class OfferManagerTab {
     offerManLayout.setSpacing(true);
     offerManLayout.setSizeFull();
 
-    TableQuery tq = new TableQuery("offers", DBManager.getDatabaseInstanceAlternative());
+    TableQuery tq = new TableQuery("offers", db.getDatabaseInstanceAlternative());
     tq.setVersionColumn("OPTLOCK");
     SQLContainer container = new SQLContainer(tq);
     container.setAutoCommit(true);

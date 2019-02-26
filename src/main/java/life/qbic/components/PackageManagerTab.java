@@ -24,7 +24,6 @@ import com.vaadin.data.util.sqlcontainer.query.TableQuery;
 import com.vaadin.server.*;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
-import life.qbic.dbase.DBManager;
 import life.qbic.dbase.Database;
 import life.qbic.utils.RefreshableGrid;
 import org.vaadin.gridutil.cell.GridCellFilter;
@@ -96,7 +95,7 @@ final class PackageManagerTab {
         "external prices based on the internal prices.");
     calculatePricesAutomaticallyCheckBox.setValue(true);
 
-    TableQuery tq = new TableQuery("packages", DBManager.getDatabaseInstanceAlternative());
+    TableQuery tq = new TableQuery("packages", db.getDatabaseInstanceAlternative());
     tq.setVersionColumn("OPTLOCK");
 
     SQLContainer container = new SQLContainer(tq);
@@ -326,7 +325,7 @@ final class PackageManagerTab {
 
       @Override
       public void buttonClick(Button.ClickEvent event) {
-        DBManager.getDatabaseInstance().addNewPackage("*** New Package - double click to edit ***");
+        db.getInstance().addNewPackage("*** New Package - double click to edit ***");
         displayNotification(
             "New Package Added",
             "Please edit the package details! If the details are not complete, incompatibility " +

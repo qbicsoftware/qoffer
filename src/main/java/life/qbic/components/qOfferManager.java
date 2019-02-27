@@ -22,6 +22,7 @@ import com.vaadin.ui.GridLayout.OverlapsException;
 import com.vaadin.ui.themes.ValoTheme;
 import life.qbic.dbase.Database;
 import life.qbic.dbase.OpenBisProxy;
+import life.qbic.portal.utils.PortalUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -97,8 +98,7 @@ public class qOfferManager extends CustomComponent {
     db = Database.getInstance();
     managerTabs = new TabSheet();
 
-/*    System.out.println(ft.format(dNow) + "  INFO  Offer Manager accessed! - User: "
-        + LiferayAndVaadinUtils.getUser().getScreenName());*/
+    LOG.info(" INFO  Offer Manager accessed! - User: {}",PortalUtils.getUser().getScreenName());
 
     managerTabs.addStyleName(ValoTheme.TABSHEET_FRAMED);
     managerTabs.addStyleName(ValoTheme.TABSHEET_EQUAL_WIDTH_TABS);

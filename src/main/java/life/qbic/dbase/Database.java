@@ -1164,4 +1164,43 @@ public class Database {
     }
   }
 
+
+  /**
+   * visit the tables offers, projects, projects_persons and persons to find the project manager for the given offer
+   * if no project manager is defined "no person found" is returned
+   * if there are multiple project manager the last project manager is returned
+   * @param offer_id
+   * @return
+   */
+  public String getProjectManager(String offer_id) {
+
+    //select * from projects where openbis_project_identifier like '%QRFSD';
+
+    String person = "no person found";
+    String sql = "SELECT persons.first_name, persons.family_name, persons.email " +
+                  "FROM persons, projects_persons, (SELECT projects.id FROM offers, projects " +
+                                                    "WHERE offers.offer_id = ? AND projects.openbis_project_identifier LIKE CONCAT('%',offers.offer_project_reference)) AS offers_projects " +
+                "WHERE offers_projects.id = projects_persons.project_id AND projects_persons.project_role = 'Manager' AND projects_persons.person_id = persons.id";
+
+    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
+      statement.setString(1, offer_id);
+      ResultSet rs = statement.executeQuery();
+
+      //only if the result set contains rows alter the person string
+      if (rs.isBeforeFirst() ) {
+        while (rs.next()) {
+
+          person = rs.getString("first_name") + ",";
+          person += rs.getString("family_name") + ",";
+          person += rs.getString("email");
+
+        }
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+
+    return person;
+  }
+
 }

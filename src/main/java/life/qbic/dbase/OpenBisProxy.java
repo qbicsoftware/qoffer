@@ -91,6 +91,7 @@ public class OpenBisProxy {
         password = conf.getDataSourcePassword();
         username = conf.getDataSourceUser();
         url = conf.getDataSourceApiUrl() + IApplicationServerApi.SERVICE_URL;
+        //LOG.info("OpenBIS URL {}",url);
       } else {
         try (final InputStream input = new FileInputStream(qOfferManagerUtils.PROPERTIES_FILE_PATH)) {
 

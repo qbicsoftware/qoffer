@@ -497,13 +497,25 @@ final class OfferManagerTab {
 
     String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1).split("_")[0];
 
-    // TODO: for liferay it probably needs some adjustments, since I couldn't test this properly..
+
+    //find the project manager based on the offer_id
+    String offer_id =
+            container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_id").getValue()
+                    .toString();
+    String personResult = db.getProjectManager(offer_id);
     String projectManager;
     String projectManagerMail;
-    try {
-      projectManager = PortalUtils.getUser().getScreenName();
-      projectManagerMail = db.getUserEmail(projectManager);
-    } catch (NullPointerException e) {
+
+    displayNotification(personResult.toString(), address[0],"warning");
+
+    if(personResult != "no person found") {
+      String[] projectManagerPerson = personResult.split(",");
+
+      projectManager = projectManagerPerson[0]+" "+projectManagerPerson[1];
+      displayNotification(projectManager, address[0],"warning");
+      projectManagerMail = projectManagerPerson[2];
+      
+    } else {
       projectManager = "Project manager not found";
       projectManagerMail = "Mail not found";
     }

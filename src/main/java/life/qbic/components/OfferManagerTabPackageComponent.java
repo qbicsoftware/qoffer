@@ -274,6 +274,7 @@ final class OfferManagerTabPackageComponent {
 
       @Override
       public void buttonClick(Button.ClickEvent event) {
+        offerManagerTab.setEnableGenerateButton(false);
 
         if (selectedPacksInOfferGrid.getSelectedRow() == null) {
           displayNotification("oOps! Forgot something?!",
@@ -329,6 +330,7 @@ final class OfferManagerTabPackageComponent {
     });
 
     removePackageButton.addClickListener((Button.ClickListener) event -> {
+      offerManagerTab.setEnableGenerateButton(false);
 
       Object selectedRow = selectedPacksInOfferGrid.getSelectedRow();
       if (selectedRow == null) {
@@ -357,6 +359,7 @@ final class OfferManagerTabPackageComponent {
     });
 
     addPackageButton.addClickListener((Button.ClickListener) event -> {
+      offerManagerTab.setEnableGenerateButton(false);
 
       Object packageToAdd = packagesAvailableForOfferComboBox.getValue();
       if (packageToAdd == null) {
@@ -401,6 +404,7 @@ final class OfferManagerTabPackageComponent {
     });
 
     externalInternalPriceButton.addClickListener(event -> {
+      offerManagerTab.setEnableGenerateButton(false);
 
       if (selectedPacksInOfferGrid.getSelectedRow() == null) {
         displayNotification("oOps! Forgot something?!",
@@ -463,6 +467,7 @@ final class OfferManagerTabPackageComponent {
    * @param packsContainer: holds all the information about the offer
    */
   private void updateOfferPrice(String selectedOfferID, SQLContainer packsContainer) {
+    offerManagerTab.setEnableGenerateButton(false);
 
     Database db = qOfferManager.getDb();
 

@@ -8,6 +8,14 @@ and create and manage packages for the offers via the Package Manager Tab.
 ## Author
 Created by Benjamin Sailer, Jennifer Boedker (jennifer.boedker@student.uni-tuebingen.de).
 
+## Known Issues
+### Browser Caching
+
+Firefox caches the generated offer-files. Changes to the contents
+in the offer are not reflected in the file of a fresh download since the filename stays the same
+and the browser provides the old cached file. This can be avoided by disabling caching:
+ browse `about:config` and set `browser.cache.disk.enable` to false (see: https://github.com/qbicsoftware/qoffer-portlet/issues/15).
+
 ## Description
 ### Offer Generator
 

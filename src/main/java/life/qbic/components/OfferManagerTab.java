@@ -54,6 +54,8 @@ final class OfferManagerTab {
   private ComboBox packageGroupComboBox;
   private qOfferManager qOfferManager;
   private OfferManagerTabPackageComponent offerManagerTabPackageComponent;
+  private Button generateOfferButton;
+
 
   //private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
   private static final Logger LOG = LogManager.getLogger(OfferManagerTab.class);
@@ -135,7 +137,7 @@ final class OfferManagerTab {
     validateOfferButton.setDescription("Download button will be active once offer is validated");
     validateOfferButton.setIcon(FontAwesome.CHECK_CIRCLE);
 
-    Button generateOfferButton = new Button("Download offer");
+    generateOfferButton = new Button("Download offer");
     generateOfferButton.setIcon(FontAwesome.DOWNLOAD);
     generateOfferButton.setDescription("Offer must be first validated!");
     generateOfferButton.setEnabled(false);
@@ -367,6 +369,7 @@ final class OfferManagerTab {
 
     validateOfferButton.addClickListener(e -> {
       generateOfferButton.setEnabled(false);
+      validateOfferButton.setEnabled(false);
       UI.getCurrent().setPollInterval(100);
       CompletableFuture.supplyAsync(() ->
         generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices, packageTotalPrices, packageIDs, fileDownloader)
@@ -374,6 +377,7 @@ final class OfferManagerTab {
         if (success) {
           UI.getCurrent().access(() -> generateOfferButton.setEnabled(true));
         }
+        UI.getCurrent().access(() -> validateOfferButton.setEnabled(true));
         UI.getCurrent().setPollInterval(-1);
       });
 
@@ -643,4 +647,9 @@ final class OfferManagerTab {
       throw new RuntimeException("Could not generate offer file", e);
     }
   }
+  
+  public void setEnableGenerateButton(boolean enable) {
+    generateOfferButton.setEnabled(enable);
+  }
+
 }

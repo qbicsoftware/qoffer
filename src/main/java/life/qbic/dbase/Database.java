@@ -1181,16 +1181,16 @@ public class Database {
             "WHERE offers_projects.id = projects_persons.project_id AND projects_persons.project_role = 'Manager' AND projects_persons.person_id = persons.id";*/
 
     String person = "no person found";
-    String sql = "SELECT persons.first_name, persons.family_name, persons.email\n" +
-                  "FROM persons\n" +
-                    "RIGHT JOIN projects_persons \n" +
-                          "ON persons.id = projects_persons.person_id\n" +
-                    "RIGHT JOIN projects \n" +
-                          "ON projects_persons.project_id = projects.id\n" +
-                    "RIGHT JOIN offers\n" +
-                          "ON projects.openbis_project_identifier LIKE CONCAT('%',offers.offer_project_reference)\n" +
+    String sql = "SELECT persons.first_name, persons.family_name, persons.email " +
+                  "FROM persons " +
+                    "INNER JOIN projects_persons " +
+                          "ON persons.id = projects_persons.person_id " +
+                    "INNER JOIN projects " +
+                          "ON projects_persons.project_id = projects.id " +
+                    "INNER JOIN offers " +
+                          "ON projects.openbis_project_identifier LIKE CONCAT('%',offers.offer_project_reference) " +
                   "WHERE offers.offer_id = ? AND projects_persons.project_role = 'Manager'";
-    
+
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
       statement.setString(1, offer_id);
       ResultSet rs = statement.executeQuery();

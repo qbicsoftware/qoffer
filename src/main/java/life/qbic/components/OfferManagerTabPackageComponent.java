@@ -438,6 +438,9 @@ final class OfferManagerTabPackageComponent {
         // due to a lack of time we simply use the updatePackageQuantityAndRecalculatePrice function to
         // recalculate the prices, although the quantity has not changed
         // TODO: write function to recalculate the price without the quantity to save some computation power
+        packsContainer.refresh();
+        offerGridContainer.refresh();
+
         String packageDiscountString = packsContainer.getContainerProperty(rowContainerId,
             "package_discount").getValue().toString().split("%")[0];
         String packageCount = packsContainer.getContainerProperty(rowContainerId,
@@ -449,6 +452,7 @@ final class OfferManagerTabPackageComponent {
         packsContainer.refresh();
         offerGridContainer.refresh();
 
+        updatePackageArrays(packsContainer);
       }
     });
   }

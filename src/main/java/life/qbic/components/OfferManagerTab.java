@@ -399,7 +399,12 @@ final class OfferManagerTab {
     //String exportOffersFileName = pathOnServer + "offers.csv";
     File tempFile = File.createTempFile("offers", ".csv");
     String filePath = tempFile.getAbsolutePath();
-	exportFileDownloader = new FileDownloader(new FileResource(tempFile))
+    //set cache time to zero so that each time the download button is pressed the file is generated new and no cached information
+    //is saved (like quantity for table content
+    FileResource resource = new FileResource(tempFile);
+    resource.setCacheTime(1000);
+
+	exportFileDownloader = new FileDownloader(resource)
     {
       @Override
       public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException
@@ -506,13 +511,10 @@ final class OfferManagerTab {
     String projectManager;
     String projectManagerMail;
 
-    displayNotification(personResult.toString(), address[0],"warning");
-
     if(personResult != "no person found") {
       String[] projectManagerPerson = personResult.split(",");
 
       projectManager = projectManagerPerson[0]+" "+projectManagerPerson[1];
-      displayNotification(projectManager, address[0],"warning");
       projectManagerMail = projectManagerPerson[2];
       
     } else {
@@ -616,8 +618,9 @@ final class OfferManagerTab {
 
       assert wordProcessor != null;
       wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
+
       LOG.info("SAVE FILE: done saving the File");
-      fileDownloader.setFileDownloadResource(new StreamResource(new StreamResource.StreamSource() {
+      StreamResource sr = new StreamResource(new StreamResource.StreamSource() {
         @Override
         public InputStream getStream () {
           try {
@@ -626,9 +629,16 @@ final class OfferManagerTab {
             throw new RuntimeException("Could not save offer", e);
           }
         }
-      }, projectQuotationNumber + ".docx"));
+      }, projectQuotationNumber + ".docx");
+
+      //also set the cache time of the Resource of the actually downloaded file to zero to obtain the newly generated file
+      sr.setCacheTime(1000);
+
+      fileDownloader.setFileDownloadResource(sr);
+
       displayNotification("File is ready", "Offer file is ready", "warning");
       return true;
+
     } catch (Docx4JException | IOException e) {
       throw new RuntimeException("Could not generate offer file", e);
     }

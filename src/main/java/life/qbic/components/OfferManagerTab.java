@@ -17,6 +17,8 @@
 package life.qbic.components;
 
 import java.util.concurrent.CompletableFuture;
+
+import com.vaadin.shared.ui.label.ContentMode;
 import life.qbic.portal.portlet.QofferUIPortlet;
 
 import com.vaadin.data.Property;
@@ -368,9 +370,14 @@ final class OfferManagerTab {
     });
 
     validateOfferButton.addClickListener(e -> {
+
       generateOfferButton.setEnabled(false);
       validateOfferButton.setEnabled(false);
+
       UI.getCurrent().setPollInterval(100);
+      Window modalWindow = createModalWindow();
+      UI.getCurrent().addWindow(modalWindow);
+
       CompletableFuture.supplyAsync(() ->
         generateOfferFile(container, db, packageNames, packageDescriptions, packageCounts, packageUnitPrices, packageTotalPrices, packageIDs, fileDownloader)
       ).thenAcceptAsync(success -> {
@@ -378,6 +385,7 @@ final class OfferManagerTab {
           UI.getCurrent().access(() -> generateOfferButton.setEnabled(true));
         }
         UI.getCurrent().access(() -> validateOfferButton.setEnabled(true));
+        UI.getCurrent().access(() -> modalWindow.setClosable(true));
         UI.getCurrent().setPollInterval(-1);
       });
 
@@ -390,6 +398,77 @@ final class OfferManagerTab {
           "again.", "error");
       e.printStackTrace();
     }
+  }
+
+  /**
+   * Create a modal window displaying all notifications during the
+   * @return
+   */
+  private Window createModalWindow(){
+    Window window = new Window();
+    window.setClosable(false);
+    window.setModal(true);
+    window.center();
+    window.setHeight(40, Sizeable.Unit.PERCENTAGE);//or 25
+    window.setWidth(25, Sizeable.Unit.PERCENTAGE);
+
+    Label isValidating = new Label(FontAwesome.SPINNER.getHtml()+" Validating ...");
+    isValidating.setContentMode(ContentMode.HTML);
+
+    window.setContent(isValidating);
+
+    /* create Theme:
+      .mytheme .v-label-success, .mytheme .v-label-failure, .mytheme .v-label-warn {
+    background: white;
+    color: #3e3d3d;
+    border: 2px solid #2c9720;
+    border-radius: 4px;
+    padding: 7px 19px 7px 37px;
+    font-weight: 400;
+    font-size: 15px;
+  }
+
+  .mytheme .v-label-success:before, .mytheme .v-label-failure:before, .mytheme .v-label-warn:before {
+    font-family: ThemeIcons;
+    content: "\f00c";
+    margin-right: 0.5em;
+    margin-left: -19px;
+    color: #2c9720;
+  }
+
+  .mytheme .v-label-failure {
+    border-color: #ed473b;
+  }
+
+  .mytheme .v-label-failure:before {
+    content: "\f05e";
+    color: #ed473b;
+  }
+
+  .mytheme .v-label-warn {
+    border-color: #eddc58;
+  }
+
+  .mytheme .v-label-warn:before {
+    content: "\f12a";
+    color: #eddc58;
+  }
+  and setStyleName as string:
+          Label label2 = new Label( "testtest");
+        label2.setStyleName("success");
+        horizontalLayout.addComponent(label2);
+
+        Label button = new Label( "test");
+        button.setStyleName("warn");
+        horizontalLayout.addComponent(button);
+
+
+        Label label3 = new Label( "ttest");
+        label3.setStyleName("failure");
+        horizontalLayout.addComponent(label3);
+     */
+
+    return window;
   }
 
   /**
@@ -647,9 +726,14 @@ final class OfferManagerTab {
       throw new RuntimeException("Could not generate offer file", e);
     }
   }
-  
+
+  /**
+   * Enable the manipulation of the enabled-status of the generateOfferButton
+   * @param enable
+   */
   public void setEnableGenerateButton(boolean enable) {
     generateOfferButton.setEnabled(enable);
   }
+
 
 }

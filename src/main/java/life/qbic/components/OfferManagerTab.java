@@ -18,9 +18,6 @@ package life.qbic.components;
 
 import java.util.concurrent.CompletableFuture;
 
-import com.vaadin.shared.ui.label.ContentMode;
-import life.qbic.portal.portlet.QofferUIPortlet;
-
 import com.vaadin.data.Property;
 import com.vaadin.data.util.sqlcontainer.SQLContainer;
 import com.vaadin.data.util.sqlcontainer.query.TableQuery;
@@ -28,7 +25,6 @@ import com.vaadin.server.*;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
 import life.qbic.dbase.Database;
-import life.qbic.portal.utils.PortalUtils;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
 import org.apache.logging.log4j.LogManager;
@@ -57,6 +53,8 @@ final class OfferManagerTab {
   private qOfferManager qOfferManager;
   private OfferManagerTabPackageComponent offerManagerTabPackageComponent;
   private Button generateOfferButton;
+  private VerticalLayout notifications;
+  private Window modalWindow;
 
 
   //private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
@@ -171,10 +169,14 @@ final class OfferManagerTab {
     filter.setComboBoxFilter("offer_status", Arrays.asList("In Progress",
         "Sent", "Accepted", "Rejected"));
 
+    final Button close = new Button("close");
+    close.setEnabled(false);
+    close.setIcon(FontAwesome.TIMES_CIRCLE);
+
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
     addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton, container,
-        exportTableButton, validateOfferButton);
+        exportTableButton, validateOfferButton, close);
 
     offerManagerGrid.getColumn("offer_id").setHeaderCaption("Id").setWidth(100).setEditable(false);
     offerManagerGrid.getColumn("offer_number").setHeaderCaption("Quotation Number").setWidth(200).setEditable(false);
@@ -249,7 +251,7 @@ final class OfferManagerTab {
    */
   private void addListeners(Database db, ComboBox updateStatusComboBox, Button updateButton,
                                    Button deleteOfferButton, Button generateOfferButton, SQLContainer container,
-                                   Button exportTableButton, Button validateOfferButton) {
+                                   Button exportTableButton, Button validateOfferButton, Button close) {
 
     // several lists holding the package names, descriptions, prices, etc. for the current offer
     // TODO: change to one list of packageBeans
@@ -369,13 +371,17 @@ final class OfferManagerTab {
       }
     });
 
+    close.addClickListener(e -> {
+      modalWindow.close();
+    });
+
     validateOfferButton.addClickListener(e -> {
 
       generateOfferButton.setEnabled(false);
       validateOfferButton.setEnabled(false);
 
       UI.getCurrent().setPollInterval(100);
-      Window modalWindow = createModalWindow();
+      modalWindow = createModalWindow(close);
       UI.getCurrent().addWindow(modalWindow);
 
       CompletableFuture.supplyAsync(() ->
@@ -385,6 +391,7 @@ final class OfferManagerTab {
           UI.getCurrent().access(() -> generateOfferButton.setEnabled(true));
         }
         UI.getCurrent().access(() -> validateOfferButton.setEnabled(true));
+        UI.getCurrent().access(() -> close.setEnabled(true));
         UI.getCurrent().access(() -> modalWindow.setClosable(true));
         UI.getCurrent().setPollInterval(-1);
       });
@@ -394,8 +401,10 @@ final class OfferManagerTab {
     try {
       setupTableExportFunctionality(container, exportTableButton);
     } catch (IOException e) {
-      displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
-          "again.", "error");
+      //displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
+      //    "again.", "error");
+      windowNotification("failure","A file could not be found, please try again.");
+
       e.printStackTrace();
     }
   }
@@ -404,71 +413,72 @@ final class OfferManagerTab {
    * Create a modal window displaying all notifications during the
    * @return
    */
-  private Window createModalWindow(){
+  private Window createModalWindow(Button close){
     Window window = new Window();
     window.setClosable(false);
     window.setModal(true);
+    window.setCaption("Validating Offer");
     window.center();
-    window.setHeight(40, Sizeable.Unit.PERCENTAGE);//or 25
+   // window.setHeight(40, Sizeable.Unit.PERCENTAGE);//or 25
     window.setWidth(25, Sizeable.Unit.PERCENTAGE);
 
-    Label isValidating = new Label(FontAwesome.SPINNER.getHtml()+" Validating ...");
-    isValidating.setContentMode(ContentMode.HTML);
+//    Label isValidating = new Label(FontAwesome.SPINNER.getHtml()+" Validating ...");
+//    isValidating.setContentMode(ContentMode.HTML);
+    notifications = new VerticalLayout();
+    notifications.setMargin(true);
 
-    window.setContent(isValidating);
+    Label validating = new Label("Please wait while the offer is validating");
+    //checkout mytheme.scss, here are the styles defined for the types
+    // validating (val), warning (warn), success (success) and failure (failure)
+    validating.setStyleName("spin");
+    notifications.addComponent(validating);
+    notifications.setWidth(100, Sizeable.Unit.PERCENTAGE);
 
-    /* create Theme:
-      .mytheme .v-label-success, .mytheme .v-label-failure, .mytheme .v-label-warn {
-    background: white;
-    color: #3e3d3d;
-    border: 2px solid #2c9720;
-    border-radius: 4px;
-    padding: 7px 19px 7px 37px;
-    font-weight: 400;
-    font-size: 15px;
-  }
+    close.setEnabled(false);
 
-  .mytheme .v-label-success:before, .mytheme .v-label-failure:before, .mytheme .v-label-warn:before {
-    font-family: ThemeIcons;
-    content: "\f00c";
-    margin-right: 0.5em;
-    margin-left: -19px;
-    color: #2c9720;
-  }
+    Panel panel = new Panel();
+    //panel.setContent();
+    VerticalLayout windowContent = new VerticalLayout(notifications,close);
+    windowContent.setComponentAlignment(notifications,Alignment.MIDDLE_CENTER);
+    windowContent.setComponentAlignment(close,Alignment.BOTTOM_RIGHT);
+    windowContent.setMargin(true);
 
-  .mytheme .v-label-failure {
-    border-color: #ed473b;
-  }
+    //notifications.addComponent(windowContent);
 
-  .mytheme .v-label-failure:before {
-    content: "\f05e";
-    color: #ed473b;
-  }
-
-  .mytheme .v-label-warn {
-    border-color: #eddc58;
-  }
-
-  .mytheme .v-label-warn:before {
-    content: "\f12a";
-    color: #eddc58;
-  }
-  and setStyleName as string:
-          Label label2 = new Label( "testtest");
-        label2.setStyleName("success");
-        horizontalLayout.addComponent(label2);
-
-        Label button = new Label( "test");
-        button.setStyleName("warn");
-        horizontalLayout.addComponent(button);
-
-
-        Label label3 = new Label( "ttest");
-        label3.setStyleName("failure");
-        horizontalLayout.addComponent(label3);
-     */
+    window.setContent(windowContent);
 
     return window;
+  }
+
+  /**
+   * Add a notification to the modal window. The type can be failure, warn, success or val
+   * @param type
+   */
+  private void windowNotification(String type,String message){
+
+    switch (type) {
+      case "failure":
+        Label fail = new Label(message);
+        fail.setStyleName(type);
+        notifications.addComponent(fail);
+        break;
+      case "success":
+        Label success = new Label(message);
+        success.setStyleName(type);
+        notifications.addComponent(success);
+        break;
+      case "warn":
+        Label warn = new Label(message);
+        warn.setStyleName(type);
+        notifications.addComponent(warn);
+        break;
+      default:
+        Label val = new Label(message);
+        val.setStyleName("spin");
+        notifications.addComponent(val);
+        break;
+    }
+
   }
 
   /**
@@ -517,8 +527,7 @@ final class OfferManagerTab {
                                         List<String> packageUnitPrices, List<String> packageTotalPrices, List<String> packageIDs,
                                         FileDownloader fileDownloader) {
     if (offerManagerGrid.getSelectedRow() == null) {
-      displayNotification("oOps! Forgot something?!",
-          "Please make sure that you select an offer.", "error");
+      windowNotification("failure", "Please make sure that you select an offer.");
       return false;
     }
 
@@ -568,7 +577,8 @@ final class OfferManagerTab {
 
     // deal with the potential errors; address[0] contains a more detailed error message and tells the user how to fix the issue
     if (address.length == 1) {
-      displayNotification("Database entry not found!", address[0], "warning");
+      windowNotification("failure","Database entry for address not found!");
+      return false;
     } else {
       groupAcronym = address[0];
       institute = address[1];
@@ -603,14 +613,15 @@ final class OfferManagerTab {
     } else {
       projectManager = "Project manager not found";
       projectManagerMail = "Mail not found";
+      windowNotification("warn","Project Manager entry not found in Database! You may want to change the information in the generated offer.");
     }
 
     //TODO inserted this not tested yet
     String projectID = //look-up: is there a thing as "offer_id" or how is it called?
             container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_id").getValue().toString();
     if (projectID == null) {
-      displayNotification("Offer ID is null", "Warning: The offer ID for the current offer is null." +
-              "Please consider setting the offer ID in the Offer Manager tab.", "error");
+      windowNotification("failure", "The offer ID for the current offer is null.");
+
       //added to prevent fail if ID is null -> no download should be triggered
       return false;
     }
@@ -618,8 +629,7 @@ final class OfferManagerTab {
     String projectTitle =
         container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_name").getValue().toString();
     if (projectTitle == null) {
-      displayNotification("Offer name is null", "Warning: The offer name for the current offer is null." +
-          "Please consider setting the offer name in the Offer Manager tab.", "error");
+      windowNotification("failure", "The offer name for the current offer is null.");
       //added to prevent fail if titel is null -> no download should be triggered
       return false;
     }
@@ -628,8 +638,7 @@ final class OfferManagerTab {
         .getItemProperty("offer_description").getValue();
     String projectDescription = projectDescriptionObject == null ? null : projectDescriptionObject.toString();
     if (projectDescription == null) {
-      displayNotification("Offer description is null.", "Warning: The offer description for the current " +
-          "offer is null. Please consider setting the offer name in the Offer Manager tab.", "error");
+      windowNotification("failure", "The offer description for the current offer is null.");
       //added to prevent fail if description is null -> no download should be triggered
       return false;
     }
@@ -674,7 +683,7 @@ final class OfferManagerTab {
     }else {
       //the default value will be written
       //but give a warning!
-      displayNotification("Estimated Delivery Time not entered", "The estimated delivery time will be set to the default value", "warning");
+      windowNotification("warn", "The estimated delivery time is not entered and thus will be set to the default value.");
     }
 
 
@@ -719,10 +728,12 @@ final class OfferManagerTab {
 
       fileDownloader.setFileDownloadResource(sr);
 
-      displayNotification("File is ready", "Offer file is ready", "warning");
+      windowNotification("success", "File is ready to download.");
+
       return true;
 
     } catch (Docx4JException | IOException e) {
+      windowNotification("failure", "Could not generate offer file");
       throw new RuntimeException("Could not generate offer file", e);
     }
   }

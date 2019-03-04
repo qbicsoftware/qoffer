@@ -98,7 +98,7 @@ public class qOfferManager extends CustomComponent {
     db = Database.getInstance();
     managerTabs = new TabSheet();
 
-    LOG.info(" INFO  Offer Manager accessed! - User: {}",PortalUtils.getUser().getScreenName());
+    LOG.info("Offer Manager accessed! - User: {}",PortalUtils.getUser().getScreenName());
 
     managerTabs.addStyleName(ValoTheme.TABSHEET_FRAMED);
     managerTabs.addStyleName(ValoTheme.TABSHEET_EQUAL_WIDTH_TABS);
@@ -114,8 +114,12 @@ public class qOfferManager extends CustomComponent {
       PackageManagerTab packageManagerTab = new PackageManagerTab();
 
       managerTabs.addTab(offerGeneratorTab.createOfferGeneratorTab(), "Offer Generator");
+      LOG.info("Created Offer Generator");
       managerTabs.addTab(offerManagerTab.createOfferManagerTab(), "Offer Manager");
+      LOG.info("Created Offer Manager");
       managerTabs.addTab(packageManagerTab.createPackageManagerTab(), "Package Manager");
+      LOG.info("Created Package Manager");
+
 
       managerTabs.setSelectedTab(1);  // show the offer manager first, since this will probably be mostly in use
 

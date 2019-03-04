@@ -45,4 +45,50 @@
     text-align: right;
     padding-top: 50px;
   }
+
+  .v-label-success, .v-label-failure, .v-label-warn, .v-label-spin {
+    background: white;
+    color: #3e3d3d;
+    border: 2px solid #2c9720;
+    border-radius: 4px;
+    padding: 7px 19px 7px 37px;
+    font-weight: 400;
+    font-size: 15px;
+  }
+
+  .v-label-success:before, .v-label-failure:before, .v-label-warn:before, .v-label-spin:before {
+    font-family: FontAwesome;
+    content: "\f00c";
+    margin-right: 0.5em;
+    margin-left: -19px;
+    color: #2c9720;
+  }
+
+  .v-label-failure {
+    border-color: #ed473b;
+  }
+
+  .v-label-failure:before {
+    content: "\f05e";
+    color: #ed473b;
+  }
+
+  .v-label-warn {
+    border-color: #eddc58;
+  }
+
+  .v-label-warn:before {
+    content: "\f12a";
+    color: #eddc58;
+  }
+
+  .v-label-spin {
+    border-color: #000000;
+  }
+
+  .v-label-spin:before {
+    content: "\f110";
+    color: #000000;
+  }
+
 }

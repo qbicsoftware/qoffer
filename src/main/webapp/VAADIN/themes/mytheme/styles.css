@@ -12990,3 +12990,48 @@ div.v-layout.v-horizontal.v-widget {
 	text-align: right;
 	padding-top: 50px;
 }
+
+.mytheme .v-label-success, .mytheme .v-label-failure, .mytheme .v-label-warn, .mytheme .v-label-spin {
+	background: white;
+	color: #3e3d3d;
+	border: 2px solid #2c9720;
+	border-radius: 4px;
+	padding: 7px 19px 7px 37px;
+	font-weight: 400;
+	font-size: 15px;
+}
+
+.mytheme .v-label-success:before, .mytheme .v-label-failure:before, .mytheme .v-label-warn:before, .mytheme .v-label-spin:before {
+	font-family: FontAwesome;
+	content: "\f00c";
+	margin-right: 0.5em;
+	margin-left: -19px;
+	color: #2c9720;
+}
+
+.mytheme .v-label-failure {
+	border-color: #ed473b;
+}
+
+.mytheme .v-label-failure:before {
+	content: "\f05e";
+	color: #ed473b;
+}
+
+.mytheme .v-label-warn {
+	border-color: #eddc58;
+}
+
+.mytheme .v-label-warn:before {
+	content: "\f12a";
+	color: #eddc58;
+}
+
+.mytheme .v-label-spin {
+	border-color: #000000;
+}
+
+.mytheme .v-label-spin:before {
+	content: "\f110";
+	color: #000000;
+}

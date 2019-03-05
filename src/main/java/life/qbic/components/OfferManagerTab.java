@@ -419,33 +419,50 @@ final class OfferManagerTab {
     window.setModal(true);
     window.setCaption("Validating Offer");
     window.center();
+    window.setResizable(false);
    // window.setHeight(40, Sizeable.Unit.PERCENTAGE);//or 25
     window.setWidth(25, Sizeable.Unit.PERCENTAGE);
+    window.setHeight(40, Sizeable.Unit.PERCENTAGE);
 
 //    Label isValidating = new Label(FontAwesome.SPINNER.getHtml()+" Validating ...");
 //    isValidating.setContentMode(ContentMode.HTML);
+    //set up not visible panels and layouts
+    VerticalLayout wrapperLayout = new VerticalLayout();
+    window.setContent(wrapperLayout);
+    wrapperLayout.setSizeFull();
+
+    Panel wrapperPanel = new Panel();
+    wrapperPanel.setHeight(90, Sizeable.Unit.PERCENTAGE);
+    wrapperPanel.setWidth(100, Sizeable.Unit.PERCENTAGE);
+    wrapperLayout.addComponent(wrapperPanel);
+
+    //add the layout with the notifications to the setup
     notifications = new VerticalLayout();
+    notifications.setHeightUndefined(); //set this to make scrollbar visible
+    wrapperPanel.setContent(notifications);
     notifications.setMargin(true);
 
+    //add the first label with the starting notification
     Label validating = new Label("Please wait while the offer is validating");
     //checkout mytheme.scss, here are the styles defined for the types
-    // validating (val), warning (warn), success (success) and failure (failure)
+    // warning (warn), success (success) and failure (failure) or spinner (spin)
     validating.setStyleName("spin");
     notifications.addComponent(validating);
-    notifications.setWidth(100, Sizeable.Unit.PERCENTAGE);
+    //notifications.setWidth(100, Sizeable.Unit.PERCENTAGE);
 
+
+    //add the close button in a horizontal layout
+    HorizontalLayout buttonLayout = new HorizontalLayout(close);
+    buttonLayout.setComponentAlignment(close,Alignment.BOTTOM_RIGHT);
+    buttonLayout.setWidth(100, Sizeable.Unit.PERCENTAGE);
     close.setEnabled(false);
 
-    Panel panel = new Panel();
-    //panel.setContent();
-    VerticalLayout windowContent = new VerticalLayout(notifications,close);
-    windowContent.setComponentAlignment(notifications,Alignment.MIDDLE_CENTER);
-    windowContent.setComponentAlignment(close,Alignment.BOTTOM_RIGHT);
-    windowContent.setMargin(true);
-
+    wrapperLayout.addComponent(buttonLayout);
+    wrapperLayout.setExpandRatio(wrapperPanel,0.9f);
+    wrapperLayout.setExpandRatio(buttonLayout,0.1f);
+    wrapperLayout.setMargin(true);
     //notifications.addComponent(windowContent);
 
-    window.setContent(windowContent);
 
     return window;
   }
@@ -472,7 +489,7 @@ final class OfferManagerTab {
         warn.setStyleName(type);
         notifications.addComponent(warn);
         break;
-      default:
+      case "spin":
         Label val = new Label(message);
         val.setStyleName("spin");
         notifications.addComponent(val);
@@ -571,22 +588,36 @@ final class OfferManagerTab {
     String umbrellaOrganization = null;
     String street = null;
     String cityZipCodeAndCounty = null;
-    String zipCode;
-    String city;
-    String country;
+    String zipCode = null;
+    String city = null;
+    String country = null;
 
-    // deal with the potential errors; address[0] contains a more detailed error message and tells the user how to fix the issue
+    // deal with the potential missing values and display them in the notification window
     if (address.length == 1) {
       windowNotification("failure","Database entry for address not found!");
       return false;
     } else {
       groupAcronym = address[0];
+      groupAcronym = checkValidity(groupAcronym,"group");
+
       institute = address[1];
+      institute = checkValidity(institute,"institute");
+
       umbrellaOrganization = address[2];
+      umbrellaOrganization = checkValidity(umbrellaOrganization,"organization");
+
       street = address[3];
+      street = checkValidity(street,"street");
+
       zipCode = address[4];
+      zipCode = checkValidity(zipCode,"zip code");
+
       city = address[5];
+      city = checkValidity(city,"city");
+
       country = address[6];
+      country = checkValidity(country,"country");
+
 
       // e.g. D - 72076 Tübingen, Germany
       // TODO: country in english (database entry is in german..), postal code of country (is not in the database)
@@ -685,8 +716,7 @@ final class OfferManagerTab {
       //but give a warning!
       windowNotification("warn", "The estimated delivery time is not entered and thus will be set to the default value.");
     }
-
-
+    
     // iterate over the packages and add them to the content control .xml file
     for (int i = packageNames.size()-1; i >= 0; i--) {
       addRowToTable(contentControlDocument, 1, packageIDs.get(i),packageNames.get(i) + ": "+
@@ -746,5 +776,12 @@ final class OfferManagerTab {
     generateOfferButton.setEnabled(enable);
   }
 
+  private String checkValidity(String address, String type){
+    if(address == null | address.equals("")| address.equals(" ")){
+      windowNotification("warn", "Database entry for "+type+" is empty check the adress in the downloaded offer!");
+      return " ";
+    }
+    return address;
+  }
 
 }

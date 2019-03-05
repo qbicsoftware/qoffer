@@ -453,13 +453,25 @@ public class Database {
   public int getPersonIdForPersonName(String title, String firstName, String familyName) {
 
     int personId = -1;
-    String sql = "SELECT id FROM persons WHERE title = ? AND first_name = ? AND family_name = ?";
+    String sql;
+
+    //if the title is null it has to be treated differently otherwise no match in the database
+    if(title.equals("null") | title.equals("NULL")){
+      sql = "SELECT id FROM persons WHERE first_name = ? AND family_name = ?";
+    } else{
+      sql = "SELECT id FROM persons WHERE title = ? AND first_name = ? AND family_name = ?";
+    }
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
-      statement.setString(1, title);
-      statement.setString(2, firstName);
-      statement.setString(3, familyName);
+      if(! (title.equals("null")| title.equals("NULL"))){
+        statement.setString(1, title);
+        statement.setString(2, firstName);
+        statement.setString(3, familyName);
+      }else{
+        statement.setString(1, firstName);
+        statement.setString(2, familyName);
+      }
       ResultSet rs = statement.executeQuery();
       if (rs.next())
         personId = rs.getInt(1);
@@ -478,6 +490,7 @@ public class Database {
     String firstName = clientNameArray[1];
     String familyName = clientNameArray[2];
     int personId = getPersonIdForPersonName(title, firstName, familyName);
+    LOG.info("how the name is transferred: {}, {}, {} personID {}",title,firstName,familyName,personId);
 
     // the person could not be found, so we return the notification message
     if (personId == -1)

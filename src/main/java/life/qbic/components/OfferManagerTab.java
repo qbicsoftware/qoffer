@@ -16,7 +16,7 @@
 
 package life.qbic.components;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 import com.vaadin.data.Property;
 import com.vaadin.data.util.sqlcontainer.SQLContainer;
@@ -392,7 +392,7 @@ final class OfferManagerTab {
         }
         UI.getCurrent().access(() -> validateOfferButton.setEnabled(true));
         UI.getCurrent().access(() -> close.setEnabled(true));
-        UI.getCurrent().access(() -> modalWindow.setClosable(true));
+        //UI.getCurrent().access(() -> modalWindow.setClosable(true));
         UI.getCurrent().setPollInterval(-1);
       });
 
@@ -401,9 +401,9 @@ final class OfferManagerTab {
     try {
       setupTableExportFunctionality(container, exportTableButton);
     } catch (IOException e) {
-      //displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
-      //    "again.", "error");
-      windowNotification("failure","A file could not be found, please try again.");
+      displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
+          "again.", "error");
+      //windowNotification("failure","A file could not be found, please try again.");
 
       e.printStackTrace();
     }
@@ -415,7 +415,7 @@ final class OfferManagerTab {
    */
   private Window createModalWindow(Button close){
     Window window = new Window();
-    window.setClosable(false);
+    //window.setClosable(false); -> leaf closable to prevent being stuck on the window
     window.setModal(true);
     window.setCaption("Validating Offer");
     window.center();
@@ -439,8 +439,8 @@ final class OfferManagerTab {
     //add the layout with the notifications to the setup
     notifications = new VerticalLayout();
     notifications.setHeightUndefined(); //set this to make scrollbar visible
-    wrapperPanel.setContent(notifications);
     notifications.setMargin(true);
+    wrapperPanel.setContent(notifications);
 
     //add the first label with the starting notification
     Label validating = new Label("Please wait while the offer is validating");
@@ -472,21 +472,23 @@ final class OfferManagerTab {
    * @param type
    */
   private void windowNotification(String type,String message){
+    //when using this method consider that it can be called from within a thread and thus needs to be called on the current
+    //thread in order to make changes visible and not breaking the program
 
     switch (type) {
       case "failure":
         Label fail = new Label(message);
-        fail.setStyleName(type);
+        fail.setStyleName("failure");
         notifications.addComponent(fail);
         break;
       case "success":
         Label success = new Label(message);
-        success.setStyleName(type);
+        success.setStyleName("success");
         notifications.addComponent(success);
         break;
       case "warn":
         Label warn = new Label(message);
-        warn.setStyleName(type);
+        warn.setStyleName("warn");
         notifications.addComponent(warn);
         break;
       case "spin":
@@ -494,7 +496,13 @@ final class OfferManagerTab {
         val.setStyleName("spin");
         notifications.addComponent(val);
         break;
+      default:
+        Label label = new Label(message);
+        label.setStyleName("warn");
+        notifications.addComponent(label);
+        break;
     }
+
 
   }
 
@@ -544,7 +552,7 @@ final class OfferManagerTab {
                                         List<String> packageUnitPrices, List<String> packageTotalPrices, List<String> packageIDs,
                                         FileDownloader fileDownloader) {
     if (offerManagerGrid.getSelectedRow() == null) {
-      windowNotification("failure", "Please make sure that you select an offer.");
+      UI.getCurrent().access(() -> windowNotification("failure", "Please make sure that you select an offer."));
       return false;
     }
 
@@ -556,7 +564,6 @@ final class OfferManagerTab {
     }
 
     String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-    LOG.info("Path"+basePath);
 
     //TODO for templates change files here:
     // file holding the content controls for the bindings
@@ -571,17 +578,23 @@ final class OfferManagerTab {
         container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_facility").getValue()
             .toString();
 
+    if (clientName == null | clientName.equals("NULL")| clientName.trim().equals("")){
+      UI.getCurrent().access(() -> windowNotification("failure","The prospect field is empty thus no client can be found!"));
+      return false;
+    }
+
     //offerManagerGrid.getSelectedRow()
     String offerNumber =
         container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_number").getValue()
             .toString();
 
     String estimatedDeliveryWeeks = null;
-
+   
     if(container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue() != null){
       estimatedDeliveryWeeks = container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("estimated_delivery_weeks").getValue().toString()+" weeks";
     }
 
+    UI.getCurrent().access(() -> windowNotification("warn","Searching in database for client"));
     String[] address = db.getAddressForPerson(clientName);
     String groupAcronym = null;
     String institute = null;
@@ -594,7 +607,7 @@ final class OfferManagerTab {
 
     // deal with the potential missing values and display them in the notification window
     if (address.length == 1) {
-      windowNotification("failure","Database entry for address not found!");
+      UI.getCurrent().access(() -> windowNotification("failure","Database entry for address not found!"));
       return false;
     } else {
       groupAcronym = address[0];
@@ -631,6 +644,7 @@ final class OfferManagerTab {
     String offer_id =
             container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_id").getValue()
                     .toString();
+    UI.getCurrent().access(() -> windowNotification("warn","Searching the project manager in the database"));
     String personResult = db.getProjectManager(offer_id);
     String projectManager;
     String projectManagerMail;
@@ -644,14 +658,14 @@ final class OfferManagerTab {
     } else {
       projectManager = "Project manager not found";
       projectManagerMail = "Mail not found";
-      windowNotification("warn","Project Manager entry not found in Database! You may want to change the information in the generated offer.");
+      UI.getCurrent().access(() -> windowNotification("warn","Project Manager entry not found in Database! You may want to change the information in the generated offer."));
     }
 
     //TODO inserted this not tested yet
     String projectID = //look-up: is there a thing as "offer_id" or how is it called?
             container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_id").getValue().toString();
     if (projectID == null) {
-      windowNotification("failure", "The offer ID for the current offer is null.");
+      UI.getCurrent().access(() -> windowNotification("failure", "The offer ID for the current offer is null."));
 
       //added to prevent fail if ID is null -> no download should be triggered
       return false;
@@ -660,7 +674,7 @@ final class OfferManagerTab {
     String projectTitle =
         container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_name").getValue().toString();
     if (projectTitle == null) {
-      windowNotification("failure", "The offer name for the current offer is null.");
+      UI.getCurrent().access(() -> windowNotification("failure", "The offer name for the current offer is null."));
       //added to prevent fail if titel is null -> no download should be triggered
       return false;
     }
@@ -669,7 +683,7 @@ final class OfferManagerTab {
         .getItemProperty("offer_description").getValue();
     String projectDescription = projectDescriptionObject == null ? null : projectDescriptionObject.toString();
     if (projectDescription == null) {
-      windowNotification("failure", "The offer description for the current offer is null.");
+      UI.getCurrent().access(() -> windowNotification("failure", "The offer description for the current offer is null."));
       //added to prevent fail if description is null -> no download should be triggered
       return false;
     }
@@ -714,7 +728,7 @@ final class OfferManagerTab {
     }else {
       //the default value will be written
       //but give a warning!
-      windowNotification("warn", "The estimated delivery time is not entered and thus will be set to the default value.");
+      UI.getCurrent().access(() -> windowNotification("warn", "The estimated delivery time is not entered and thus will be set to the default value."));
     }
     
     // iterate over the packages and add them to the content control .xml file
@@ -758,12 +772,12 @@ final class OfferManagerTab {
 
       fileDownloader.setFileDownloadResource(sr);
 
-      windowNotification("success", "File is ready to download.");
+      UI.getCurrent().access(() -> windowNotification("success", "File is ready to download."));
 
       return true;
 
     } catch (Docx4JException | IOException e) {
-      windowNotification("failure", "Could not generate offer file");
+      UI.getCurrent().access(() -> windowNotification("failure", "Could not generate offer file"));
       throw new RuntimeException("Could not generate offer file", e);
     }
   }

@@ -12991,7 +12991,7 @@ div.v-layout.v-horizontal.v-widget {
 	padding-top: 50px;
 }
 
-.mytheme .v-label-success, .mytheme .v-label-failure, .mytheme .v-label-warn, .mytheme .v-label-spin {
+.mytheme .success, .mytheme .failure, .mytheme .warn, .mytheme .spin {
 	background: white;
 	color: #3e3d3d;
 	border: 2px solid #2c9720;
@@ -13001,7 +13001,7 @@ div.v-layout.v-horizontal.v-widget {
 	font-size: 15px;
 }
 
-.mytheme .v-label-success:before, .mytheme .v-label-failure:before, .mytheme .v-label-warn:before, .mytheme .v-label-spin:before {
+.mytheme .success:before, .mytheme .failure:before, .mytheme .warn:before, .mytheme .spin:before {
 	font-family: FontAwesome;
 	content: "\f00c";
 	margin-right: 0.5em;
@@ -13009,29 +13009,29 @@ div.v-layout.v-horizontal.v-widget {
 	color: #2c9720;
 }
 
-.mytheme .v-label-failure {
+.mytheme .failure {
 	border-color: #ed473b;
 }
 
-.mytheme .v-label-failure:before {
+.mytheme .failure:before {
 	content: "\f05e";
 	color: #ed473b;
 }
 
-.mytheme .v-label-warn {
+.mytheme .warn {
 	border-color: #eddc58;
 }
 
-.mytheme .v-label-warn:before {
+.mytheme .warn:before {
 	content: "\f12a";
 	color: #eddc58;
 }
 
-.mytheme .v-label-spin {
+.mytheme .spin {
 	border-color: #000000;
 }
 
-.mytheme .v-label-spin:before {
+.mytheme .spin:before {
 	content: "\f110";
 	color: #000000;
 }

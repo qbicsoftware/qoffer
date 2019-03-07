@@ -57,7 +57,6 @@ final class OfferManagerTab {
   private Window modalWindow;
 
 
-  //private static String pathOnServer = "/home/tomcat-liferay/liferay_production/tmp/";
   private static final Logger LOG = LogManager.getLogger(OfferManagerTab.class);
 
   RefreshableGrid getOfferManagerGrid() {
@@ -72,9 +71,6 @@ final class OfferManagerTab {
     return packageGroupComboBox.getValue().toString();
   }
 
-/*  static String getPathOnServer() {
-    return pathOnServer;
-  }*/
 
   public OfferManagerTab(qOfferManager qom){
     qOfferManager = qom;
@@ -189,8 +185,6 @@ final class OfferManagerTab {
     offerManagerGrid.getColumn("offer_date").setHeaderCaption("Date").setEditable(false);
     offerManagerGrid.getColumn("last_edited").setHeaderCaption("Last edited").setEditable(false);
     offerManagerGrid.getColumn("added_by").setHeaderCaption("Added by").setEditable(false);
-    //add estimated delivery also for OpenBIS (done for mariaDB)
-
     offerManagerGrid.getColumn("estimated_delivery_weeks").setHeaderCaption("Estimated Delivery");
 
 
@@ -254,7 +248,6 @@ final class OfferManagerTab {
                                    Button exportTableButton, Button validateOfferButton, Button close) {
 
     // several lists holding the package names, descriptions, prices, etc. for the current offer
-    // TODO: change to one list of packageBeans
     List<String> packageNames = qOfferManager.getPackageNames();
     List<String> packageDescriptions = qOfferManager.getPackageDescriptions();
     List<String> packageCounts = qOfferManager.getPackageCounts();
@@ -392,7 +385,6 @@ final class OfferManagerTab {
         }
         UI.getCurrent().access(() -> validateOfferButton.setEnabled(true));
         UI.getCurrent().access(() -> close.setEnabled(true));
-        //UI.getCurrent().access(() -> modalWindow.setClosable(true));
         UI.getCurrent().setPollInterval(-1);
       });
 
@@ -403,8 +395,6 @@ final class OfferManagerTab {
     } catch (IOException e) {
       displayNotification("Whoops, something went wrong.", "A file could not be found, please try" +
           "again.", "error");
-      //windowNotification("failure","A file could not be found, please try again.");
-
       e.printStackTrace();
     }
   }
@@ -415,17 +405,13 @@ final class OfferManagerTab {
    */
   private Window createModalWindow(Button close){
     Window window = new Window();
-    //window.setClosable(false); -> leaf closable to prevent being stuck on the window
     window.setModal(true);
     window.setCaption("Validating Offer");
     window.center();
     window.setResizable(false);
-   // window.setHeight(40, Sizeable.Unit.PERCENTAGE);//or 25
     window.setWidth(25, Sizeable.Unit.PERCENTAGE);
     window.setHeight(40, Sizeable.Unit.PERCENTAGE);
 
-//    Label isValidating = new Label(FontAwesome.SPINNER.getHtml()+" Validating ...");
-//    isValidating.setContentMode(ContentMode.HTML);
     //set up not visible panels and layouts
     VerticalLayout wrapperLayout = new VerticalLayout();
     window.setContent(wrapperLayout);
@@ -444,11 +430,11 @@ final class OfferManagerTab {
 
     //add the first label with the starting notification
     Label validating = new Label("Please wait while the offer is validating");
+
     //checkout mytheme.scss, here are the styles defined for the types
     // warning (warn), success (success) and failure (failure) or spinner (spin)
     validating.setStyleName("spin");
     notifications.addComponent(validating);
-    //notifications.setWidth(100, Sizeable.Unit.PERCENTAGE);
 
 
     //add the close button in a horizontal layout
@@ -461,8 +447,6 @@ final class OfferManagerTab {
     wrapperLayout.setExpandRatio(wrapperPanel,0.9f);
     wrapperLayout.setExpandRatio(buttonLayout,0.1f);
     wrapperLayout.setMargin(true);
-    //notifications.addComponent(windowContent);
-
 
     return window;
   }
@@ -514,9 +498,9 @@ final class OfferManagerTab {
    */
   private void setupTableExportFunctionality(SQLContainer container, Button exportGridButton) throws IOException {
     // setup the export as .csv file functionality
-    //String exportOffersFileName = pathOnServer + "offers.csv";
     File tempFile = File.createTempFile("offers", ".csv");
     String filePath = tempFile.getAbsolutePath();
+
     //set cache time to zero so that each time the download button is pressed the file is generated new and no cached information
     //is saved (like quantity for table content
     FileResource resource = new FileResource(tempFile);
@@ -569,21 +553,19 @@ final class OfferManagerTab {
     // file holding the content controls for the bindings
     String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
     // template .docx file containing the bindings
-    //"/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX.docx"; //changed TempFile
-    //String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_TEMPLATE_FINAL_bound_UPDATE.docx"; //changed TempFile
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_TEMPLATE_FINAL_NEW_Header.docx"; //changed TempFile
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_TEMPLATE_FINAL_NEW_Header.docx";
 
 
     String clientName =
         container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_facility").getValue()
             .toString();
 
+    //be careful when testing for non-existent entries in the database. Some are null and others are just empty strings!
     if (clientName == null | clientName.equals("NULL")| clientName.trim().equals("")){
       UI.getCurrent().access(() -> windowNotification("failure","The prospect field is empty thus no client can be found!"));
       return false;
     }
 
-    //offerManagerGrid.getSelectedRow()
     String offerNumber =
         container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_number").getValue()
             .toString();
@@ -661,10 +643,9 @@ final class OfferManagerTab {
       UI.getCurrent().access(() -> windowNotification("warn","Project Manager entry not found in Database! You may want to change the information in the generated offer."));
     }
 
-    //TODO inserted this not tested yet
-    String projectID = //look-up: is there a thing as "offer_id" or how is it called?
+    String projectID =
             container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_id").getValue().toString();
-    if (projectID == null) {
+    if (projectID == null | projectID.equals("null")| projectID.trim().equals("")) {
       UI.getCurrent().access(() -> windowNotification("failure", "The offer ID for the current offer is null."));
 
       //added to prevent fail if ID is null -> no download should be triggered
@@ -673,7 +654,8 @@ final class OfferManagerTab {
 
     String projectTitle =
         container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow()).getItemProperty("offer_name").getValue().toString();
-    if (projectTitle == null) {
+
+    if (projectTitle == null| projectTitle.equals("null")|projectTitle.trim().equals("")) {
       UI.getCurrent().access(() -> windowNotification("failure", "The offer name for the current offer is null."));
       //added to prevent fail if titel is null -> no download should be triggered
       return false;
@@ -682,7 +664,8 @@ final class OfferManagerTab {
     Object projectDescriptionObject = container.getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow())
         .getItemProperty("offer_description").getValue();
     String projectDescription = projectDescriptionObject == null ? null : projectDescriptionObject.toString();
-    if (projectDescription == null) {
+
+    if (projectDescription == null | projectDescription.equals("null")|projectDescription.trim().equals("")) {
       UI.getCurrent().access(() -> windowNotification("failure", "The offer description for the current offer is null."));
       //added to prevent fail if description is null -> no download should be triggered
       return false;
@@ -699,9 +682,6 @@ final class OfferManagerTab {
 
     SimpleDateFormat currentDateFormat = new SimpleDateFormat("EEEE, dd MMMM yyyy", Locale.ENGLISH);
     String currentDate = currentDateFormat.format(new Date());
-
-    //todo exchange delivery time in offer -> change in double clicked field is saved and written to file
-   // db.getDeliveryTime(db);
 
     // get the xml document holding the content for the bindings in the docx template file
     org.w3c.dom.Document contentControlDocument = readXMLFile(contentControlFilename);

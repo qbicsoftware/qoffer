@@ -28,4 +28,4 @@ src/main/webapp/VAADIN/widgetsets
 
 # ignore credentials file, but keep Credentials.properties.example
 src/main/webapp/WEB-INF/resourceFiles/Credentials.properties
-src/main/webapp/WEB-INF/resourceFiles/
+src/main/webapp/WEB-INF/resourceFiles/*

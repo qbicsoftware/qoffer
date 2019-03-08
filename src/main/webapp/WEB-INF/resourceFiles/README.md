@@ -13,20 +13,21 @@ After downloading OpenDoPE the add-in is automatically added as a tab to Word.
 Click that tab and create a XML for your Template.docx by clicking **"Add CustomXML to this docx"**. Answer **"no"** to the following dialog. 
 The OpenDoPE taskpane opens on the right side.
 
-![setupDialog](https://github.com/qbicsoftware/qoffer-portlet/blob/feature/fixBug/src/main/webapp/WEB-INF/images/setupDialog.png)
-
+![setupDialog](https://github.com/qbicsoftware/qoffer-portlet/blob/development/src/main/webapp/WEB-INF/images/setupDialog.png)
 
 #### 1) Select
 
 Select the text that you want to bind. Then click **"Bind this text"** on the upper task pane.
 
-![BindThisText](https://github.com/qbicsoftware/qoffer-portlet/blob/feature/fixBug/src/main/webapp/WEB-INF/images/bindThisText.png)
+![BindThisText](https://github.com/qbicsoftware/qoffer-portlet/blob/development/src/main/webapp/WEB-INF/images/bindThisText.png)
+
 
 #### 2) Bind
 
 The OpenDoPE task pane then shows some details:
 
-![bindThis...](https://github.com/qbicsoftware/qoffer-portlet/blob/feature/fixBug/src/main/webapp/WEB-INF/images/bindThis.png)
+![bindThis...](https://github.com/qbicsoftware/qoffer-portlet/blob/development/src/main/webapp/WEB-INF/images/bindThis.png)
+
 
 Click **"Bind this ..."** (this takes some time the first time this is executed for a document)
 
@@ -38,7 +39,8 @@ The XML appears within the task pane. A default XML is already created, the root
 ```
 The default value will be placed into the textfield, if it changes in the XML it also cahnges in the document. Please use proper naming here since the node name is the name that you later use within the program code.
 
-![XML](https://github.com/qbicsoftware/qoffer-portlet/blob/feature/fixBug/src/main/webapp/WEB-INF/images/XML.png)
+
+![XML](https://github.com/qbicsoftware/qoffer-portlet/blob/development/src/main/webapp/WEB-INF/images/XML.png)
 
 To determine the XPath you can click the node in the XML and Word automatically adds this path (or you can manually type it).
 You need to give an ID to the path. Since I don't know what effect the naming of the ID has I used to name it like the node. Finally click **"Use this XPath"**, your text is now bound to the XPath.
@@ -73,16 +75,16 @@ The naming of the nodes for the offer table are predefined in the code (see *XML
 Now we need to tell Word that the node **row** can multiply occur in our XML. 
 First, contents of each column of the example row are separately bound as text (see *Steps 1)-3)*). Then, the complete row is selected. Click "**Wrap with Repeat"**. 
 
-![wrapWithRepeat](https://github.com/qbicsoftware/qoffer-portlet/blob/feature/fixBug/src/main/webapp/WEB-INF/images/wrapWithRepeat.png)
+![wrapWithRepeat](https://github.com/qbicsoftware/qoffer-portlet/blob/development/src/main/webapp/WEB-INF/images/wrapWithRepeat.png)
 
 Select **"Make Repeat"** in the task pane.
 
-![makeRepeat](https://github.com/qbicsoftware/qoffer-portlet/blob/feature/fixBug/src/main/webapp/WEB-INF/images/makeRepeat.png)
+![makeRepeat](https://github.com/qbicsoftware/qoffer-portlet/blob/development/src/main/webapp/WEB-INF/images/makeRepeat.png)
 
 Again the XML appears in the task pane. You choose the XPath of **row** and name the ID e.g. 'repeatRow'. 
 By clicking **"show Tags"** you can display the bindings of the document. The binding of the table should look like this:
 
-![table](https://github.com/qbicsoftware/qoffer-portlet/blob/feature/fixBug/src/main/webapp/WEB-INF/images/tableSmall.png)
+![table](https://github.com/qbicsoftware/qoffer-portlet/blob/development/src/main/webapp/WEB-INF/images/tableSmall.png)
 
 SAVE the document!
 

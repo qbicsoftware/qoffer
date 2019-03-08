@@ -8,6 +8,12 @@ and create and manage packages for the offers via the Package Manager Tab.
 ## Author
 Created by Benjamin Sailer, Jennifer Boedker (jennifer.boedker@student.uni-tuebingen.de).
 
+
+## Note for Developers
+
+Since some resource files contain sensitive information they are stored in Google Drive.
+Ask the BioPMs for them when working on this portlet.
+
 ## Known Issues
 ### Browser Caching
 
@@ -143,3 +149,5 @@ detailed README on the implementation details can be found [here](https://github
 
 
 ## How to Install
+
+Install as any other portlet in your Liferay instance.

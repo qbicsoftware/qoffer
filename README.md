@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/qbicsoftware/qoffer-portlet.svg?branch=development)](https://travis-ci.com/qbicsoftware/qoffer-portlet)[![Code Coverage]( https://codecov.io/gh/qbicsoftware/qoffer-portlet/branch/development/graph/badge.svg)](https://codecov.io/gh/qbicsoftware/qoffer-portlet)
 
-Qoffer-Portlet, version 1.1-SNAPSHOT - The QBiC Offer Manager allows the user to create offers via the Offer Generator Tab, manage and print existing offers via the Offer Manager Tab
+Qoffer-Portlet - The QBiC Offer Manager allows the user to create offers via the Offer Generator Tab, manage and print existing offers via the Offer Manager Tab
 and create and manage packages for the offers via the Package Manager Tab.
 
 ## Author

@@ -1,49 +1,76 @@
+# Build script for Travis CI
+#
+
 # use xenial distribution
 dist: xenial
 
+# no need to check for oracle's java
 language: java
 jdk: openjdk8
+
+# speed up builds by caching maven local repository
 cache:
   directories:
-  - $HOME/.m2/repository
+  - "$HOME/.m2/repository"
+
+# as agreed in our SOP
 branches:
   only:
   - master
   - development
-before_install: unset _JAVA_OPTIONS
+  # Travis treats pushed tags as branches
+  - /^[vV]?\d+\.\d+\.\d+$/ # matches e.g., v1.2.3, 1.2.3, V1.2.3
+
+# added to make logs look cleaner, crisper, certified fresh
+before_install: unset _JAVA_OPTIONS 
+
+# speed up builds by telling Travis that we don't need any special "installation"
 install: true
-before_script: if [ "$VAADIN_CHARTS_LICENSE_CODE" != "" ]; then echo "$VAADIN_CHARTS_LICENSE_CODE"
-  > ~/.vaadin.charts.developer.license; fi;
-script: mvn --quiet --activate-profiles !development-build,!release-build --settings
-  .travis.settings.xml clean cobertura:cobertura install
-after_success:
+
+# check if we need to add a license file for Vaadin charts
+before_script: if [ "$VAADIN_CHARTS_LICENSE_CODE" != "" ]; then
+                  echo "$VAADIN_CHARTS_LICENSE_CODE" > ~/.vaadin.charts.developer.license;
+               fi;
+
+# as agreed in our SOP, build everything (don't deploy, just try to 'mvn package' locally, which covers unit tests)
+script: mvn --quiet --activate-profiles !development-build,!release-build --settings .travis.settings.xml clean cobertura:cobertura package
+# upload code coverage report, generate maven site (javadocs, documentation, static code analysis, etc.)
+after_success: 
 - bash <(curl -s https://codecov.io/bash)
-- mvn --quiet --activate-profiles !development-build,!release-build --settings .travis.settings.xml
-  site
+
+# upload to maven
 deploy:
+  # as agreed in our SOP, builds on development branch will deploy to our maven repository after validating
+  # the artifact has a proper SNAPSHOT version
+  # make sure to skip integration tests! (using -DskipITs)
 - skip_cleanup: true
   provider: script
-  script: mvn --quiet --activate-profiles development-build,!release-build --settings
-    .travis.settings.xml deploy
+  script: mvn --quiet --activate-profiles development-build,!release-build --settings .travis.settings.xml deploy -DskipITs
   on:
     branch: development
     condition: '"$TRAVIS_EVENT_TYPE" = "push"'
+  # as agreed in our SOP, releases are performed by tagging commits,
+  # the version string and version of dependencies are validated (no snapshots allowed)
 - skip_cleanup: true
   provider: script
-  script: mvn --quiet --activate-profiles !development-build,release-build --settings
-    .travis.settings.xml deploy
+  script: mvn --quiet --activate-profiles !development-build,release-build --settings .travis.settings.xml deploy -DskipITs
   on:
-    branch: master
     condition: '"$TRAVIS_EVENT_TYPE" = "push"'
+    tags: true
+
+# change according to your needs, but we recommend to deactivate email notifications
+# for now, we configured Travis to send a notification to the #travis-ci Slack channel 
 notifications:
   email:
     on_success: never
     on_failure: never
-  slack:
+  slack: 
     on_success: never
     on_failure: always
+    # edit the following section if you want to get slack notifications
     rooms:
-    - secure: '***'
+      - secure: "***"
+
 env:
   global:
   - secure: JAqDnuyilG+ANK5e6yhBnzCpPF9lPnfpLXvn2myJmGZ4ZEnd5hAGR/usM4dHWvhGOPOeHuFcEhiHM6GdpD75uao3Fuf8ZDwq9WNn7c2T8i/hZpZ9Fs4L5xpC01P2G8I5ncPhbwmKRncqOka1HfhBqvBPpXSxEbd+s0xkAmlhYtC5eU5UISp7Ck/t3JK7twTDt/9GRNWMPCezfY4FihIkaOazaCXdHHvOOp/5PgNhP5zY0ScR+hnAH05Pa91C0/G4PdF8DqYh0e1LKqM4lDZlWG7jFp1jVPWmaPneCKpTJAhnFmUa5k7bscAFAMes4DYOeZYrTkYQsnlfyMxeuQ5KLgwBQZRntHhzZuamAKqWd+dBJPyYm/5sPZNaI2oIyngLiiPhkazDuJ2PBQlKfQxITufR5Vttjxm3g8qZVsW1KAd9aBx9cWiCSbzzDB7VNEemUTWOSY9N7ASGF/Tp+jZudeSxDS3aGAmAqY4ShpUlsC1W5jL070OD91ymIcWywicEgOT5Ky3hxp+GKm6K/1uRmxRDVtjxceccYUtIiwwodYc+wX21nSlV7YjmEkWOMs7MxfiCXgayhYvKTnByGjnzkvYKWeaq7kSvNphU+8X37kuGzPSqT9I6aUIfEy1EzeIZ0VcrOJU4tvQWtQN5EOcO6i57I2Hh3ipAl+xR1o3s3e0=

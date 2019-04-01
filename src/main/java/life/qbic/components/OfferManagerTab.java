@@ -491,7 +491,7 @@ final class OfferManagerTab {
     // file holding the content controls for the bindings
     String contentControlFilename = basePath + "/WEB-INF/resourceFiles/contentControlTemplate.xml";
     // template .docx file containing the bindings
-    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_TEMPLATE_FINAL_NEW_Header.docx";
+    String templateFileName = basePath + "/WEB-INF/resourceFiles/YYYYMMDD_PiName_QXXXX_TEMPLATE_NEW_LOGO.docx";
 
 
     String clientName =
@@ -639,7 +639,7 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "email", projectManagerMail);
     changeNodeTextContent(contentControlDocument, "project_title", projectTitle);
     changeNodeTextContent(contentControlDocument, "objective", projectDescription);
-    changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(offerTotal));
+    changeNodeTextContent(contentControlDocument, "estimated_total", offerTotal+" €");//formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
     if (estimatedDeliveryWeeks != null){

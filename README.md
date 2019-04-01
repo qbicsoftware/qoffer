@@ -28,8 +28,7 @@ and the browser provides the old cached file. This can be avoided by disabling c
 The Offer Generator Tab allows the user to generate offers for the
 available openBIS projects and also to add the packages at the same time.
 The packages can then be edited via Offer Generator tab (change quantity,
-add/remove packages) or via the Package Manager tab (change package name,
-description, price, etc.).
+add/remove packages) or via the Package Manager tab (change package name, description, price, etc.).
 
 #### Generating an offer:
 

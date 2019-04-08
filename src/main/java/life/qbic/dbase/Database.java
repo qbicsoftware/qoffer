@@ -29,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -638,15 +639,16 @@ public class Database {
 
   }
 
-  public void updateTotalOfferPrice(String offer_id, float offer_total) {
+  //TODO editing here
+  public void updateTotalOfferPrice(String offer_id, BigDecimal offer_total) {
     String sql = "UPDATE offers SET offer_total = ? WHERE offer_id = ? ";
     // The following statement is an try-with-resources statement, which declares two resources,
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
 
-      String updatedPriceFormatted = String.format("%.02f", offer_total);
-      updatedPriceFormatted = updatedPriceFormatted.replaceAll(",", ".");
-      statement.setString(1, updatedPriceFormatted);
+      //String updatedPriceFormatted = String.format("%.02f", offer_total);
+      //updatedPriceFormatted = updatedPriceFormatted.replaceAll(",", ".");
+      statement.setString(1, offer_total.toString());
       statement.setString(2, offer_id);
       int result = statement.executeUpdate();
     } catch (SQLException e) {
@@ -655,12 +657,50 @@ public class Database {
 
   }
 
+  public void updatePackagePrice(String offer_id, String package_id,String packagePrice) {
+      // update the package_addon_price
+      String sql =
+              "UPDATE offers_packages SET package_addon_price = ?" +
+                      "WHERE offer_id = ? AND package_id = ? ";
+      // The following statement is an try-with-resources statement, which declares two resources,
+      // conn and statement, which will be automatically closed when the try block terminates
+      try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
+        statement.setBigDecimal(1, new BigDecimal(packagePrice));
+        statement.setString(2, offer_id);
+        statement.setString(3, package_id);
+
+        statement.executeUpdate();
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
+  }
+
+  public String getPackagePriceType(String offer_id, String package_id){
+
+
+    // update the package_addon_price
+    String sql =
+            "SELECT package_price_type FROM offers_packages WHERE offer_id = ? AND package_id = ? ";
+
+    try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
+      statement.setString(1, offer_id);
+      statement.setString(2, package_id);
+      ResultSet rs = statement.executeQuery();
+      if (rs.next())
+        return rs.getString(1);
+
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return "no valid price type found";
+  }
+
   public void updatePackageQuantityAndRecalculatePrice(String package_count, String offer_id, String package_id,
                                                        String packagePriceType, float packageDiscount) {
 
-    float updatedPackageAddOnPrice = 0;
-    float offerPrice = 0;
-    float offerDiscount = 0;
+    BigDecimal updatedPackageAddOnPrice = BigDecimal.ZERO;
+    BigDecimal offerPrice = BigDecimal.ZERO;
+    BigDecimal offerDiscount = BigDecimal.ZERO;
     String sqlS;
 
     switch (packagePriceType) {
@@ -682,8 +722,8 @@ public class Database {
       statementS.setString(1, package_id);
       ResultSet rs = statementS.executeQuery();
       if (rs.next())
-        updatedPackageAddOnPrice = rs.getFloat(1);
-      updatedPackageAddOnPrice = updatedPackageAddOnPrice * Integer.parseInt(package_count) * packageDiscount;
+        updatedPackageAddOnPrice = rs.getBigDecimal(1);
+      updatedPackageAddOnPrice = updatedPackageAddOnPrice.multiply(new BigDecimal(Integer.parseInt(package_count)).multiply(new BigDecimal(packageDiscount)));
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -700,7 +740,7 @@ public class Database {
     // conn and statement, which will be automatically closed when the try block terminates
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
       statement.setString(1, package_count);
-      statement.setFloat(2, updatedPackageAddOnPrice);
+      statement.setBigDecimal(2, updatedPackageAddOnPrice);
       statement.setString(3, packageDiscountFormatted);
       statement.setString(4, offer_id);
       statement.setString(5, package_id);
@@ -718,7 +758,7 @@ public class Database {
       statementL.setString(1, offer_id);
       ResultSet rs = statementL.executeQuery();
       if (rs.next())
-        offerPrice = rs.getFloat(1);
+        offerPrice = rs.getBigDecimal(1);
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -726,9 +766,9 @@ public class Database {
     // update the offer price in the offers database
     String sqlF = "UPDATE offers SET offer_price = ? WHERE offer_id = ?";
     try (Connection conn = login(); PreparedStatement statementF = conn.prepareStatement(sqlF)) {
-      String offerPriceFormatted = String.format("%.02f", offerPrice);
-      offerPriceFormatted = offerPriceFormatted.replaceAll(",", ".");
-      statementF.setString(1, offerPriceFormatted);
+      //String offerPriceFormatted = String.format("%.02f", offerPrice);
+      //offerPriceFormatted = offerPriceFormatted.replaceAll(",", ".");
+      statementF.setString(1, offerPrice.toString());
       statementF.setString(2, offer_id);
       statementF.executeUpdate();
     } catch (SQLException e) {
@@ -748,14 +788,14 @@ public class Database {
         LOG.info("Get String for discount "+rs.getNString(1));
       //column discount is VARCHAR() --> get String --> cut '%' --> convert to integer
       String discount = rs.getString(1);
-      offerDiscount = Integer.parseInt(discount.split("%")[0]);
+      offerDiscount = new BigDecimal(Integer.parseInt(discount.split("%")[0]));
 
     } catch (SQLException e) {
       e.printStackTrace();
     }
 
     // apply the discount + recalculate the total offer price
-    float offerTotalPrice = offerPrice * ((100 - offerDiscount) / 100);
+    BigDecimal offerTotalPrice = offerPrice.multiply ((new BigDecimal(100).subtract(offerDiscount)).divide(new BigDecimal(100)));
 
     // update the total offer price
     String sqlT = "UPDATE offers SET offer_total = ? WHERE offer_id = ?";
@@ -1080,7 +1120,8 @@ public class Database {
     return count > 0;
   }
 
-  public boolean insertOrUpdateOffersPackages(int offer_id, int package_id, float package_unit_price) {
+  //TODO check if BigDecimal works here
+  public boolean insertOrUpdateOffersPackages(int offer_id, int package_id, BigDecimal package_unit_price) {
     int count = 0;
     boolean success = false;
 
@@ -1105,7 +1146,7 @@ public class Database {
       try (Connection connUpdate = login();
            PreparedStatement statementUpdate = connUpdate.prepareStatement(sqlUpdate)) {
         statementUpdate.setInt(1, package_id);
-        statementUpdate.setFloat(2, package_unit_price);
+        statementUpdate.setBigDecimal(2, package_unit_price);
         statementUpdate.setInt(3, offer_id);
         int result = statementUpdate.executeUpdate();
         // System.out.println("Update: " + statementUpdate);
@@ -1121,7 +1162,7 @@ public class Database {
            PreparedStatement statementInsert = connInsert.prepareStatement(sqlInsert)) {
         statementInsert.setInt(1, offer_id);
         statementInsert.setInt(2, package_id);
-        statementInsert.setFloat(3, package_unit_price);
+        statementInsert.setBigDecimal(3, package_unit_price);
         statementInsert.setInt(4, 1);
         statementInsert.setString(5, "0%");
         int result = statementInsert.executeUpdate();

@@ -176,10 +176,6 @@ final class OfferManagerTab {
     filter.setComboBoxFilter("offer_status", Arrays.asList("In Progress",
         "Sent", "Accepted", "Rejected"));
 
-//    final Button close = new Button("close");
-//    close.setEnabled(false);
-//    close.setIcon(FontAwesome.TIMES_CIRCLE);
-
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
     addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton, container,
@@ -296,6 +292,7 @@ final class OfferManagerTab {
         try {
           detailsLayout.addComponent(offerManagerTabPackageComponent.createOfferManagerTabPackageComponent(container, container.getItem(selected)
               .getItemProperty("offer_id").getValue().toString(), "All"));
+
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -385,6 +382,7 @@ final class OfferManagerTab {
       try {
         detailsLayout.addComponent(offerManagerTabPackageComponent.createOfferManagerTabPackageComponent(container, container.getItem(selected)
             .getItemProperty("offer_id").getValue().toString(),  selectedPackageGroup));
+
       } catch (SQLException e) {
         e.printStackTrace();
       }
@@ -639,7 +637,7 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "email", projectManagerMail);
     changeNodeTextContent(contentControlDocument, "project_title", projectTitle);
     changeNodeTextContent(contentControlDocument, "objective", projectDescription);
-    changeNodeTextContent(contentControlDocument, "estimated_total", offerTotal+" €");//formatCurrency(offerTotal));
+    changeNodeTextContent(contentControlDocument, "estimated_total",formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
     if (estimatedDeliveryWeeks != null){
@@ -654,7 +652,7 @@ final class OfferManagerTab {
     for (int i = packageNames.size()-1; i >= 0; i--) {
       addRowToTable(contentControlDocument, 1, packageIDs.get(i),packageNames.get(i) + ": "+
               packageDescriptions.get(i), packageCounts.get(i), formatCurrency(packageUnitPrices.get(i)),
-          formatCurrency(packageTotalPrices.get(i)));
+              formatCurrency(packageTotalPrices.get(i)));
     }
 
     // remove the placeholder rows in the .xml file

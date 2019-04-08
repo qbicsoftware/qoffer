@@ -24,15 +24,19 @@ import com.vaadin.data.util.sqlcontainer.query.TableQuery;
 import com.vaadin.server.*;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
+import life.qbic.CustomWindow.WindowFactory;
 import life.qbic.dbase.Database;
 import life.qbic.utils.RefreshableGrid;
 import org.vaadin.gridutil.cell.GridCellFilter;
 
+import javax.xml.crypto.Data;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 //import static life.qbic.components.OfferManagerTab.getPathOnServer;
 import static life.qbic.utils.qOfferManagerUtils.createExportContent;
@@ -49,6 +53,10 @@ final class PackageManagerTab {
 
   private static FileDownloader fileDownloader;
   //private static String pathOnServer = getPathOnServer();
+  private Window deleteWarning;
+  private Database db;
+  private SQLContainer container;
+  private RefreshableGrid packageGrid;
 
   /**
    * creates the tab for creating new packages
@@ -58,7 +66,7 @@ final class PackageManagerTab {
    */
   Component createPackageManagerTab() throws SQLException, IOException {
 
-    Database db = qOfferManager.getDb();
+    db = qOfferManager.getDb();
 
     VerticalLayout packManVerticalLayout = new VerticalLayout();
     packManVerticalLayout.setMargin(true);
@@ -71,6 +79,10 @@ final class PackageManagerTab {
     Button addPackageButton = new Button("New Package");
     addPackageButton.setIcon(FontAwesome.PLUS);
     addPackageButton.setDescription("Click here to add a new package but don't forget to update the details.");
+
+    Button proceed = new Button("ok");
+    proceed.setIcon(FontAwesome.CHECK_CIRCLE);
+    proceed.setDescription("Click here to proceed and delete the package");
 
     ComboBox updatePackageGroupComboBox = new ComboBox("Select package group");
     updatePackageGroupComboBox.addItems("Sequencing", "Project Management", "Bioinformatics Analysis",
@@ -98,7 +110,7 @@ final class PackageManagerTab {
     TableQuery tq = new TableQuery("packages", db.getDatabaseInstanceAlternative());
     tq.setVersionColumn("OPTLOCK");
 
-    SQLContainer container = new SQLContainer(tq);
+    container = new SQLContainer(tq);
     container.setAutoCommit(true);
 
     GeneratedPropertyContainer gpcontainer = new GeneratedPropertyContainer(container);
@@ -127,7 +139,7 @@ final class PackageManagerTab {
         });
 */
 
-    RefreshableGrid packageGrid = new RefreshableGrid(gpcontainer);
+    packageGrid = new RefreshableGrid(gpcontainer);
 
     // add the filters to the grid
     GridCellFilter filter = new GridCellFilter(packageGrid);
@@ -191,8 +203,8 @@ final class PackageManagerTab {
       cell.setHtml(htmlWithTooltip);
     }
 
-    addListeners(db, addPackageButton, updatePackageGroupComboBox, updateSelectedPackageButton, deleteSelectedPackageButton,
-        container, packageGrid, exportTableButton, calculatePricesAutomaticallyCheckBox);
+    addListeners(addPackageButton, updatePackageGroupComboBox, updateSelectedPackageButton, deleteSelectedPackageButton,
+        packageGrid, exportTableButton, calculatePricesAutomaticallyCheckBox, proceed);
 
     packManHorizontalLayout.addComponent(addPackageButton);
     packManHorizontalLayout.addComponent(updatePackageGroupComboBox);
@@ -220,7 +232,7 @@ final class PackageManagerTab {
    * @param container: sql container for getting the currently selected row
    * @param packageGrid: grid showing the packages
    */
-  private static void addAutomaticPriceCalculation(CheckBox calculatePricesAutomatically, SQLContainer container,
+  private void addAutomaticPriceCalculation(CheckBox calculatePricesAutomatically, SQLContainer container,
                                                    RefreshableGrid packageGrid) {
 
     // TODO: make this more efficient + not a workaround any more
@@ -238,7 +250,7 @@ final class PackageManagerTab {
       @Override
       public void postCommit(FieldGroup.CommitEvent commitEvent) throws FieldGroup.CommitException {
 
-        calculatePrices(container,calculatePricesAutomatically,packageGrid);
+        calculatePrices(container,calculatePricesAutomatically,packageGrid,packageGrid.getSelectedRow());
 
       }
     });
@@ -246,19 +258,16 @@ final class PackageManagerTab {
 
   /**
    * adds the listeners to the three buttons
-   * @param db: database instance to query
    * @param addPackageButton: button for creating a new package
    * @param updatePackageGroupComboBox: combo box for selecting the package group
    * @param updateSelectedPackageButton: button for updating a package
    * @param deleteSelectedPackageButton: button for deleting a package
-   * @param container: SQLContainer holding the data from the database
    * @param packageGrid: grid holding the packages
    * @param exportTableButton: button for exporting the grid as csv
  * @throws IOException 
    */
-  private static void addListeners(Database db, Button addPackageButton, ComboBox updatePackageGroupComboBox,
-                                   Button updateSelectedPackageButton, Button deleteSelectedPackageButton,
-                                   SQLContainer container, RefreshableGrid packageGrid, Button exportTableButton, CheckBox calculatePricesAutomaticallyCheckBox) throws IOException {
+  private void addListeners(Button addPackageButton, ComboBox updatePackageGroupComboBox,
+                            Button updateSelectedPackageButton, Button deleteSelectedPackageButton, RefreshableGrid packageGrid, Button exportTableButton, CheckBox calculatePricesAutomaticallyCheckBox, Button proceed) throws IOException {
 
     addPackageButton.addClickListener(new Button.ClickListener() {
 
@@ -294,22 +303,35 @@ final class PackageManagerTab {
       }
       else {
         String selectedPackageGroup = updatePackageGroupComboBox.getValue().toString();
-        String packageId = packageGrid.getSelectedRow().toString();
-        db.updatePackageGroupForPackage(selectedPackageGroup, packageId);
+        Object packageId = packageGrid.getSelectedRow();
+        db.updatePackageGroupForPackage(selectedPackageGroup, packageId.toString());
         //added: to update the price if the package group is changed
         container.refresh();
         //update price
-        calculatePrices(container,calculatePricesAutomaticallyCheckBox,packageGrid);
+        calculatePrices(container,calculatePricesAutomaticallyCheckBox,packageGrid, packageId);
         container.refresh();
       }
     });
 
     deleteSelectedPackageButton.addClickListener((Button.ClickListener) event -> {
       Object selectedRow = packageGrid.getSelectedRow();
+
       if (selectedRow == null) {
         displayNotification("No package selected!", "Please select a package to delete.", "error");
         return;
       }
+
+      WindowFactory warning = new WindowFactory();
+      deleteWarning = warning.setTitle("Delete this package?").isModal(true).addButton(proceed).getWindow(false);
+      Layout infoLayout = warning.getContentLayout();
+      WindowFactory.addNotification("warn","Do you really want to delete this package?",infoLayout);
+
+      UI.getCurrent().addWindow(deleteWarning);
+
+    });
+
+    proceed.addClickListener((Button.ClickListener) event -> {
+      Object selectedRow = packageGrid.getSelectedRow();
 
       int selectedPackageId = (int) packageGrid.getContainerDataSource().getItem(selectedRow)
           .getItemProperty("package_id").getValue();
@@ -331,6 +353,8 @@ final class PackageManagerTab {
       packageGrid.sort("package_name", SortDirection.ASCENDING);
       displayNotification("Package deleted", "Package " + selectedPackageId + " successfully deleted.",
           "success");
+      deleteWarning.close();
+
     });
 
     // setup the export as .csv file functionality
@@ -356,13 +380,12 @@ final class PackageManagerTab {
    * @param container
    * @param calculatePricesAutomaticallyCheckBox
    * @param packageGrid
+   * @param selected row in the grid
    */
-  private static void calculatePrices(SQLContainer container, CheckBox calculatePricesAutomaticallyCheckBox, RefreshableGrid packageGrid) {
+  private void calculatePrices(SQLContainer container, CheckBox calculatePricesAutomaticallyCheckBox, RefreshableGrid packageGrid, Object selected) {
 
     if (calculatePricesAutomaticallyCheckBox.getValue()) {
 
-      // Get the internal package price from the selected row in the grid
-      Object selected = ((Grid.SingleSelectionModel) packageGrid.getSelectionModel()).getSelectedRow();
       if (selected == null) {
         displayNotification("Price could not be automatically calculated", "Vaadin couldn't get " +
                 "the selected row, so the external prices have NOT been automatically calculated. If you wanted to " +
@@ -388,21 +411,21 @@ final class PackageManagerTab {
 
       String packageGroup = packageGroupObject.toString();
 
-      // based on the package group we have differnet price modifiers:
-      Float packagePriceExternalAcademic;
-      Float packagePriceExternalCommercial;
+      // based on the package group we have different price modifiers:
+      BigDecimal packagePriceExternalAcademic;
+      BigDecimal packagePriceExternalCommercial;
       switch (packageGroup) {
         case "Bioinformatics Analysis":
         case "Project Management":
           // recalculate the two external prices (*1.3 and *2.0)
-          packagePriceExternalAcademic = packagePriceInternal.multiply(externalAcademicPriceModifier).floatValue();
-          packagePriceExternalCommercial = packagePriceInternal.multiply(externalCommercialPriceModifier).floatValue();
+          packagePriceExternalAcademic = packagePriceInternal.multiply(externalAcademicPriceModifier);
+          packagePriceExternalCommercial = packagePriceInternal.multiply(externalCommercialPriceModifier);
           break;
         case "Sequencing":
         case "Mass spectrometry":
           // recalculate the two external prices (*1.5)
-          packagePriceExternalAcademic = packagePriceInternal.multiply(externalPriceModifier).floatValue();
-          packagePriceExternalCommercial = packagePriceInternal.multiply(externalPriceModifier).floatValue();
+          packagePriceExternalAcademic = packagePriceInternal.multiply(externalPriceModifier);
+          packagePriceExternalCommercial = packagePriceInternal.multiply(externalPriceModifier);
           break;
         default:  // package group is "Other"
           displayNotification("Wrong package group", "Package has package group \"Other\" " +
@@ -415,7 +438,34 @@ final class PackageManagerTab {
       // set the respective fields in the grid, which also updates the database
       selectedRow.getItemProperty("package_price_external_academic").setValue(packagePriceExternalAcademic);
       selectedRow.getItemProperty("package_price_external_commercial").setValue(packagePriceExternalCommercial);
+
+/*      //update the new price also for table offers_packages
+      String offer_id = selectedRow.getItemProperty("offer_id").getValue().toString();
+      String package_id = selectedRow.getItemProperty("package_id").getValue().toString();
+
+      String priceType = db.getPackagePriceType(offer_id,package_id);
+      String price = "";
+
+      switch (priceType){
+        case "internal":
+          price = packagePriceInternalString;
+          break;
+        case "external_academic":
+          price = packagePriceExternalAcademic.toString();
+          break;
+        case "external_commercial":
+          price = packagePriceExternalCommercial.toString();
+          break;
+        default:
+          price = packagePriceInternalString;
+          break;
+
+      }
+
+      db.updatePackagePrice(offer_id,package_id,price);*/
     }
 
   }
+
+
 }

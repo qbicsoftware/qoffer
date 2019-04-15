@@ -441,7 +441,7 @@ final class OfferManagerTabPackageComponent {
         // update the package price type
         db.updatePackagePriceTypeForPackage(selectedOfferID, packageId, packagePriceType);
 
-        // due to a lack of time we simply use the updatePackageQuantityAndRecalculatePrice function to
+        // due to a lack of time we simply use the updatePriceAndRecalculateTotalPrices function to
         // recalculate the prices, although the quantity has not changed
         // TODO: write function to recalculate the price without the quantity to save some computation power
         packsContainer.refresh();

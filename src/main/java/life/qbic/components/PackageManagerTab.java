@@ -444,13 +444,10 @@ final class PackageManagerTab {
             //last change here
             for(int i = 0; i < offerIDs.size(); i++){
                 String offer_id = Integer.toString(offerIDs.get(i));
-                displayNotification("here", "" + offer_id, "success");
+                //displayNotification("here", "" + offer_id, "success");
 
                 updatePackageAddOnPrice(offer_id, package_id);
             }
-
-            //String offer_id = "77";
-            //updatePackageAddOnPrice(offer_id, package_id);
 
         } else {
             displayNotification("Price could not be automatically calculated", "Vaadin couldn't get " +
@@ -472,7 +469,9 @@ final class PackageManagerTab {
 
         String package_priceType = db.getPackagePriceType(offer_id, package_id);
 
-        db.updatePackageQuantityAndRecalculatePrice(offer_id, package_id, package_priceType);
+        db.updatePriceAndRecalculateTotalPrices(offer_id, package_id, package_priceType);
+
+        //TODO update the total price of the offer --> extend upper function!!
     }
 
 

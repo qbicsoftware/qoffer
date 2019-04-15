@@ -17,7 +17,6 @@ package life.qbic.dbase;
 
 import com.vaadin.data.util.sqlcontainer.connection.JDBCConnectionPool;
 import com.vaadin.data.util.sqlcontainer.connection.SimpleJDBCConnectionPool;
-import com.vaadin.server.VaadinService;
 import life.qbic.model.packageBean;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
@@ -643,7 +642,6 @@ public class Database {
 
     }
 
-    //TODO editing here
     public void updateTotalOfferPrice(String offer_id, BigDecimal offer_total) {
         String sql = "UPDATE offers SET offer_total = ? WHERE offer_id = ? ";
         // The following statement is an try-with-resources statement, which declares two resources,
@@ -742,7 +740,6 @@ public class Database {
         LOG.info("started to update");
 
         BigDecimal updatedPackageAddOnPrice = BigDecimal.ZERO;
-        BigDecimal offerPrice = BigDecimal.ZERO;
         String sqlS;
 
         switch (packagePriceType) {
@@ -781,19 +778,7 @@ public class Database {
 
 
         // get the sum of all total package prices as offer price
-        String sqlL = "SELECT SUM(package_addon_price) FROM offers_packages WHERE offer_id = ?";
-        // The following statement is an try-with-resources statement, which declares two resources,
-        // conn and statement, which will be automatically closed when the try block terminates
-        try (Connection conn = login(); PreparedStatement statementL = conn.prepareStatement(sqlL)) {
-            statementL.setInt(1, Integer.parseInt(offer_id));
-            ResultSet rs = statementL.executeQuery();
-            if (rs.next())
-                offerPrice = rs.getBigDecimal(1);
-
-            LOG.info("calc offerPrice "+offerPrice);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        BigDecimal offerPrice = calculateOfferPrice(offer_id);
 
         // update the offer price in the offers database
         updateOfferPrice(offer_id, offerPrice.floatValue());
@@ -801,9 +786,8 @@ public class Database {
 
 
         // get the offer discount
-        BigDecimal offerDiscount = getPackageDiscount(offer_id);
-        LOG.info("get package discount "+offerDiscount);
-
+        BigDecimal offerDiscount = getOfferDiscount(offer_id);
+        LOG.info("get offer discount "+offerDiscount);
 
 
         // apply the discount + recalculate the total offer price
@@ -822,24 +806,15 @@ public class Database {
      * @param package_id
      * @param packagePriceType
      */
-    public void updatePackageQuantityAndRecalculatePrice(String offer_id, String package_id,
-                                                         String packagePriceType) {
+    public void updatePriceAndRecalculateTotalPrices(String offer_id, String package_id,
+                                                     String packagePriceType) {
 
         BigDecimal updatedPackageAddOnPrice = BigDecimal.ZERO;
-        BigDecimal offerPrice = BigDecimal.ZERO;
         int package_count = getPackageCount(offer_id,package_id);
 
+        BigDecimal packageDiscount = new BigDecimal(getPackageDiscount(offer_id,package_id).replace("%",""));
+        packageDiscount = new BigDecimal(1).subtract((packageDiscount.divide(new BigDecimal(100))));
 
-        String s= "UPDATE offers_packages SET package_discount = ? WHERE package_id = ?";
-        try (Connection conn = login(); PreparedStatement statementS = conn.prepareStatement(s)) {
-            statementS.setString(1, "0%");
-            statementS.setInt(2, Integer.parseInt(package_id));
-            statementS.executeQuery();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        float packageDiscount = Float.parseFloat(getPackageDiscount(offer_id,package_id).replace("%",""));
         String sqlS;
 
         switch (packagePriceType) {
@@ -863,7 +838,7 @@ public class Database {
             if (rs.next())
                 updatedPackageAddOnPrice = rs.getBigDecimal(1);
 
-            updatedPackageAddOnPrice = updatedPackageAddOnPrice.multiply(new BigDecimal(package_count).multiply( new BigDecimal(1).subtract(new BigDecimal(packageDiscount))));
+            updatedPackageAddOnPrice = updatedPackageAddOnPrice.multiply(new BigDecimal(package_count).multiply(packageDiscount));
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -872,12 +847,37 @@ public class Database {
         // update the package_count, the package_addon_price and the package_discount in the offers_packages table
         updateOffersPackages(offer_id, package_id, updatedPackageAddOnPrice);
 
-
         // get the sum of all total package prices as offer price
+        BigDecimal offerPrice = calculateOfferPrice(offer_id);
+
+        // update the offer price in the offers database
+        updateOfferPrice(offer_id, offerPrice.floatValue());
+
+        // get the offer discount
+        BigDecimal offerDiscount = getOfferDiscount(offer_id);
+
+        // apply the discount + recalculate the total offer price
+        BigDecimal offerTotalPrice = offerPrice.multiply((new BigDecimal(100).subtract(offerDiscount)).divide(new BigDecimal(100)));
+        LOG.info("New Total Offer Price is "+offerTotalPrice);
+
+        // update the total offer price
+        updateTotalOfferPrice(offer_id, offerTotalPrice);
+
+    }
+
+    /**
+     * Calculate the offer price by summing up the prices for all packages in the offer
+     * @param offer_id
+     * @return
+     */
+    private BigDecimal calculateOfferPrice(String offer_id){
+        BigDecimal offerPrice = BigDecimal.ZERO;
+
+        LOG.info("summing up packages for offer price");
+
         String sqlL = "SELECT SUM(package_addon_price) FROM offers_packages WHERE offer_id = ?";
-        // The following statement is an try-with-resources statement, which declares two resources,
-        // conn and statement, which will be automatically closed when the try block terminates
         try (Connection conn = login(); PreparedStatement statementL = conn.prepareStatement(sqlL)) {
+
             statementL.setInt(1, Integer.parseInt(offer_id));
             ResultSet rs = statementL.executeQuery();
             if (rs.next())
@@ -887,19 +887,7 @@ public class Database {
             e.printStackTrace();
         }
 
-        // update the offer price in the offers database
-        updateOfferPrice(offer_id, offerPrice.floatValue());
-
-        // get the offer discount
-        BigDecimal offerDiscount = getPackageDiscount(offer_id);
-
-        // apply the discount + recalculate the total offer price
-        BigDecimal offerTotalPrice = offerPrice.multiply((new BigDecimal(100).subtract(offerDiscount)).divide(new BigDecimal(100)));
-
-
-        // update the total offer price
-        updateTotalOfferPrice(offer_id, offerTotalPrice);
-
+        return offerPrice;
     }
 
 
@@ -954,7 +942,7 @@ public class Database {
         }
     }
 
-    public BigDecimal getPackageDiscount(String offer_id) {
+    public BigDecimal getOfferDiscount(String offer_id) {
         BigDecimal offerDiscount = BigDecimal.ZERO;
 
         String sql = "SELECT discount FROM offers WHERE offer_id = ?";

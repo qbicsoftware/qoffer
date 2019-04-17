@@ -58,6 +58,7 @@ final class OfferManagerTab {
   private Window validationWindow;
   private Window deleteWarning;
   private Layout notificationLayout;
+  private SQLContainer offersContainer;
 
 
   private static final Logger LOG = LogManager.getLogger(OfferManagerTab.class);
@@ -157,10 +158,10 @@ final class OfferManagerTab {
 
     TableQuery tq = new TableQuery("offers", db.getDatabaseInstanceAlternative());
     tq.setVersionColumn("OPTLOCK");
-    SQLContainer container = new SQLContainer(tq);
-    container.setAutoCommit(true);
+    offersContainer = new SQLContainer(tq);
+    offersContainer.setAutoCommit(true);
 
-    offerManagerGrid = new RefreshableGrid(container);
+    offerManagerGrid = new RefreshableGrid(offersContainer);
     offerManagerGrid.setImmediate(true);
 
     // add the filters to the grid
@@ -176,13 +177,9 @@ final class OfferManagerTab {
     filter.setComboBoxFilter("offer_status", Arrays.asList("In Progress",
         "Sent", "Accepted", "Rejected"));
 
-//    final Button close = new Button("close");
-//    close.setEnabled(false);
-//    close.setIcon(FontAwesome.TIMES_CIRCLE);
-
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
-    addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton, container,
+    addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton, offersContainer,
         exportTableButton, validateOfferButton,proceedButton);
 
     offerManagerGrid.getColumn("offer_id").setHeaderCaption("Id").setWidth(100).setEditable(false);
@@ -296,6 +293,7 @@ final class OfferManagerTab {
         try {
           detailsLayout.addComponent(offerManagerTabPackageComponent.createOfferManagerTabPackageComponent(container, container.getItem(selected)
               .getItemProperty("offer_id").getValue().toString(), "All"));
+
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -385,6 +383,7 @@ final class OfferManagerTab {
       try {
         detailsLayout.addComponent(offerManagerTabPackageComponent.createOfferManagerTabPackageComponent(container, container.getItem(selected)
             .getItemProperty("offer_id").getValue().toString(),  selectedPackageGroup));
+
       } catch (SQLException e) {
         e.printStackTrace();
       }
@@ -639,7 +638,7 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "email", projectManagerMail);
     changeNodeTextContent(contentControlDocument, "project_title", projectTitle);
     changeNodeTextContent(contentControlDocument, "objective", projectDescription);
-    changeNodeTextContent(contentControlDocument, "estimated_total", offerTotal+" €");//formatCurrency(offerTotal));
+    changeNodeTextContent(contentControlDocument, "estimated_total",formatCurrency(offerTotal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
     if (estimatedDeliveryWeeks != null){
@@ -654,7 +653,7 @@ final class OfferManagerTab {
     for (int i = packageNames.size()-1; i >= 0; i--) {
       addRowToTable(contentControlDocument, 1, packageIDs.get(i),packageNames.get(i) + ": "+
               packageDescriptions.get(i), packageCounts.get(i), formatCurrency(packageUnitPrices.get(i)),
-          formatCurrency(packageTotalPrices.get(i)));
+              formatCurrency(packageTotalPrices.get(i)));
     }
 
     // remove the placeholder rows in the .xml file
@@ -715,6 +714,10 @@ final class OfferManagerTab {
       return " ";
     }
     return address;
+  }
+
+  public void refreshOffersContainer(){
+    offersContainer.refresh();
   }
 
 }

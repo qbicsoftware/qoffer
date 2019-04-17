@@ -25,6 +25,8 @@ import com.vaadin.event.FieldEvents;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.ui.*;
 import com.vaadin.ui.themes.ValoTheme;
+
+import java.math.BigDecimal;
 import java.util.List;
 import life.qbic.dbase.Database;
 
@@ -332,8 +334,7 @@ final class OfferGeneratorTab {
 					LOG.info("packageID "+packageId);
 					packageId = packageId.trim(); //remove whitespaces -> error
 					int currentPackageId = Integer.valueOf(packageId);
-					float packageUnitPrice =
-							Float.valueOf(db.getPriceFromPackageId(currentPackageId, "internal"));
+					BigDecimal packageUnitPrice = new BigDecimal(db.getPriceFromPackageId(currentPackageId, "internal"));
 					db.insertOrUpdateOffersPackages(offerId, currentPackageId, packageUnitPrice);
 				}
 

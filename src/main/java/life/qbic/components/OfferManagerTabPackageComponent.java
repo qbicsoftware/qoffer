@@ -31,6 +31,7 @@ import life.qbic.utils.RefreshableGrid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -228,6 +229,7 @@ final class OfferManagerTabPackageComponent {
     return packQuantityLayout;
   }
 
+
   /**
    * adds the listeners to the package component of the offer manager tab
    * @param offerGridContainer: sql container holding the data for the offers
@@ -389,7 +391,7 @@ final class OfferManagerTabPackageComponent {
         return;
       }
 
-      db.insertOrUpdateOffersPackages(Integer.parseInt(selectedOfferID), packageId, Float.parseFloat(packageUnitPrice));
+      db.insertOrUpdateOffersPackages(Integer.parseInt(selectedOfferID), packageId, new BigDecimal(packageUnitPrice));
       packsContainer.refresh();
 
       // update the array lists holding the information about the packages of the current offer
@@ -439,7 +441,7 @@ final class OfferManagerTabPackageComponent {
         // update the package price type
         db.updatePackagePriceTypeForPackage(selectedOfferID, packageId, packagePriceType);
 
-        // due to a lack of time we simply use the updatePackageQuantityAndRecalculatePrice function to
+        // due to a lack of time we simply use the updatePriceAndRecalculateTotalPrices function to
         // recalculate the prices, although the quantity has not changed
         // TODO: write function to recalculate the price without the quantity to save some computation power
         packsContainer.refresh();
@@ -461,6 +463,7 @@ final class OfferManagerTabPackageComponent {
     });
   }
 
+
   /**
    * updates the total offer price for the offer with offer id selectedOfferId
    * @param selectedOfferID: id of the offer to update the price for
@@ -471,7 +474,7 @@ final class OfferManagerTabPackageComponent {
 
     Database db = qOfferManager.getDb();
 
-    float totalOfferPrice = 0;
+    BigDecimal totalOfferPrice = BigDecimal.ZERO;
 
     for (Object itemID : packsContainer.getItemIds()) {
       // get the package id
@@ -490,15 +493,14 @@ final class OfferManagerTabPackageComponent {
       float discount = (100 - Float.parseFloat(discountProperty.getValue().toString().split("%")[0])) / 100;
 
       String packagePrice = db.getPriceFromPackageId(packageIdInGrid, packagePriceType);
+
       if (packagePrice == null) {
         packagePrice = "0";
         displayNotification("Package price is null!", "The package price for the package " +
-            String.valueOf(packageIdInGrid) + " is null. Please update the price in the package manager tab.",
+            packageIdInGrid + " is null. Please update the price in the package manager tab.",
             "warning") ;
       }
-
-      totalOfferPrice +=
-          (Float.parseFloat(packagePrice) * packageCount) * discount;
+      totalOfferPrice = totalOfferPrice.add((new BigDecimal(packagePrice).multiply(new BigDecimal(packageCount))).multiply(new BigDecimal(discount)));
     }
 
     // update total offer price in db

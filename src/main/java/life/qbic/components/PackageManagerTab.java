@@ -55,6 +55,12 @@ final class PackageManagerTab {
     private Database db;
     private SQLContainer container;
     private RefreshableGrid packageGrid;
+    private OfferManagerTab omt;
+
+    //the OfferManagerTab is needed so that the SQLContainer of the Offers can be refreshed
+    public PackageManagerTab(OfferManagerTab offerManagerTab){
+        omt = offerManagerTab;
+    }
 
     /**
      * creates the tab for creating new packages
@@ -449,6 +455,8 @@ final class PackageManagerTab {
                 updatePackageAddOnPrice(offer_id, package_id);
             }
 
+            //todo refresh the offer grid
+
         } else {
             displayNotification("Price could not be automatically calculated", "Vaadin couldn't get " +
                     "the selected row, so the external prices have NOT been automatically calculated. If you wanted to " +
@@ -471,7 +479,8 @@ final class PackageManagerTab {
 
         db.updatePriceAndRecalculateTotalPrices(offer_id, package_id, package_priceType);
 
-        //TODO update the total price of the offer --> extend upper function!!
+        omt.refreshOffersContainer();
+
     }
 
 

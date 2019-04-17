@@ -111,7 +111,7 @@ public class qOfferManager extends CustomComponent {
 
       OfferGeneratorTab offerGeneratorTab = new OfferGeneratorTab(this);
       OfferManagerTab offerManagerTab = new OfferManagerTab(this);
-      PackageManagerTab packageManagerTab = new PackageManagerTab();
+      PackageManagerTab packageManagerTab = new PackageManagerTab(offerManagerTab);
 
       managerTabs.addTab(offerGeneratorTab.createOfferGeneratorTab(), "Offer Generator");
       LOG.info("Created Offer Generator");

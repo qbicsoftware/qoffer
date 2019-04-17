@@ -58,6 +58,7 @@ final class OfferManagerTab {
   private Window validationWindow;
   private Window deleteWarning;
   private Layout notificationLayout;
+  private SQLContainer offersContainer;
 
 
   private static final Logger LOG = LogManager.getLogger(OfferManagerTab.class);
@@ -157,10 +158,10 @@ final class OfferManagerTab {
 
     TableQuery tq = new TableQuery("offers", db.getDatabaseInstanceAlternative());
     tq.setVersionColumn("OPTLOCK");
-    SQLContainer container = new SQLContainer(tq);
-    container.setAutoCommit(true);
+    offersContainer = new SQLContainer(tq);
+    offersContainer.setAutoCommit(true);
 
-    offerManagerGrid = new RefreshableGrid(container);
+    offerManagerGrid = new RefreshableGrid(offersContainer);
     offerManagerGrid.setImmediate(true);
 
     // add the filters to the grid
@@ -178,7 +179,7 @@ final class OfferManagerTab {
 
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
 
-    addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton, container,
+    addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton, offersContainer,
         exportTableButton, validateOfferButton,proceedButton);
 
     offerManagerGrid.getColumn("offer_id").setHeaderCaption("Id").setWidth(100).setEditable(false);
@@ -713,6 +714,10 @@ final class OfferManagerTab {
       return " ";
     }
     return address;
+  }
+
+  public void refreshOffersContainer(){
+    offersContainer.refresh();
   }
 
 }

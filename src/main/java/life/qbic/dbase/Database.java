@@ -653,6 +653,7 @@ public class Database {
             statement.setString(1, offer_total.toString());
             statement.setString(2, offer_id);
             int result = statement.executeUpdate();
+            LOG.info("successfully updated the offers total price "+result);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -781,7 +782,7 @@ public class Database {
         BigDecimal offerPrice = calculateOfferPrice(offer_id);
 
         // update the offer price in the offers database
-        updateOfferPrice(offer_id, offerPrice.floatValue());
+        updateOfferPrice(offer_id, offerPrice);
         LOG.info("updated offerPrice");
 
 
@@ -851,7 +852,7 @@ public class Database {
         BigDecimal offerPrice = calculateOfferPrice(offer_id);
 
         // update the offer price in the offers database
-        updateOfferPrice(offer_id, offerPrice.floatValue());
+        updateOfferPrice(offer_id, offerPrice);
 
         // get the offer discount
         BigDecimal offerDiscount = getOfferDiscount(offer_id);
@@ -928,15 +929,16 @@ public class Database {
         }
     }
 
-    public void updateOfferPrice(String offer_id, float offerPrice) {
+    public void updateOfferPrice(String offer_id, BigDecimal offerPrice) {
         String sql = "UPDATE offers SET offer_price = ? WHERE offer_id = ?";
 
         try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
             //String offerPriceFormatted = String.format("%.02f", offerPrice);
             //offerPriceFormatted = offerPriceFormatted.replaceAll(",", ".");
-            statement.setFloat(1, offerPrice);
+            statement.setBigDecimal(1, offerPrice);
             statement.setInt(2, Integer.parseInt(offer_id));
-            statement.executeUpdate();
+            int done = statement.executeUpdate();
+            LOG.info("successfully updated the offers price "+done);
         } catch (SQLException e) {
             e.printStackTrace();
         }

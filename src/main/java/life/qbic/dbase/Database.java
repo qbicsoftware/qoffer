@@ -653,7 +653,6 @@ public class Database {
             statement.setString(1, offer_total.toString());
             statement.setString(2, offer_id);
             int result = statement.executeUpdate();
-            LOG.info("successfully updated the offers total price "+result);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -859,7 +858,6 @@ public class Database {
 
         // apply the discount + recalculate the total offer price
         BigDecimal offerTotalPrice = offerPrice.multiply((new BigDecimal(100).subtract(offerDiscount)).divide(new BigDecimal(100)));
-        LOG.info("New Total Offer Price is "+offerTotalPrice);
 
         // update the total offer price
         updateTotalOfferPrice(offer_id, offerTotalPrice);
@@ -906,7 +904,6 @@ public class Database {
             statement.setInt(4, Integer.parseInt(offer_id));
             statement.setInt(5, Integer.parseInt(package_id));
             statement.executeUpdate();
-            LOG.info("Updated offer with id " + offer_id);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -923,7 +920,6 @@ public class Database {
             statement.setInt(2, Integer.parseInt(offer_id));
             statement.setInt(3, Integer.parseInt(package_id));
             statement.executeUpdate();
-            LOG.info("Updated offer with id " + offer_id);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -938,7 +934,6 @@ public class Database {
             statement.setBigDecimal(1, offerPrice);
             statement.setInt(2, Integer.parseInt(offer_id));
             int done = statement.executeUpdate();
-            LOG.info("successfully updated the offers price "+done);
         } catch (SQLException e) {
             e.printStackTrace();
         }

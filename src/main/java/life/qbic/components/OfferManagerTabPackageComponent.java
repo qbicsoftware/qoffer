@@ -303,8 +303,8 @@ final class OfferManagerTabPackageComponent {
           }
           int packageCount = Integer.parseInt(packageQuantityComboBox.getValue().toString());
           float packageDiscount = 1.0f;
-          // the package discount should only be applied to the sequencing packages
-          if (Objects.equals(packageGroup, "Sequencing")) {
+          // the package discount should only be applied to the bioinformatics analysis packages
+          if (Objects.equals(packageGroup, "Bioinformatics Analysis")) {
             // get the package discount based on the number of samples
             packageDiscount = discountPerSampleSize.get(packageCount);
           }

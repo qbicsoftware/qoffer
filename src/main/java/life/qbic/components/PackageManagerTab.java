@@ -21,6 +21,7 @@ import com.vaadin.data.fieldgroup.FieldGroup;
 import com.vaadin.data.util.GeneratedPropertyContainer;
 import com.vaadin.data.util.sqlcontainer.SQLContainer;
 import com.vaadin.data.util.sqlcontainer.query.TableQuery;
+import com.vaadin.event.SortEvent;
 import com.vaadin.server.*;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
@@ -165,16 +166,7 @@ final class PackageManagerTab {
         packageGrid.getColumn("package_price_internal").setHeaderCaption("Internal Price (€)");
         packageGrid.getColumn("package_price_external_academic").setHeaderCaption("Ext. Academical Price (€)");
         packageGrid.getColumn("package_price_external_commercial").setHeaderCaption("Ext. Commercial Price (€)");
-        // TODO: offer_ids currently not in use; since it's extremely slow..
-        //packageGrid.getColumn("offer_ids").setHeaderCaption("Offer Id's");
         packageGrid.getColumn("package_unit_type").setHeaderCaption("Unit Type");
-
-    /*
-    // TODO: offer_ids currently not in use; since it's extremely slow..
-    packageGrid.setColumnOrder("package_id", "package_name", "package_description", "package_group", "package_facility",
-        "package_price_internal", "package_price_external_academic", "package_price_external_commercial",
-        "package_unit_type", "offer_ids");*/
-
         packageGrid.setColumnOrder("package_id", "package_name", "package_description", "package_group", "package_facility",
                 "package_price_internal", "package_price_external_academic", "package_price_external_commercial",
                 "package_unit_type");
@@ -383,7 +375,7 @@ final class PackageManagerTab {
      * @param container
      * @param calculatePricesAutomaticallyCheckBox
      * @param packageGrid
-     * @param selected                             row in the grid
+     * @param selected row in the grid
      */
     private void calculatePrices(SQLContainer container, CheckBox calculatePricesAutomaticallyCheckBox, RefreshableGrid packageGrid, Object selected) {
 
@@ -454,8 +446,6 @@ final class PackageManagerTab {
 
                 updatePackageAddOnPrice(offer_id, package_id);
             }
-
-            //todo refresh the offer grid
 
         } else {
             displayNotification("Price could not be automatically calculated", "Vaadin couldn't get " +

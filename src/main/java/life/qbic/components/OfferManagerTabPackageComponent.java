@@ -22,6 +22,7 @@ import com.vaadin.data.util.sqlcontainer.query.FreeformQuery;
 import com.vaadin.event.SelectionEvent;
 import com.vaadin.server.FontAwesome;
 import com.vaadin.server.VaadinService;
+import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.shared.ui.combobox.FilteringMode;
 import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.*;
@@ -216,6 +217,7 @@ final class OfferManagerTabPackageComponent {
         "package_unit_type");
 
     // we don't want the packages to be be editable, because this would change the package in other offers as well
+    selectedPacksInOfferGrid.sort("package_id", SortDirection.ASCENDING);
     selectedPacksInOfferGrid.setEditorEnabled(false);
     selectedPacksInOfferGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
     selectedPacksInOfferGrid.setWidth("100%");

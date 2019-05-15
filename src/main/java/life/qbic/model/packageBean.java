@@ -59,6 +59,16 @@ public class packageBean implements Serializable {
     // TODO Auto-generated constructor stub
   }
 
+  public packageBean(String name, String facility, String desc, String group, double price,
+      String unit) {
+    this.package_name = name;
+    this.package_facility = facility;
+    this.package_description = desc;
+    this.package_group = group;
+    this.package_price = price;
+    this.package_unit_type = unit;
+  }
+
   /**
    * @return the package_id
    */
@@ -185,6 +195,12 @@ public class packageBean implements Serializable {
     this.package_date = package_date;
   }
 
-
-
+  @Override
+  public String toString() {
+    StringBuilder b = new StringBuilder();
+    b.append(package_name+" ("+package_group+"@"+package_facility+"): ");
+    b.append(package_description);
+    b.append(" internal price: "+package_price+" "+package_unit_type);
+    return b.toString();
+  }
 }

@@ -1,6 +1,5 @@
 package life.qbic.CustomWindow;
 
-import com.vaadin.server.FontAwesome;
 import com.vaadin.ui.*;
 
 /**

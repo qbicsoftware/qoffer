@@ -1,7 +1,6 @@
 package life.qbic.CustomWindow;
 
 import com.vaadin.ui.Component;
-import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Layout;
 
 public interface IWindow {

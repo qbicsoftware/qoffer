@@ -6,20 +6,12 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.Project;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.fetchoptions.ProjectFetchOptions;
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.project.search.ProjectSearchCriteria;
 import ch.systemsx.cisd.common.spring.HttpInvokerUtils;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.Properties;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
-import life.qbic.portal.utils.LiferayConfigurationManager;
-import life.qbic.utils.qOfferManagerUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import static life.qbic.portal.utils.PortalUtils.isLiferayPortlet;
 
 /**
  * Singleton that encapsulates access to openBIS.
@@ -86,27 +78,29 @@ public class OpenBisProxy {
     LOG.info("Initializing OpenBisProxy");
     if (INSTANCE == null) {
       final String password, username, url;
-      if (isLiferayPortlet()) {
+      //TODO local properties file path is now: src/main/resources/developer.properties
+
+//      if (isLiferayPortlet()) {
         final ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
         password = conf.getDataSourcePassword();
         username = conf.getDataSourceUser();
         url = conf.getDataSourceApiUrl() + IApplicationServerApi.SERVICE_URL;
         //LOG.info("OpenBIS URL {}",url);
-      } else {
-        try (final InputStream input = new FileInputStream(qOfferManagerUtils.PROPERTIES_FILE_PATH)) {
-
-          // load a properties file
-          final Properties prop = new Properties();
-          prop.load(input);
-
-          password = prop.getProperty(LiferayConfigurationManager.DATASOURCE_PASS);
-          username = prop.getProperty(LiferayConfigurationManager.DATASOURCE_USER);
-          url = prop.getProperty(LiferayConfigurationManager.DATASOURCE_API_URL) + IApplicationServerApi.SERVICE_URL;
-
-        } catch (IOException ex) {
-          throw new RuntimeException("Could not read configuration settings", ex);
-        }
-      }
+//      } else {
+//        try (final InputStream input = new FileInputStream(qOfferManagerUtils.PROPERTIES_FILE_PATH)) {
+//
+//          // load a properties file
+//          final Properties prop = new Properties();
+//          prop.load(input);
+//
+//          password = prop.getProperty(LiferayConfigurationManager.DATASOURCE_PASS);
+//          username = prop.getProperty(LiferayConfigurationManager.DATASOURCE_USER);
+//          url = prop.getProperty(LiferayConfigurationManager.DATASOURCE_API_URL) + IApplicationServerApi.SERVICE_URL;
+//
+//        } catch (IOException ex) {
+//          throw new RuntimeException("Could not read configuration settings", ex);
+//        }
+//      }
       INSTANCE = new OpenBisProxy(url, username, password);
     }
   }

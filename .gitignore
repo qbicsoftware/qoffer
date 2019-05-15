@@ -32,3 +32,6 @@ src/main/webapp/WEB-INF/resourceFiles/Credentials.properties
 src/main/webapp/WEB-INF/resourceFiles/*.docx
 src/main/webapp/WEB-INF/resourceFiles/*.xml
 src/main/webapp/WEB-INF/resourceFiles/*.csv
+
+# new properties file - do not push this ever
+src/main/resources/developer.properties

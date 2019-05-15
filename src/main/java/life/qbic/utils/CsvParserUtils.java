@@ -24,10 +24,12 @@ import java.util.ArrayList;
  */
 public class CsvParserUtils {
 
-  public static ArrayList<Float> parseCsvFile(String filename, String csvSplitBy, boolean skipHeader) {
+  public static ArrayList<Float> parseCsvFile(String filename, String csvSplitBy,
+      boolean skipHeader) {
 
     ArrayList<Float> parsedCsvFile = new ArrayList<>();
-    // add a placeholder for the discount to skip the first value, so we can easily access the discount via
+    // add a placeholder for the discount to skip the first value, so we can easily access the
+    // discount via
     // arrayList[5] -> discount for 5 samples
     parsedCsvFile.add(-1.0f);
 
@@ -39,10 +41,17 @@ public class CsvParserUtils {
         String line;
         while ((line = br.readLine()) != null) {
           String[] lineSplitted = line.split(csvSplitBy);
-          parsedCsvFile.add(Float.parseFloat(lineSplitted[1]));   //
+          parsedCsvFile.add(Float.parseFloat(lineSplitted[1])); //
         }
       } catch (IOException e) {
         e.printStackTrace();
+      } finally {
+        try {
+          br.close();
+        } catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
       }
     } catch (FileNotFoundException e) {
       e.printStackTrace();

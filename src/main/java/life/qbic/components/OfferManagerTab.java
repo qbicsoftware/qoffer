@@ -28,7 +28,7 @@ import life.qbic.CustomWindow.WindowFactory;
 import life.qbic.dbase.Database;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
-import life.qbic.CustomWindow.NotificationWindow;
+import life.qbic.utils.TimeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.docx4j.Docx4J;
@@ -37,6 +37,7 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.vaadin.gridutil.cell.GridCellFilter;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -435,8 +436,13 @@ final class OfferManagerTab {
    */
   private void setupTableExportFunctionality(SQLContainer container, Button exportGridButton) throws IOException {
     // setup the export as .csv file functionality
-    File tempFile = File.createTempFile("offers", ".csv");
-    String filePath = tempFile.getAbsolutePath();
+    
+    String timeStamp = TimeUtils.getCurrentTimestampString();
+    String filePath = Paths.get(qOfferManager.tmpFolder, "offers_" + timeStamp + ".csv").toString();
+    File tempFile = new File(filePath);
+    
+//    File tempFile = File.createTempFile("offers", ".csv");
+//    String filePath = tempFile.getAbsolutePath();
 
     //set cache time to zero so that each time the download button is pressed the file is generated new and no cached information
     //is saved (like quantity for table content
@@ -668,8 +674,12 @@ final class OfferManagerTab {
 
     // save updated document to output file
     try {
-      File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
+//      File tempFile = File.createTempFile(projectQuotationNumber, ".docx");
 
+      String timeStamp = TimeUtils.getCurrentTimestampString();
+      String filePath = Paths.get(qOfferManager.tmpFolder, projectQuotationNumber + timeStamp + ".docx").toString();
+      File tempFile = new File(filePath);
+      
       assert wordProcessor != null;
       wordProcessor.save(tempFile, Docx4J.FLAG_SAVE_ZIP_FILE);
 
@@ -694,7 +704,7 @@ final class OfferManagerTab {
 
       return true;
 
-    } catch (Docx4JException | IOException e) {
+    } catch (Docx4JException e) {
       UI.getCurrent().access(() -> WindowFactory.addNotification("failure","Could not generate offer file",notificationLayout));
       throw new RuntimeException("Could not generate offer file", e);
     }

@@ -21,7 +21,8 @@ import com.vaadin.ui.GridLayout.OutOfBoundsException;
 import com.vaadin.ui.GridLayout.OverlapsException;
 import com.vaadin.ui.themes.ValoTheme;
 import life.qbic.dbase.Database;
-import life.qbic.dbase.OpenBisProxy;
+import life.qbic.portal.utils.ConfigurationManager;
+import life.qbic.portal.utils.ConfigurationManagerFactory;
 import life.qbic.portal.utils.PortalUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,8 @@ import java.util.*;
 
 public class qOfferManager extends CustomComponent {
 
+  public static String tmpFolder;
+  
   private static Database db;
   private TabSheet managerTabs;
 
@@ -94,7 +97,9 @@ public class qOfferManager extends CustomComponent {
   }
 
   private void init() throws IOException {
-
+    ConfigurationManager config = ConfigurationManagerFactory.getInstance();
+    tmpFolder = config.getTmpFolder();
+    
     db = Database.getInstance();
     managerTabs = new TabSheet();
 

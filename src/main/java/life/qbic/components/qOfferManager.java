@@ -34,7 +34,7 @@ import java.util.*;
 public class qOfferManager extends CustomComponent {
 
   public static String tmpFolder;
-  
+
   private static Database db;
   private TabSheet managerTabs;
 
@@ -88,22 +88,26 @@ public class qOfferManager extends CustomComponent {
   }
 
   public qOfferManager() throws IOException {
-	  try {
-		init(); 
-	  }catch(IOException e) {
-		  e.printStackTrace();
-	  }
+    try {
+      init();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
 
   }
 
   private void init() throws IOException {
     ConfigurationManager config = ConfigurationManagerFactory.getInstance();
     tmpFolder = config.getTmpFolder();
-    
+
     db = Database.getInstance();
     managerTabs = new TabSheet();
 
-    LOG.info("Offer Manager accessed! - User: {}",PortalUtils.getUser().getScreenName());
+    if (PortalUtils.isLiferayPortlet()) {
+      LOG.info("Offer Manager accessed! - User: {}", PortalUtils.getUser().getScreenName());
+    } else {
+      LOG.info("Offer Manager accessed! This is not a liferay portlet, probably testing locally");
+    }
 
     managerTabs.addStyleName(ValoTheme.TABSHEET_FRAMED);
     managerTabs.addStyleName(ValoTheme.TABSHEET_EQUAL_WIDTH_TABS);
@@ -126,13 +130,17 @@ public class qOfferManager extends CustomComponent {
       LOG.info("Created Package Manager");
 
 
-      managerTabs.setSelectedTab(1);  // show the offer manager first, since this will probably be mostly in use
+      managerTabs.setSelectedTab(1); // show the offer manager first, since this will probably be
+                                     // mostly in use
 
       // TODO: make this more elegant
-      // if one changes the tab e.g. from the offer manager to the package manager, creates a new package and goes
+      // if one changes the tab e.g. from the offer manager to the package manager, creates a new
+      // package and goes
       // back to the offer manager tab, the package won't be updated -> workaround:
-      // since the selected offer in the offer manager grid won't requery the database for the information needed, we
-      // deselect the current offer (if any has been selected), so the user has to select the offer again -> information
+      // since the selected offer in the offer manager grid won't requery the database for the
+      // information needed, we
+      // deselect the current offer (if any has been selected), so the user has to select the offer
+      // again -> information
       // for the database is queried again and e.g. the newly created packages are shown properly)
       managerTabs.addSelectedTabChangeListener((TabSheet.SelectedTabChangeListener) event -> {
         offerManagerTab.getOfferManagerGrid().deselectAll();

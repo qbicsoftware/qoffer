@@ -24,7 +24,7 @@ import java.util.ArrayList;
  */
 public class CsvParserUtils {
 
-  public static ArrayList<Float> parseCsvFile(String filename, String csvSplitBy,
+  public static ArrayList<Float> parseCsvFile(InputStream fileStream, String csvSplitBy,
       boolean skipHeader) {
 
     ArrayList<Float> parsedCsvFile = new ArrayList<>();
@@ -34,7 +34,9 @@ public class CsvParserUtils {
     parsedCsvFile.add(-1.0f);
 
     try {
-      BufferedReader br = new BufferedReader(new FileReader(filename));
+      BufferedReader br = new BufferedReader(new InputStreamReader(fileStream, "UTF-8"));
+
+      // BufferedReader br = new BufferedReader(new FileReader(filename));
       try {
         if (skipHeader)
           br.readLine();
@@ -48,12 +50,13 @@ public class CsvParserUtils {
       } finally {
         try {
           br.close();
+          fileStream.close();
         } catch (IOException e) {
           // TODO Auto-generated catch block
           e.printStackTrace();
         }
       }
-    } catch (FileNotFoundException e) {
+    } catch (UnsupportedEncodingException e) {
       e.printStackTrace();
     }
     return parsedCsvFile;

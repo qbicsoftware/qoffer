@@ -21,7 +21,6 @@ import com.vaadin.data.util.sqlcontainer.SQLContainer;
 import com.vaadin.data.util.sqlcontainer.query.FreeformQuery;
 import com.vaadin.event.SelectionEvent;
 import com.vaadin.server.FontAwesome;
-import com.vaadin.server.VaadinService;
 import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.shared.ui.combobox.FilteringMode;
 import com.vaadin.shared.ui.label.ContentMode;
@@ -32,6 +31,8 @@ import life.qbic.utils.RefreshableGrid;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -43,32 +44,35 @@ import static life.qbic.utils.qOfferManagerUtils.displayNotification;
 
 final class OfferManagerTabPackageComponent {
 
-  private String basePath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-  private String csvFileName = basePath + "/WEB-INF/resourceFiles/discount_per_sample_size.csv";
-  private ArrayList<Float> discountPerSampleSize = CsvParserUtils.parseCsvFile(csvFileName, ",", true);
+  private ArrayList<Float> discountPerSampleSize;
   private RefreshableGrid selectedPacksInOfferGrid;
   private OfferManagerTab offerManagerTab;
   private qOfferManager qOfferManager;
 
   private static final Logger LOG = LogManager.getLogger(OfferManagerTabPackageComponent.class);
 
-  public OfferManagerTabPackageComponent(qOfferManager qom, OfferManagerTab omt){
+  public OfferManagerTabPackageComponent(qOfferManager qom, OfferManagerTab omt) {
     offerManagerTab = omt;
     qOfferManager = qom;
+    InputStream fileStream = OfferManagerTabPackageComponent.class.getClassLoader().getResourceAsStream("discount_per_sample_size.csv");
+
+    discountPerSampleSize = CsvParserUtils.parseCsvFile(fileStream, ",", true);
   }
 
   /**
-   * creates the component showing the packages of the respective package type of the currently selected offer in a
-   * grid and enables the user to add and remove packages from the offer
+   * creates the component showing the packages of the respective package type of the currently
+   * selected offer in a grid and enables the user to add and remove packages from the offer
+   * 
    * @param offerGridContainer: sql container of all the offers
    * @param selectedOfferID: id of the currently selected offer
-   * @param packagesType: type of the packages: "All", "Bioinformatics Analysis", "Project Management", "Sequencing",
-   *                    "Mass spectrometry", "Other"; what type of packages the grid should display
+   * @param packagesType: type of the packages: "All", "Bioinformatics Analysis",
+   *        "Project Management", "Sequencing", "Mass spectrometry", "Other"; what type of packages
+   *        the grid should display
    * @return vaadin component
    * @throws SQLException :
    */
-  Component createOfferManagerTabPackageComponent(SQLContainer offerGridContainer, String selectedOfferID,
-                                                         String packagesType) throws SQLException {
+  Component createOfferManagerTabPackageComponent(SQLContainer offerGridContainer,
+      String selectedOfferID, String packagesType) throws SQLException {
 
     Database db = qOfferManager.getDb();
 
@@ -108,14 +112,16 @@ final class OfferManagerTabPackageComponent {
     addPackageButton.setDescription("Adds a package to the current offer.");
 
     ComboBox externalInternalPriceComboBox = new ComboBox("External/Internal Price");
-    externalInternalPriceComboBox.setDescription("Select here whether the internal, the external academical or the " +
-        "external commercial price should be used for the current selected package.");
+    externalInternalPriceComboBox
+        .setDescription("Select here whether the internal, the external academical or the "
+            + "external commercial price should be used for the current selected package.");
     externalInternalPriceComboBox.addItems("Internal", "External academic", "External commercial");
 
     Button externalInternalButton = new Button("Update price type");
     externalInternalButton.setIcon(FontAwesome.SPINNER);
-    externalInternalButton.setDescription("Updates the package price type (internal/external academic/external " +
-        "commercial) to use.");
+    externalInternalButton
+        .setDescription("Updates the package price type (internal/external academic/external "
+            + "commercial) to use.");
 
     packSettingsLayout.addComponent(packageQuantityComboBox);
     packSettingsLayout.addComponent(updateQuantityButton);
@@ -128,25 +134,24 @@ final class OfferManagerTabPackageComponent {
     packSettingsLayout.setComponentAlignment(updateQuantityButton, Alignment.BOTTOM_CENTER);
     packSettingsLayout.setComponentAlignment(removePackageButton, Alignment.BOTTOM_CENTER);
     packSettingsLayout.setComponentAlignment(addPackageButton, Alignment.BOTTOM_CENTER);
-    packSettingsLayout.setComponentAlignment(externalInternalPriceComboBox, Alignment.MIDDLE_CENTER);
+    packSettingsLayout.setComponentAlignment(externalInternalPriceComboBox,
+        Alignment.MIDDLE_CENTER);
     packSettingsLayout.setComponentAlignment(externalInternalButton, Alignment.BOTTOM_CENTER);
 
     packSettingsLayout.setSpacing(true);
 
-    // we need different freeform queries if 'All' package groups are selected or e.g. only 'Bioinformatics' package groups
-    String freeformQueryString =
-        "SELECT * " +
-            "FROM offers " +
-            "INNER JOIN offers_packages ON offers.`offer_id` = offers_packages.`offer_id` " +
-            "INNER JOIN packages ON packages.`package_id` = offers_packages.`package_id`" +
-            "WHERE offers.offer_id = " + selectedOfferID + " AND packages.`package_group` = '" + packagesType + "'";
+    // we need different freeform queries if 'All' package groups are selected or e.g. only
+    // 'Bioinformatics' package groups
+    String freeformQueryString = "SELECT * " + "FROM offers "
+        + "INNER JOIN offers_packages ON offers.`offer_id` = offers_packages.`offer_id` "
+        + "INNER JOIN packages ON packages.`package_id` = offers_packages.`package_id`"
+        + "WHERE offers.offer_id = " + selectedOfferID + " AND packages.`package_group` = '"
+        + packagesType + "'";
     if (Objects.equals(packagesType, "All")) {
-      freeformQueryString =
-          "SELECT * " +
-              "FROM offers " +
-              "INNER JOIN offers_packages ON offers.`offer_id` = offers_packages.`offer_id` " +
-              "INNER JOIN packages ON packages.`package_id` = offers_packages.`package_id`" +
-              "WHERE offers.offer_id = " + selectedOfferID;
+      freeformQueryString = "SELECT * " + "FROM offers "
+          + "INNER JOIN offers_packages ON offers.`offer_id` = offers_packages.`offer_id` "
+          + "INNER JOIN packages ON packages.`package_id` = offers_packages.`package_id`"
+          + "WHERE offers.offer_id = " + selectedOfferID;
     }
 
     FreeformQuery query =
@@ -167,9 +172,9 @@ final class OfferManagerTabPackageComponent {
     // update the array lists holding the information about the packages of the current offer
     updatePackageArrays(packsContainer);
 
-    addListeners(offerGridContainer, selectedOfferID, db, packageQuantityComboBox, updateQuantityButton,
-        removePackageButton, packagesAvailableForOfferComboBox, addPackageButton, packsContainer,
-        externalInternalPriceComboBox, externalInternalButton);
+    addListeners(offerGridContainer, selectedOfferID, db, packageQuantityComboBox,
+        updateQuantityButton, removePackageButton, packagesAvailableForOfferComboBox,
+        addPackageButton, packsContainer, externalInternalPriceComboBox, externalInternalButton);
 
     // remove unimportant columns from the grid
     selectedPacksInOfferGrid.removeColumn("offer_id");
@@ -193,8 +198,8 @@ final class OfferManagerTabPackageComponent {
 
     // rename the header caption
     selectedPacksInOfferGrid.getColumn("package_id").setHeaderCaption("Id");
-    selectedPacksInOfferGrid.getColumn("package_addon_price").setHeaderCaption(
-        "Package total price (€)");
+    selectedPacksInOfferGrid.getColumn("package_addon_price")
+        .setHeaderCaption("Package total price (€)");
     selectedPacksInOfferGrid.getColumn("package_count").setHeaderCaption("Quantity");
     selectedPacksInOfferGrid.getColumn("package_discount").setHeaderCaption("Discount");
     selectedPacksInOfferGrid.getColumn("package_name").setHeaderCaption("Package Name")
@@ -203,20 +208,22 @@ final class OfferManagerTabPackageComponent {
     selectedPacksInOfferGrid.getColumn("package_description").setHeaderCaption("Description")
         .setWidth(300);
     selectedPacksInOfferGrid.getColumn("package_group").setHeaderCaption("Group");
-    selectedPacksInOfferGrid.getColumn("package_price_internal").setHeaderCaption("Internal base price (€)");
-    selectedPacksInOfferGrid.getColumn("package_price_external_academic").setHeaderCaption(
-        "External academic base price (€)");
-    selectedPacksInOfferGrid.getColumn("package_price_external_commercial").setHeaderCaption(
-        "External commercial base price (€)");
+    selectedPacksInOfferGrid.getColumn("package_price_internal")
+        .setHeaderCaption("Internal base price (€)");
+    selectedPacksInOfferGrid.getColumn("package_price_external_academic")
+        .setHeaderCaption("External academic base price (€)");
+    selectedPacksInOfferGrid.getColumn("package_price_external_commercial")
+        .setHeaderCaption("External commercial base price (€)");
     selectedPacksInOfferGrid.getColumn("package_unit_type").setHeaderCaption("Unit Type");
     selectedPacksInOfferGrid.getColumn("package_price_type").setHeaderCaption("Package price type");
 
-    selectedPacksInOfferGrid.setColumnOrder("package_id", "package_name", "package_description", "package_addon_price",
-        "package_count", "package_discount", "package_group", "package_facility", "package_price_internal",
-        "package_price_external_academic", "package_price_external_commercial", "package_price_type",
-        "package_unit_type");
+    selectedPacksInOfferGrid.setColumnOrder("package_id", "package_name", "package_description",
+        "package_addon_price", "package_count", "package_discount", "package_group",
+        "package_facility", "package_price_internal", "package_price_external_academic",
+        "package_price_external_commercial", "package_price_type", "package_unit_type");
 
-    // we don't want the packages to be be editable, because this would change the package in other offers as well
+    // we don't want the packages to be be editable, because this would change the package in other
+    // offers as well
     selectedPacksInOfferGrid.sort("package_id", SortDirection.ASCENDING);
     selectedPacksInOfferGrid.setEditorEnabled(false);
     selectedPacksInOfferGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
@@ -234,21 +241,23 @@ final class OfferManagerTabPackageComponent {
 
   /**
    * adds the listeners to the package component of the offer manager tab
+   * 
    * @param offerGridContainer: sql container holding the data for the offers
    * @param selectedOfferID: id of the selected offer
    * @param db: database instance to query
    * @param packageQuantityComboBox: combo box for selecting the package quantity
    * @param updateQuantityButton: button for updating the package quantity
    * @param removePackageButton: button for removing a package from the current offer
-   * @param packagesAvailableForOfferComboBox: combo box for selecting the available packages to add to the current offer
+   * @param packagesAvailableForOfferComboBox: combo box for selecting the available packages to add
+   *        to the current offer
    * @param addPackageButton: button for adding a package
    * @param packsContainer: sql container holding the data for the packages
    */
   private void addListeners(SQLContainer offerGridContainer, String selectedOfferID, Database db,
-                                   ComboBox packageQuantityComboBox, Button updateQuantityButton,
-                                   Button removePackageButton, ComboBox packagesAvailableForOfferComboBox,
-                                   Button addPackageButton, SQLContainer packsContainer,
-                                   ComboBox externalInternalPriceComboBox, Button externalInternalPriceButton) {
+      ComboBox packageQuantityComboBox, Button updateQuantityButton, Button removePackageButton,
+      ComboBox packagesAvailableForOfferComboBox, Button addPackageButton,
+      SQLContainer packsContainer, ComboBox externalInternalPriceComboBox,
+      Button externalInternalPriceButton) {
 
     selectedPacksInOfferGrid.addSelectionListener(new SelectionEvent.SelectionListener() {
 
@@ -292,14 +301,14 @@ final class OfferManagerTabPackageComponent {
         } else {
 
           String rowId = selectedPacksInOfferGrid.getSelectedRow().toString();
-          Object rowContainerId = packsContainer.getIdByIndex(Integer.parseInt(rowId)-1);
-          String packageId = packsContainer.getContainerProperty(rowContainerId,
-              "package_id").getValue().toString();
+          Object rowContainerId = packsContainer.getIdByIndex(Integer.parseInt(rowId) - 1);
+          String packageId = packsContainer.getContainerProperty(rowContainerId, "package_id")
+              .getValue().toString();
 
           String packageGroup;
           try {
-            packageGroup = packsContainer.getContainerProperty(rowContainerId,
-                "package_grp").getValue().toString();
+            packageGroup = packsContainer.getContainerProperty(rowContainerId, "package_grp")
+                .getValue().toString();
           } catch (NullPointerException e) {
             packageGroup = "";
           }
@@ -321,8 +330,8 @@ final class OfferManagerTabPackageComponent {
           }
 
           // update the database
-          db.updatePackageQuantityAndRecalculatePrice(packageQuantityComboBox.getValue().toString(), selectedOfferID,
-              packageId, packagePriceType, packageDiscount);
+          db.updatePackageQuantityAndRecalculatePrice(packageQuantityComboBox.getValue().toString(),
+              selectedOfferID, packageId, packagePriceType, packageDiscount);
 
           packsContainer.refresh();
           offerGridContainer.refresh();
@@ -338,13 +347,13 @@ final class OfferManagerTabPackageComponent {
 
       Object selectedRow = selectedPacksInOfferGrid.getSelectedRow();
       if (selectedRow == null) {
-        displayNotification("No package selected!", "Please select an package to remove from the offer.",
-            "error");
+        displayNotification("No package selected!",
+            "Please select an package to remove from the offer.", "error");
         return;
       }
 
-      int selectedPackageID = (int) selectedPacksInOfferGrid.getContainerDataSource().getItem(selectedRow)
-          .getItemProperty("package_id").getValue();
+      int selectedPackageID = (int) selectedPacksInOfferGrid.getContainerDataSource()
+          .getItem(selectedRow).getItemProperty("package_id").getValue();
 
       db.removePackageFromOffer(selectedPackageID, Integer.parseInt(selectedOfferID));
       packsContainer.refresh();
@@ -357,9 +366,8 @@ final class OfferManagerTabPackageComponent {
 
       offerGridContainer.refresh();
 
-      displayNotification("Package removed", "Package " + selectedPackageID + " successfully removed from " +
-              "offer.",
-          "success");
+      displayNotification("Package removed",
+          "Package " + selectedPackageID + " successfully removed from " + "offer.", "success");
     });
 
     addPackageButton.addClickListener((Button.ClickListener) event -> {
@@ -379,21 +387,26 @@ final class OfferManagerTabPackageComponent {
       // get the package price as string, so we can check whether it's null
       String packageUnitPrice = db.getPriceFromPackageId(packageId, "internal");
       if (packageUnitPrice == null) {
-        displayNotification("Price is null!", "The price for the current package is null, please fix the " +
-            "database entry before adding the package!", "error");
-        return;
-      }
-
-      // check if the package is already used for the offer
-      boolean packageIsAlreadyInOffer = db.checkForPackageInOffer(Integer.parseInt(selectedOfferID), packageId);
-      if (packageIsAlreadyInOffer) {
-        displayNotification("Package already in offer!", "The package you tried to add is already used in " +
-                "the offer. Please update the quantity instead.",
+        displayNotification("Price is null!",
+            "The price for the current package is null, please fix the "
+                + "database entry before adding the package!",
             "error");
         return;
       }
 
-      db.insertOrUpdateOffersPackages(Integer.parseInt(selectedOfferID), packageId, new BigDecimal(packageUnitPrice));
+      // check if the package is already used for the offer
+      boolean packageIsAlreadyInOffer =
+          db.checkForPackageInOffer(Integer.parseInt(selectedOfferID), packageId);
+      if (packageIsAlreadyInOffer) {
+        displayNotification("Package already in offer!",
+            "The package you tried to add is already used in "
+                + "the offer. Please update the quantity instead.",
+            "error");
+        return;
+      }
+
+      db.insertOrUpdateOffersPackages(Integer.parseInt(selectedOfferID), packageId,
+          new BigDecimal(packageUnitPrice));
       packsContainer.refresh();
 
       // update the array lists holding the information about the packages of the current offer
@@ -403,8 +416,8 @@ final class OfferManagerTabPackageComponent {
       updateOfferPrice(selectedOfferID, packsContainer);
 
       offerGridContainer.refresh();
-      displayNotification("Package added", "Package " + packageName + " successfully added to the " +
-          "offer.", "success");
+      displayNotification("Package added",
+          "Package " + packageName + " successfully added to the " + "offer.", "success");
     });
 
     externalInternalPriceButton.addClickListener(event -> {
@@ -422,21 +435,24 @@ final class OfferManagerTabPackageComponent {
       } else {
 
         String rowId = selectedPacksInOfferGrid.getSelectedRow().toString();
-        Object rowContainerId = packsContainer.getIdByIndex(Integer.parseInt(rowId)-1);
-        String packageId = packsContainer.getContainerProperty(rowContainerId,
-            "package_id").getValue().toString();
+        Object rowContainerId = packsContainer.getIdByIndex(Integer.parseInt(rowId) - 1);
+        String packageId =
+            packsContainer.getContainerProperty(rowContainerId, "package_id").getValue().toString();
 
-        // database entry is an enum ["internal", "external_academic" and "external_commercial"], so we need to
+        // database entry is an enum ["internal", "external_academic" and "external_commercial"], so
+        // we need to
         // adjust the value we want to insert
         String packagePriceType = externalInternalPriceComboBox.getValue().toString();
         packagePriceType = packagePriceType.toLowerCase().replace(" ", "_");
 
         // check if we have a price for the selected package price type in the database
-        if (packsContainer.getContainerProperty(rowContainerId,
-            "package_price_" + packagePriceType).getValue() == null) {
-          displayNotification("Package price is null", "The " + packagePriceType + " for package " +
-              packageId + " is null. Please update the package in the package manager tab. Otherwise the price " +
-              "will be null", "error");
+        if (packsContainer.getContainerProperty(rowContainerId, "package_price_" + packagePriceType)
+            .getValue() == null) {
+          displayNotification("Package price is null",
+              "The " + packagePriceType + " for package " + packageId
+                  + " is null. Please update the package in the package manager tab. Otherwise the price "
+                  + "will be null",
+              "error");
           return;
         }
 
@@ -445,17 +461,19 @@ final class OfferManagerTabPackageComponent {
 
         // due to a lack of time we simply use the updatePriceAndRecalculateTotalPrices function to
         // recalculate the prices, although the quantity has not changed
-        // TODO: write function to recalculate the price without the quantity to save some computation power
+        // TODO: write function to recalculate the price without the quantity to save some
+        // computation power
         packsContainer.refresh();
         offerGridContainer.refresh();
 
-        String packageDiscountString = packsContainer.getContainerProperty(rowContainerId,
-            "package_discount").getValue().toString().split("%")[0];
-        String packageCount = packsContainer.getContainerProperty(rowContainerId,
-            "package_count").getValue().toString();
+        String packageDiscountString =
+            packsContainer.getContainerProperty(rowContainerId, "package_discount").getValue()
+                .toString().split("%")[0];
+        String packageCount = packsContainer.getContainerProperty(rowContainerId, "package_count")
+            .getValue().toString();
 
-        db.updatePackageQuantityAndRecalculatePrice(packageCount, selectedOfferID,
-            packageId, packagePriceType, 1-Float.valueOf(packageDiscountString)/100);
+        db.updatePackageQuantityAndRecalculatePrice(packageCount, selectedOfferID, packageId,
+            packagePriceType, 1 - Float.valueOf(packageDiscountString) / 100);
 
         packsContainer.refresh();
         offerGridContainer.refresh();
@@ -468,6 +486,7 @@ final class OfferManagerTabPackageComponent {
 
   /**
    * updates the total offer price for the offer with offer id selectedOfferId
+   * 
    * @param selectedOfferID: id of the offer to update the price for
    * @param packsContainer: holds all the information about the offer
    */
@@ -484,25 +503,31 @@ final class OfferManagerTabPackageComponent {
       int packageIdInGrid = Integer.parseInt(packageIdProperty.getValue().toString());
 
       // get the package price type (internal, external, etc.)
-      Property<?> packagePriceTypeProperty = packsContainer.getContainerProperty(itemID, "package_price_type");
+      Property<?> packagePriceTypeProperty =
+          packsContainer.getContainerProperty(itemID, "package_price_type");
       String packagePriceType = packagePriceTypeProperty.getValue().toString();
 
-      Property<?> packageCountProperty = packsContainer.getContainerProperty(itemID, "package_count");
+      Property<?> packageCountProperty =
+          packsContainer.getContainerProperty(itemID, "package_count");
       int packageCount = Integer.parseInt(packageCountProperty.getValue().toString());
 
       // get the discount as floating point number (82% -> 0.18)
-      Property<?> discountProperty = packsContainer.getContainerProperty(itemID, "package_discount");
-      float discount = (100 - Float.parseFloat(discountProperty.getValue().toString().split("%")[0])) / 100;
+      Property<?> discountProperty =
+          packsContainer.getContainerProperty(itemID, "package_discount");
+      float discount =
+          (100 - Float.parseFloat(discountProperty.getValue().toString().split("%")[0])) / 100;
 
       String packagePrice = db.getPriceFromPackageId(packageIdInGrid, packagePriceType);
 
       if (packagePrice == null) {
         packagePrice = "0";
-        displayNotification("Package price is null!", "The package price for the package " +
-            packageIdInGrid + " is null. Please update the price in the package manager tab.",
-            "warning") ;
+        displayNotification("Package price is null!", "The package price for the package "
+            + packageIdInGrid + " is null. Please update the price in the package manager tab.",
+            "warning");
       }
-      totalOfferPrice = totalOfferPrice.add((new BigDecimal(packagePrice).multiply(new BigDecimal(packageCount))).multiply(new BigDecimal(discount)));
+      totalOfferPrice =
+          totalOfferPrice.add((new BigDecimal(packagePrice).multiply(new BigDecimal(packageCount)))
+              .multiply(new BigDecimal(discount)));
     }
 
     // update total offer price in db
@@ -511,7 +536,9 @@ final class OfferManagerTabPackageComponent {
   }
 
   /**
-   * updates the array lists holding the package names, descriptions, counts, unit prices and total prices
+   * updates the array lists holding the package names, descriptions, counts, unit prices and total
+   * prices
+   * 
    * @param packsContainer: holds all the information of the currently used packages
    */
   private void updatePackageArrays(SQLContainer packsContainer) {
@@ -535,8 +562,8 @@ final class OfferManagerTabPackageComponent {
 
     for (Object packsContainerRowId : packsContainer.getItemIds()) {
 
-      String packageId = packsContainer
-          .getContainerProperty(packsContainerRowId, "package_id").getValue().toString();
+      String packageId = packsContainer.getContainerProperty(packsContainerRowId, "package_id")
+          .getValue().toString();
       packageIDs.add(packageId);
 
       // package description can be empty, since it's not really needed
@@ -548,7 +575,8 @@ final class OfferManagerTabPackageComponent {
         packageDescriptions.add("");
 
       // deal with all properties which must not be null
-      Object packageName = packsContainer.getContainerProperty(packsContainerRowId, "package_name").getValue();
+      Object packageName =
+          packsContainer.getContainerProperty(packsContainerRowId, "package_name").getValue();
       if (packageName == null) {
         displayNotification("Error parsing the package name for package " + packageId + "!",
             " package_name is null. Please fix the package in the package tab.", "error");
@@ -556,7 +584,8 @@ final class OfferManagerTabPackageComponent {
         packageNames.add(packageName.toString());
       }
 
-      Object packageCount = packsContainer.getContainerProperty(packsContainerRowId, "package_count").getValue();
+      Object packageCount =
+          packsContainer.getContainerProperty(packsContainerRowId, "package_count").getValue();
       if (packageCount == null) {
         displayNotification("Error parsing the package count for package " + packageId + "!",
             " package_count is null. Please fix it in the offer manager tab.", "error");
@@ -566,24 +595,29 @@ final class OfferManagerTabPackageComponent {
 
       DecimalFormat myFormatter = new DecimalFormat("###,###.###");
 
-      // get the container property we need to check ("package_price_internal", "package_price_external_academic", ..)
-      Object packagePriceTypeObject = packsContainer.getContainerProperty(packsContainerRowId,
-          "package_price_type").getValue();
+      // get the container property we need to check ("package_price_internal",
+      // "package_price_external_academic", ..)
+      Object packagePriceTypeObject =
+          packsContainer.getContainerProperty(packsContainerRowId, "package_price_type").getValue();
       // deal with null and empty strings -> use "internal" instead
-      String packagePriceType = packagePriceTypeObject == null ? "internal" : packagePriceTypeObject.toString();
+      String packagePriceType =
+          packagePriceTypeObject == null ? "internal" : packagePriceTypeObject.toString();
       packagePriceType = packagePriceType.equals("") ? "internal" : packagePriceType;
       String containerPropertyToCheck = "package_price_" + packagePriceType;
 
       // get the respective package price (based on containerPropertyToCheck)
-      Object packagePrice = packsContainer.getContainerProperty(packsContainerRowId, containerPropertyToCheck).getValue();
+      Object packagePrice = packsContainer
+          .getContainerProperty(packsContainerRowId, containerPropertyToCheck).getValue();
       if (packagePrice == null) {
-        displayNotification("Error parsing the package price for package " + packsContainerRowId + "!",
+        displayNotification(
+            "Error parsing the package price for package " + packsContainerRowId + "!",
             packageId + " is null. Please fix the package in the package tab.", "error");
       } else {
         packageUnitPrices.add(myFormatter.format(packagePrice));
       }
 
-      Object packageAddonPrice = packsContainer.getContainerProperty(packsContainerRowId, "package_addon_price").getValue();
+      Object packageAddonPrice = packsContainer
+          .getContainerProperty(packsContainerRowId, "package_addon_price").getValue();
       if (packageAddonPrice == null) {
         displayNotification("Error parsing the package addon price for package " + packageId + "!",
             " package_addon_price is null. Please fix the package in the package tab.", "error");

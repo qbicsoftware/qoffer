@@ -9,6 +9,7 @@ import ch.systemsx.cisd.common.spring.HttpInvokerUtils;
 import java.util.List;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,7 @@ public class OpenBisProxy {
   private OpenBisProxy(final String url, final String user, final String password) {
     this.user = user;
     this.password = password;
+    System.out.println(url);
     this.apiStub = HttpInvokerUtils.createServiceStub(IApplicationServerApi.class, url, TIMEOUT);
     LOG.info("OpenBisProxy instance created");
   }
@@ -84,7 +86,7 @@ public class OpenBisProxy {
         final ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
         password = conf.getDataSourcePassword();
         username = conf.getDataSourceUser();
-        url = conf.getDataSourceApiUrl() + IApplicationServerApi.SERVICE_URL;
+        url = conf.getDataSourceUrl() + "/openbis/openbis" + IApplicationServerApi.SERVICE_URL;
         //LOG.info("OpenBIS URL {}",url);
 //      } else {
 //        try (final InputStream input = new FileInputStream(qOfferManagerUtils.PROPERTIES_FILE_PATH)) {

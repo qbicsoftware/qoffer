@@ -194,7 +194,7 @@ final class OfferManagerTabPackageComponent {
     selectedPacksInOfferGrid.removeColumn("package_date");
     selectedPacksInOfferGrid.removeColumn("discount");
     selectedPacksInOfferGrid.removeColumn("internal");
-    selectedPacksInOfferGrid.removeColumn("package_grp");
+    selectedPacksInOfferGrid.removeColumn("package_grp"); //TODO remove once column is removed
 
     // rename the header caption
     selectedPacksInOfferGrid.getColumn("package_id").setHeaderCaption("Id");
@@ -305,9 +305,12 @@ final class OfferManagerTabPackageComponent {
           String packageId = packsContainer.getContainerProperty(rowContainerId, "package_id")
               .getValue().toString();
 
+          LOG.info("updatePackageQuantityAndRecalculatePrice update quantitybutton");
+          
           String packageGroup;
+          LOG.info(packsContainer.getContainerPropertyIds());
           try {
-            packageGroup = packsContainer.getContainerProperty(rowContainerId, "package_grp")
+            packageGroup = packsContainer.getContainerProperty(rowContainerId, "package_group")
                 .getValue().toString();
           } catch (NullPointerException e) {
             packageGroup = "";
@@ -316,8 +319,11 @@ final class OfferManagerTabPackageComponent {
           float packageDiscount = 1.0f;
           // the package discount should only be applied to the bioinformatics analysis packages
           if (Objects.equals(packageGroup, "Bioinformatics Analysis")) {
+            LOG.info("package is Bioinformatics Analysis");
             // get the package discount based on the number of samples
             packageDiscount = discountPerSampleSize.get(packageCount);
+          } else {
+            LOG.info("package is not bioinfo analysis, but: <"+packageGroup+">");
           }
 
           Property packagePriceTypeProperty =
@@ -465,6 +471,8 @@ final class OfferManagerTabPackageComponent {
         // computation power
         packsContainer.refresh();
         offerGridContainer.refresh();
+        
+        LOG.info("updatePackageQuantityAndRecalculatePrice for price type button");
 
         String packageDiscountString =
             packsContainer.getContainerProperty(rowContainerId, "package_discount").getValue()

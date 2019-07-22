@@ -1057,14 +1057,14 @@ public class Database {
     return package_price;
   }
 
-  //TODO
+  //TODO package_grp or package_group?
   public void addNewPackage(packageBean pack, String user) {
     java.sql.Date date = new java.sql.Date(System.currentTimeMillis());
 
     String sql =
-        "INSERT INTO packages (package_name, package_facility, package_decription, package_grp, "
+        "INSERT INTO packages (package_name, package_facility, package_description, package_group, "
             + "package_price_internal, package_price_external_academic, package_price_external_commercial, "
-            + "package_unit_type, packag_date, added_by) VALUES(?,?,?,?,?,?,?,?,?,?)";
+            + "package_unit_type, package_date, added_by) VALUES(?,?,?,?,?,?,?,?,?,?)";
 
     String pack_grp = pack.getpackage_group();
     BigDecimal base_price = new BigDecimal(pack.getpackage_price());

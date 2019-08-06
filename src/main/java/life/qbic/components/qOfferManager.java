@@ -27,6 +27,7 @@ import life.qbic.portal.utils.PortalUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -39,16 +40,19 @@ public class qOfferManager extends CustomComponent {
   private TabSheet managerTabs;
 
   // TODO: use one list of packageBeans instead of multiple lists
+  // also: setters or adders ffs! see offermanagertab for update of these lists..
   private List<String> packageNames = new ArrayList<>();
   private List<String> packageDescriptions = new ArrayList<>();
   private List<String> packageCounts = new ArrayList<>();
   private List<String> packageUnitPrices = new ArrayList<>();
   private List<String> packageTotalPrices = new ArrayList<>();
   private List<String> packageIDs = new ArrayList<>();
+  
+  private List<Integer> discounts = new ArrayList<>();
+  private List<String> discountedPrices = new ArrayList<>();
 
 
   private static final Logger LOG = LogManager.getLogger(qOfferManager.class);
-
 
   /**
    * 
@@ -86,6 +90,14 @@ public class qOfferManager extends CustomComponent {
   List<String> getPackageIDs() {
     return packageIDs;
   }
+  
+  public List<Integer> getDiscounts() {
+    return discounts;
+  }
+
+  public List<String> getDiscountedPrices() {
+    return discountedPrices;
+  }
 
   public qOfferManager() throws IOException {
     try {
@@ -100,6 +112,17 @@ public class qOfferManager extends CustomComponent {
     ConfigurationManager config = ConfigurationManagerFactory.getInstance();
     tmpFolder = config.getTmpFolder();
 
+ // initialize tmp folder
+    try {
+      File folder = new File(tmpFolder);
+      if (!folder.exists()) {
+        folder.mkdirs();
+      }
+    } catch (Exception e) {
+      LOG.warn("unsuccessfully tried to initialize temporary folder:"+tmpFolder);
+      LOG.warn(e.getMessage());
+    }
+    
     db = Database.getInstance();
     managerTabs = new TabSheet();
 

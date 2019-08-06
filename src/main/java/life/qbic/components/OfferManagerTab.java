@@ -29,6 +29,8 @@ import life.qbic.dbase.Database;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
 import life.qbic.utils.TimeUtils;
+import life.qbic.utils.qOfferManagerUtils;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.docx4j.Docx4J;
@@ -191,7 +193,7 @@ final class OfferManagerTab {
     offerManagerGrid.getColumn("offer_project_reference").setHeaderCaption("Project Reference")
         .setEditable(false);
     offerManagerGrid.getColumn("offer_name").setHeaderCaption("Offer Name").setWidth(200)
-        .setEditable(false);
+        .setEditable(true);
     offerManagerGrid.getColumn("offer_facility").setHeaderCaption("Prospect").setEditable(false);
     offerManagerGrid.getColumn("offer_description").setHeaderCaption("Description").setWidth(300)
         .setEditable(false);
@@ -269,6 +271,8 @@ final class OfferManagerTab {
     List<String> packageUnitPrices = qOfferManager.getPackageUnitPrices();
     List<String> packageTotalPrices = qOfferManager.getPackageTotalPrices();
     List<String> packageIDs = qOfferManager.getPackageIDs();
+    List<Integer> discounts = qOfferManager.getDiscounts();
+    List<String> discountedPrices = qOfferManager.getDiscountedPrices();
 
     offerManagerGrid.addSelectionListener(selectionEvent -> {
       generateOfferButton.setEnabled(false);
@@ -419,10 +423,9 @@ final class OfferManagerTab {
 
       UI.getCurrent().addWindow(validationWindow);
 
-      CompletableFuture
-          .supplyAsync(() -> generateOfferFile(container, db, packageNames, packageDescriptions,
-              packageCounts, packageUnitPrices, packageTotalPrices, packageIDs, fileDownloader))
-          .thenAcceptAsync(success -> {
+      CompletableFuture.supplyAsync(() -> generateOfferFile(container, db, packageNames,
+          packageDescriptions, packageCounts, packageUnitPrices, packageTotalPrices, packageIDs,
+          discounts, discountedPrices, fileDownloader)).thenAcceptAsync(success -> {
             if (success) {
               UI.getCurrent().access(() -> generateOfferButton.setEnabled(true));
             }
@@ -495,7 +498,8 @@ final class OfferManagerTab {
    */
   private boolean generateOfferFile(SQLContainer container, Database db, List<String> packageNames,
       List<String> packageDescriptions, List<String> packageCounts, List<String> packageUnitPrices,
-      List<String> packageTotalPrices, List<String> packageIDs, FileDownloader fileDownloader) {
+      List<String> packageTotalPrices, List<String> packageIDs, List<Integer> discounts,
+      List<String> discountedPrices, FileDownloader fileDownloader) {
     if (offerManagerGrid.getSelectedRow() == null) {
       UI.getCurrent().access(() -> WindowFactory.addNotification("failure",
           "Please make sure that you select an offer.", notificationLayout));
@@ -668,15 +672,16 @@ final class OfferManagerTab {
       return false;
     }
 
-    DecimalFormat offerPriceFormatter = new DecimalFormat("###,###.###");
-    String offerTotal =
-        offerPriceFormatter
-            .format(
-                Float
-                    .valueOf(container
-                        .getItem(((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel())
-                            .getSelectedRow())
-                        .getItemProperty("offer_total").getValue().toString()));
+
+    String totalVal = container
+        .getItem(
+            ((Grid.SingleSelectionModel) offerManagerGrid.getSelectionModel()).getSelectedRow())
+        .getItemProperty("offer_total").getValue().toString();
+
+    // DecimalFormat offerPriceFormatter = new DecimalFormat("###,###.###");
+    // String offerTotal =
+    // offerPriceFormatter
+    // .format(totalVal);
 
     String clientSurname = clientName.split(" ")[clientName.split(" ").length - 1];
     String dateToday = new SimpleDateFormat("yyyyMMdd").format(new Date());
@@ -702,7 +707,7 @@ final class OfferManagerTab {
     changeNodeTextContent(contentControlDocument, "email", projectManagerMail);
     changeNodeTextContent(contentControlDocument, "project_title", projectTitle);
     changeNodeTextContent(contentControlDocument, "objective", projectDescription);
-    changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(offerTotal));
+    changeNodeTextContent(contentControlDocument, "estimated_total", formatCurrency(totalVal));
     changeNodeTextContent(contentControlDocument, "date", currentDate);
 
     if (estimatedDeliveryWeeks != null) {
@@ -721,7 +726,8 @@ final class OfferManagerTab {
     for (int i = packageNames.size() - 1; i >= 0; i--) {
       addRowToTable(contentControlDocument, 1, packageIDs.get(i),
           packageNames.get(i) + ": " + packageDescriptions.get(i), packageCounts.get(i),
-          formatCurrency(packageUnitPrices.get(i)), formatCurrency(packageTotalPrices.get(i)));
+          formatCurrency(packageUnitPrices.get(i)), formatCurrency(packageTotalPrices.get(i)),
+          discounts.get(i), formatCurrency(discountedPrices.get(i)));
     }
 
     // remove the placeholder rows in the .xml file

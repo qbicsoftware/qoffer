@@ -36,8 +36,10 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import static life.qbic.utils.qOfferManagerUtils.displayNotification;
@@ -54,7 +56,8 @@ final class OfferManagerTabPackageComponent {
   public OfferManagerTabPackageComponent(qOfferManager qom, OfferManagerTab omt) {
     offerManagerTab = omt;
     qOfferManager = qom;
-    InputStream fileStream = OfferManagerTabPackageComponent.class.getClassLoader().getResourceAsStream("discount_per_sample_size.csv");
+    InputStream fileStream = OfferManagerTabPackageComponent.class.getClassLoader()
+        .getResourceAsStream("discount_per_sample_size.csv");
 
     discountPerSampleSize = CsvParserUtils.parseCsvFile(fileStream, ",", true);
   }
@@ -194,7 +197,6 @@ final class OfferManagerTabPackageComponent {
     selectedPacksInOfferGrid.removeColumn("package_date");
     selectedPacksInOfferGrid.removeColumn("discount");
     selectedPacksInOfferGrid.removeColumn("internal");
-    selectedPacksInOfferGrid.removeColumn("package_grp"); //TODO remove once column is removed
 
     // rename the header caption
     selectedPacksInOfferGrid.getColumn("package_id").setHeaderCaption("Id");
@@ -306,7 +308,7 @@ final class OfferManagerTabPackageComponent {
               .getValue().toString();
 
           LOG.info("updatePackageQuantityAndRecalculatePrice update quantitybutton");
-          
+
           String packageGroup;
           LOG.info(packsContainer.getContainerPropertyIds());
           try {
@@ -323,7 +325,7 @@ final class OfferManagerTabPackageComponent {
             // get the package discount based on the number of samples
             packageDiscount = discountPerSampleSize.get(packageCount);
           } else {
-            LOG.info("package is not bioinfo analysis, but: <"+packageGroup+">");
+            LOG.info("package is not bioinfo analysis, but: <" + packageGroup + ">");
           }
 
           Property packagePriceTypeProperty =
@@ -471,7 +473,7 @@ final class OfferManagerTabPackageComponent {
         // computation power
         packsContainer.refresh();
         offerGridContainer.refresh();
-        
+
         LOG.info("updatePackageQuantityAndRecalculatePrice for price type button");
 
         String packageDiscountString =
@@ -520,10 +522,7 @@ final class OfferManagerTabPackageComponent {
       int packageCount = Integer.parseInt(packageCountProperty.getValue().toString());
 
       // get the discount as floating point number (82% -> 0.18)
-      Property<?> discountProperty =
-          packsContainer.getContainerProperty(itemID, "package_discount");
-      float discount =
-          (100 - Float.parseFloat(discountProperty.getValue().toString().split("%")[0])) / 100;
+      float discount = getDiscountForRow(packsContainer, itemID);
 
       String packagePrice = db.getPriceFromPackageId(packageIdInGrid, packagePriceType);
 
@@ -533,14 +532,22 @@ final class OfferManagerTabPackageComponent {
             + packageIdInGrid + " is null. Please update the price in the package manager tab.",
             "warning");
       }
-      totalOfferPrice =
-          totalOfferPrice.add((new BigDecimal(packagePrice).multiply(new BigDecimal(packageCount)))
-              .multiply(new BigDecimal(discount)));
+      totalOfferPrice = totalOfferPrice.add(computeDiscount(packagePrice, packageCount, discount));
     }
-
     // update total offer price in db
     db.updateTotalOfferPrice(selectedOfferID, totalOfferPrice);
+  }
 
+  private BigDecimal computeDiscount(String packagePrice, int packageCount, float discountPercent) {
+    return new BigDecimal(packagePrice).multiply(new BigDecimal(packageCount))
+        .multiply(new BigDecimal(discountPercent));
+  }
+
+  private float getDiscountForRow(SQLContainer packsContainer, Object id) {
+    Property<?> discountProperty = packsContainer.getContainerProperty(id, "package_discount");
+    float discount =
+        (100 - Float.parseFloat(discountProperty.getValue().toString().split("%")[0])) / 100;
+    return discount;
   }
 
   /**
@@ -560,6 +567,10 @@ final class OfferManagerTabPackageComponent {
     List<String> packageTotalPrices = qOfferManager.getPackageTotalPrices();
     List<String> packageIDs = qOfferManager.getPackageIDs();
 
+    // new infos
+    List<Integer> discounts = qOfferManager.getDiscounts();
+    List<String> discountedPrices = qOfferManager.getDiscountedPrices();
+
     // clear all the lists from the qOfferManager
     packageNames.clear();
     packageDescriptions.clear();
@@ -567,6 +578,9 @@ final class OfferManagerTabPackageComponent {
     packageUnitPrices.clear();
     packageTotalPrices.clear();
     packageIDs.clear();
+
+    discounts.clear();
+    discountedPrices.clear();
 
     for (Object packsContainerRowId : packsContainer.getItemIds()) {
 
@@ -600,8 +614,10 @@ final class OfferManagerTabPackageComponent {
       } else {
         packageCounts.add(packageCount.toString());
       }
-
-      DecimalFormat myFormatter = new DecimalFormat("###,###.###");
+      NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
+      DecimalFormat decimalFormatter = (DecimalFormat) nf;
+      decimalFormatter.applyLocalizedPattern("#,#00.0#");
+      // DecimalFormat decimalFormatter = new DecimalFormat("###,###.###");
 
       // get the container property we need to check ("package_price_internal",
       // "package_price_external_academic", ..)
@@ -621,8 +637,23 @@ final class OfferManagerTabPackageComponent {
             "Error parsing the package price for package " + packsContainerRowId + "!",
             packageId + " is null. Please fix the package in the package tab.", "error");
       } else {
-        packageUnitPrices.add(myFormatter.format(packagePrice));
+        packageUnitPrices.add(decimalFormatter.format(packagePrice));
       }
+
+      float discountPercent = getDiscountForRow(packsContainer, packsContainerRowId);
+      int discount = (int) (100 * (new Float(1) - discountPercent));
+      BigDecimal res = new BigDecimal(decimalFormatter.format(packagePrice))
+          .multiply(new BigDecimal(discountPercent));
+//      System.out.println("---");
+//      System.out.println(res.toString());
+      String discountedUnitPrice = res.toString();
+//      System.out.println(discountedUnitPrice);
+//      discountedUnitPrice = decimalFormatter.format(res);
+//      System.out.println(discountedUnitPrice);
+//      System.out.println("---");
+
+      discounts.add(discount);
+      discountedPrices.add(discountedUnitPrice);
 
       Object packageAddonPrice = packsContainer
           .getContainerProperty(packsContainerRowId, "package_addon_price").getValue();
@@ -630,7 +661,8 @@ final class OfferManagerTabPackageComponent {
         displayNotification("Error parsing the package addon price for package " + packageId + "!",
             " package_addon_price is null. Please fix the package in the package tab.", "error");
       } else {
-        packageTotalPrices.add(myFormatter.format(packageAddonPrice));
+        packageTotalPrices.add(decimalFormatter.format(packageAddonPrice));
+        // packageTotalPrices.add(nf.getCurrencyInstance().format(packageAddonPrice));
       }
     }
 

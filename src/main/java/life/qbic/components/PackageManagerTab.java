@@ -174,7 +174,6 @@ final class PackageManagerTab {
         "package_price_external_commercial", "package_unit_type");
 
     packageGrid.removeColumn("added_by");
-    packageGrid.removeColumn("package_grp");//TODO remove once col is removed
     packageGrid.removeColumn("package_date");
     packageGrid.removeColumn("last_edited");
 

@@ -20,20 +20,14 @@ import com.vaadin.data.util.sqlcontainer.connection.SimpleJDBCConnectionPool;
 import life.qbic.model.packageBean;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
-import life.qbic.utils.qOfferManagerUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.Date;
-
-import static life.qbic.portal.utils.PortalUtils.isLiferayPortlet;
 
 public class Database {
 
@@ -46,21 +40,20 @@ public class Database {
   private final String sql_database;
   private final String username;
   private final String password;
-  private static SimpleJDBCConnectionPool connectionPool;
 
-  // private static final String basePath =
-  // VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
-
-  private static ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
-
-  private Database(String user, String password, String host, String port, String sql_database) {
+  public Database(String user, String password, String host, String port, String sql_database) {
     username = user;
     this.password = password;
     this.hostname = host;
     this.port = port;
     this.sql_database = sql_database;
     this.url = "jdbc:mysql://" + host + ":" + port + "/" + sql_database;
-
+    String mysqlDriverName = "com.mysql.jdbc.Driver";
+    try {
+      Class.forName(mysqlDriverName);
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
     LOG.info("MySQL Database instance created");
   }
 
@@ -83,125 +76,12 @@ public class Database {
 
   private static void init() {
     LOG.info("Initializing MySQL Database");
+    ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
     if (INSTANCE == null) {
-      String user = "";
-      String pw = "";
-      String host = "";
-      String port = "";
-      String sql_database = "";
-
-      // TODO local properties file path is now: src/main/resources/developer.properties
-      // if (isLiferayPortlet()) {
-      user = conf.getMysqlUser();
-      pw = conf.getMysqlPass();
-      host = conf.getMysqlHost();
-      port = conf.getMysqlPort();
-      sql_database = conf.getMysqlDB();
-
-      // } else {
-      // Properties prop = new Properties();
-      // InputStream input = null;
-      //
-      // try {
-      //
-      // input = new FileInputStream(qOfferManagerUtils.PROPERTIES_FILE_PATH);
-      //
-      // // load a properties file
-      // prop.load(input);
-      //
-      // user = prop.getProperty(LiferayConfigurationManager.MSQL_USER);
-      // pw = prop.getProperty(LiferayConfigurationManager.MSQL_PASS);
-      // host = prop.getProperty(LiferayConfigurationManager.MSQL_HOST);
-      // port = prop.getProperty(LiferayConfigurationManager.MSQL_PORT);
-      // sql_database = prop.getProperty(LiferayConfigurationManager.MSQL_DB);
-      //
-      // } catch (IOException ex) {
-      // ex.printStackTrace();
-      // } finally {
-      // if (input != null) {
-      // try {
-      // input.close();
-      // } catch (IOException e) {
-      // e.printStackTrace();
-      // }
-      // }
-      // }
-      // }
-      INSTANCE = new Database(user, pw, host, port, sql_database);
-
-      // check if com.mysql.jdbc.Driver exists. If not try to add it
-      String mysqlDriverName = "com.mysql.jdbc.Driver";
-      Enumeration<Driver> tmp = DriverManager.getDrivers();
-      boolean existsDriver = false;
-      while (tmp.hasMoreElements()) {
-        Driver d = tmp.nextElement();
-        if (d.toString().equals(mysqlDriverName)) {
-          existsDriver = true;
-          break;
-        }
-      }
-      if (!existsDriver) {
-        // Register JDBC driver
-        // According http://docs.oracle.com/javase/6/docs/api/java/sql/DriverManager.html
-        // this should not be needed anymore. But without it I get the following error:
-        // java.sql.SQLException: No suitable driver found for
-        // jdbc:mysql://localhost:3306/facs_facility
-        // Does not work for servlets, just for portlets :(
-        try {
-          Class.forName(mysqlDriverName);
-        } catch (ClassNotFoundException e) {
-          e.printStackTrace();
-        }
-      }
-
+      INSTANCE = new Database(conf.getMysqlUser(), conf.getMysqlPass(), conf.getMysqlHost(),
+          conf.getMysqlPort(), conf.getMysqlDB());
     }
   }
-
-
-  /*
-  
-   */
-  /**
-   * @return the password
-   *//*
-     * 
-     * public String getPassword() { return password; }
-     * 
-     */
-  /**
-   * @param password the password to set
-   *//*
-     * 
-     * public void setPassword(String password) { this.password = password; }
-     * 
-     */
-  /**
-   * @return the user
-   *//*
-     * 
-     * public String getUser() { return username; }
-     * 
-     */
-  /**
-   * @param user the user to set
-   *//*
-     * 
-     * public void setUser(String user) { this.username = user; }
-     * 
-     */
-  /**
-   * @return the host
-   *//*
-     * 
-     * public String getHost() { return host; }
-     * 
-     */
-  /**
-   * @param host the host to set
-   *//*
-     * 
-     * public void setHost(String host) { this.host = host; }
-     */
 
   /**
    * Undoes all changes made in the current transaction. Does not undo, if conn IS in auto commit
@@ -1057,7 +937,6 @@ public class Database {
     return package_price;
   }
 
-  //TODO package_grp or package_group?
   public void addNewPackage(packageBean pack, String user) {
     java.sql.Date date = new java.sql.Date(System.currentTimeMillis());
 
@@ -1070,7 +949,7 @@ public class Database {
     BigDecimal base_price = new BigDecimal(pack.getpackage_price());
     BigDecimal ext_acad_price = computeExternalPrice(pack_grp, "external_academics", base_price);
     BigDecimal ext_comm_price = computeExternalPrice(pack_grp, "external_commercial", base_price);
-
+    
     try (Connection conn = login();
         PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -1091,18 +970,19 @@ public class Database {
   }
 
   // TODO test
-  private BigDecimal computeExternalPrice(String priceType, String packageGroup,
+  private BigDecimal computeExternalPrice(String packageGroup, String priceType, 
       BigDecimal internalPrice) {
-    
-//    Group   Internal    Academic    Commercial
-//    Mass Spec/Sequencing    1.0 1.1 1.5
-//    Bioinformatics Analysis 1.0 1.3 2.0
-//    Project Management  1.0 1.5 2.0
-    
+
+    // Group Internal Academic Commercial
+    // Mass Spec/Sequencing 1.0 1.1 1.5
+    // Bioinformatics Analysis 1.0 1.3 2.0
+    // Project Management 1.0 1.5 2.0
+    // Other 1.0 - -
+
     Set<String> group1 = new HashSet<>(Arrays.asList("Sequencing", "Mass Spectrometry"));
     Set<String> group2 = new HashSet<>(Arrays.asList("Bioinformatics Analysis"));
     Set<String> group3 = new HashSet<>(Arrays.asList("Project Management"));
-    
+
     if (priceType.equals("external_academics")) {
       if (group1.contains(packageGroup)) {
         return internalPrice.multiply(new BigDecimal(1.1));

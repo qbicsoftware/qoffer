@@ -60,8 +60,8 @@ public class XMLUtils {
    * @param workPackageAmount: text content of the work package amount node
    */
   public static void addRowToTable(Document doc, int rowIndex, String workPackageID, String workPackageName, String workPackageQuantity,
-                                   String workPackageUnitPrice, String workPackageAmount) {
-
+                                   String workPackageUnitPrice, String workPackageAmount, int discount, String discountedPrice) {
+    
     // create the element we want to insert
     Element rowToInsert = doc.createElement("row");
 
@@ -70,9 +70,13 @@ public class XMLUtils {
     workPackageIDElement.setTextContent(workPackageID);
     rowToInsert.appendChild(workPackageIDElement);
 
-
     // add the row elements to the row element we want to insert
     Element workPackageNameElement = doc.createElement("work_package_name");
+    // add discount information, if there is a discount
+    if(discount>0) {
+      workPackageName+= " ("+workPackageQuantity+" samples result in a "+discount+"% discount)";
+      workPackageUnitPrice = discountedPrice;
+    }
     workPackageNameElement.setTextContent(workPackageName);
     rowToInsert.appendChild(workPackageNameElement);
 

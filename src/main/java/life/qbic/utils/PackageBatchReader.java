@@ -4,12 +4,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.xml.bind.JAXBException;
@@ -20,6 +22,10 @@ import org.apache.logging.log4j.Logger;
 import life.qbic.dbase.Database;
 import life.qbic.model.PackageGroup;
 import life.qbic.model.packageBean;
+import life.qbic.portal.portlet.QBiCPortletUI;
+import life.qbic.portal.utils.ConfigurationManager;
+import life.qbic.portal.utils.ConfigurationManagerFactory;
+import life.qbic.portal.utils.PropertiesBasedConfigurationManager;
 
 public class PackageBatchReader {
 
@@ -41,19 +47,48 @@ public class PackageBatchReader {
   }
 
   public static void main(String[] args) throws JAXBException {
-    String user = "";
+    String user = "andreas";
     try {
+      Properties properties = new Properties();
+
       PackageBatchReader p = new PackageBatchReader();
-      if (p.readPackageFile(new File("/Users/frieda/Desktop/package.tsv"))) {
-//        Database db = Database.getInstance();
+      if (p.readPackageFile(new File("/Users/frieda/Downloads/qOffer.tsv"))) {
+
+        try (final InputStream inputStream = ConfigurationManagerFactory.class.getClassLoader()
+            .getResourceAsStream(QBiCPortletUI.DEVELOPER_PROPERTIES_FILE_PATH)) {
+          if (inputStream == null) {
+            logger.warn(
+                "Your local configuration file was not found in the classpath. This might not be a problem. Perhaps you forgot to add {} in the classpath?",
+                QBiCPortletUI.DEVELOPER_PROPERTIES_FILE_PATH);
+          } else {
+            properties.load(inputStream);
+          }
+        } catch (IOException e) {
+          throw new RuntimeException("Could not load local configuration file "
+              + QBiCPortletUI.DEVELOPER_PROPERTIES_FILE_PATH, e);
+        }
+        final String MSQL_HOST = "mysql.host";
+        final String MSQL_DB = "mysql.db";
+        final String MSQL_USER = "mysql.user";
+        final String MSQL_PORT = "mysql.port";
+        final String MSQL_PASS = "mysql.pass";
+
+        String msqlHost = properties.getProperty(MSQL_HOST);
+        String msqlDB = properties.getProperty(MSQL_DB);
+        String msqlUser = properties.getProperty(MSQL_USER);
+        String msqlPort = properties.getProperty(MSQL_PORT);
+        String msqlPass = properties.getProperty(MSQL_PASS);
+
+        Database db = new Database(msqlUser, msqlPass, msqlHost, msqlPort, msqlDB);
         for (packageBean pack : p.getPackages()) {
-          System.out.println(pack);
-//          db.addNewPackage(pack, user);
+          db.addNewPackage(pack, user);
         }
       } else {
         System.out.println(p.getError());
       }
-    } catch (IOException e) {
+    } catch (
+
+    IOException e) {
       e.printStackTrace();
     }
   }

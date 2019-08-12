@@ -32,7 +32,8 @@ public class OpenBisProxy {
   private OpenBisProxy(final String url, final String user, final String password) {
     this.user = user;
     this.password = password;
-    System.out.println(url);
+    LOG.info("openbis API URL:");
+    LOG.info(url);
     this.apiStub = HttpInvokerUtils.createServiceStub(IApplicationServerApi.class, url, TIMEOUT);
     LOG.info("OpenBisProxy instance created");
   }
@@ -46,7 +47,6 @@ public class OpenBisProxy {
   }
 
   public List<Project> getProjects() {
-    LOG.info("Querying for openBIS projects");
     final SearchResult<Project> searchResult = apiStub.searchProjects(sessionToken, new ProjectSearchCriteria(), new ProjectFetchOptions());
     LOG.info("Found {} openBIS projects", searchResult.getTotalCount());
     return searchResult.getObjects();

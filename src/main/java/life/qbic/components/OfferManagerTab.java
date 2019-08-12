@@ -202,7 +202,7 @@ final class OfferManagerTab {
     offerManagerGrid.getColumn("offer_date").setHeaderCaption("Date").setEditable(false);
     offerManagerGrid.getColumn("last_edited").setHeaderCaption("Last edited").setEditable(false);
     offerManagerGrid.getColumn("added_by").setHeaderCaption("Added by").setEditable(false);
-    offerManagerGrid.getColumn("estimated_delivery_weeks").setHeaderCaption("Estimated Delivery");
+    offerManagerGrid.getColumn("estimated_delivery_weeks").setHeaderCaption("Estimated Delivery (weeks)");
 
 
     offerManagerGrid.setColumnOrder("offer_id", "offer_project_reference", "offer_number",

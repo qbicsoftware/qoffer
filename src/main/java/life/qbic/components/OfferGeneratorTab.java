@@ -41,6 +41,7 @@ import org.apache.logging.log4j.LogManager;
 
 import static life.qbic.utils.qOfferManagerUtils.displayNotification;
 import life.qbic.portal.utils.PortalUtils;
+import life.qbic.utils.qOfferManagerUtils;
 
 
 final class OfferGeneratorTab {
@@ -262,8 +263,8 @@ final class OfferGeneratorTab {
 								"</td><td align='right'><p style='color:red;'><b>Price</b></p></td></tr><tr> </tr>"
 								+ descriptionText[0]
 										+ "<tr><td><p style='color:red;'><b>Grand Total</b> (excl. Taxes)</p></td><td align='right'>" +
-										"<p style='color:red;'><b>€"
-										+ totalPrice[0] + "</b></p></td></tr></table>");
+										"<p style='color:red;'><b>"
+										+ qOfferManagerUtils.formatCurrency(Float.toString(totalPrice[0])) + "</b></p></td></tr></table>");
 					else
 						packageDescriptionLabel.setValue("No description available!");
 				}

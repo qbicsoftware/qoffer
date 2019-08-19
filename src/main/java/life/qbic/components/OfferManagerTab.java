@@ -29,7 +29,6 @@ import life.qbic.dbase.Database;
 import life.qbic.utils.Docx4jUtils;
 import life.qbic.utils.RefreshableGrid;
 import life.qbic.utils.TimeUtils;
-import life.qbic.utils.qOfferManagerUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,7 +40,6 @@ import org.vaadin.gridutil.cell.GridCellFilter;
 import java.io.*;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -92,6 +90,7 @@ final class OfferManagerTab {
    */
   Component createOfferManagerTab() throws SQLException {
 
+    LOG.info("init database connection");
     Database db = qOfferManager.getDb();
 
     VerticalLayout offerManLayout = new VerticalLayout();
@@ -161,6 +160,8 @@ final class OfferManagerTab {
     offerManLayout.setSpacing(true);
     offerManLayout.setSizeFull();
 
+    LOG.info("init table query connection");
+
     TableQuery tq = new TableQuery("offers", db.getDatabaseInstanceAlternative());
     tq.setVersionColumn("OPTLOCK");
     offersContainer = new SQLContainer(tq);
@@ -183,6 +184,8 @@ final class OfferManagerTab {
         Arrays.asList("In Progress", "Sent", "Accepted", "Rejected"));
 
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
+
+    LOG.info("init listeners");
 
     addListeners(db, updateStatus, updateButton, deleteOfferButton, generateOfferButton,
         offersContainer, exportTableButton, validateOfferButton, proceedButton);
@@ -220,6 +223,8 @@ final class OfferManagerTab {
     offerManagerGrid.setSelectionMode(Grid.SelectionMode.SINGLE);
     offerManagerGrid.setEditorEnabled(true);
 
+    LOG.info("add tooltips");
+
     // add tooltips to the cells
     offerManagerGrid.setCellDescriptionGenerator((Grid.CellDescriptionGenerator) cell -> {
       if (cell.getValue() == null)
@@ -244,6 +249,8 @@ final class OfferManagerTab {
     buttonLayout.addComponent(validateOfferButton);
     buttonLayout.addComponent(generateOfferButton);
     offerManLayout.addComponent(buttonLayout);
+
+    LOG.info("return layout");
 
     return offerManLayout;
   }
@@ -599,8 +606,6 @@ final class OfferManagerTab {
 
 
       // e.g. D - 72076 Tübingen, Germany
-      // TODO: country in english (database entry is in german..), postal code of country (is not in
-      // the database)
       cityZipCodeAndCounty = zipCode + " " + city + ", " + country;
     }
 

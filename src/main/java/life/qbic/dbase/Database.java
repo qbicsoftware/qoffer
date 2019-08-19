@@ -20,9 +20,9 @@ import com.vaadin.data.util.sqlcontainer.connection.SimpleJDBCConnectionPool;
 import life.qbic.model.packageBean;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
+import life.qbic.utils.PriceModificationHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.DecimalFormat;
@@ -949,7 +949,7 @@ public class Database {
     BigDecimal base_price = new BigDecimal(pack.getpackage_price());
     BigDecimal ext_acad_price = computeExternalPrice(pack_grp, "external_academics", base_price);
     BigDecimal ext_comm_price = computeExternalPrice(pack_grp, "external_commercial", base_price);
-    
+
     try (Connection conn = login();
         PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -969,43 +969,10 @@ public class Database {
     }
   }
 
-  // TODO test
-  private BigDecimal computeExternalPrice(String packageGroup, String priceType, 
+  // this should probably be in a configuration file
+  private BigDecimal computeExternalPrice(String packageGroup, String priceType,
       BigDecimal internalPrice) {
-
-    // Group Internal Academic Commercial
-    // Mass Spec/Sequencing 1.0 1.1 1.5
-    // Bioinformatics Analysis 1.0 1.3 2.0
-    // Project Management 1.0 1.5 2.0
-    // Other 1.0 - -
-
-    Set<String> group1 = new HashSet<>(Arrays.asList("Sequencing", "Mass Spectrometry"));
-    Set<String> group2 = new HashSet<>(Arrays.asList("Bioinformatics Analysis"));
-    Set<String> group3 = new HashSet<>(Arrays.asList("Project Management"));
-
-    if (priceType.equals("external_academics")) {
-      if (group1.contains(packageGroup)) {
-        return internalPrice.multiply(new BigDecimal(1.1));
-      }
-      if (group2.contains(packageGroup)) {
-        return internalPrice.multiply(new BigDecimal(1.3));
-      }
-      if (group3.contains(packageGroup)) {
-        return internalPrice.multiply(new BigDecimal(1.5));
-      }
-    }
-    if (priceType.equals("external_commercial")) {
-      if (group1.contains(packageGroup)) {
-        return internalPrice.multiply(new BigDecimal(1.5));
-      }
-      if (group2.contains(packageGroup)) {
-        return internalPrice.multiply(new BigDecimal(2.0));
-      }
-      if (group3.contains(packageGroup)) {
-        return internalPrice.multiply(new BigDecimal(2.0));
-      }
-    }
-    return internalPrice;
+    return PriceModificationHelper.computePrice(internalPrice, priceType, packageGroup);
   }
 
   public void addNewPackage(String name) {

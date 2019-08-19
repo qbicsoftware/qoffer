@@ -94,7 +94,7 @@ Generating the .docx file is rather easy:
  2. **Hit the *Generate Offer* button**.
  3. **Download the generated file** via the dialog.
 
-The implementation details can be found [here](https://github.com/qbicsoftware/qoffer/blob/master/src/README.md).
+The implementation details can be found [here](https://github.com/qbicsoftware/qoffer/blob/master/src/main/README.md).
 
 
 ### Package Manager

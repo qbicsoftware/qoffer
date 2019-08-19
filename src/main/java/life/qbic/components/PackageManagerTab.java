@@ -26,11 +26,10 @@ import com.vaadin.shared.data.sort.SortDirection;
 import com.vaadin.ui.*;
 import life.qbic.CustomWindow.WindowFactory;
 import life.qbic.dbase.Database;
+import life.qbic.utils.PriceModificationHelper;
 import life.qbic.utils.RefreshableGrid;
 import life.qbic.utils.TimeUtils;
-
 import org.vaadin.gridutil.cell.GridCellFilter;
-
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -38,19 +37,11 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-
 // import static life.qbic.components.OfferManagerTab.getPathOnServer;
 import static life.qbic.utils.qOfferManagerUtils.createExportContent;
 import static life.qbic.utils.qOfferManagerUtils.displayNotification;
 
 final class PackageManagerTab {
-
-  // price modifiers for project management and bioinformatics analysis
-  private static BigDecimal externalAcademicPriceModifier = new BigDecimal("1.3");
-  private static BigDecimal externalCommercialPriceModifier = new BigDecimal("2.0");
-
-  // price modifier for sequencing and mass spectrometry packages
-  private static BigDecimal externalPriceModifier = new BigDecimal("1.5");
 
   private static FileDownloader fileDownloader;
   // private static String pathOnServer = getPathOnServer();
@@ -370,7 +361,8 @@ final class PackageManagerTab {
     // setup the export as .csv file functionality
     // String exportPackagesFileName = pathOnServer + "packages.csv";
     String timeStamp = TimeUtils.getCurrentTimestampString();
-    String filePath = Paths.get(qOfferManager.tmpFolder, "packages_" + timeStamp + ".csv").toString();
+    String filePath =
+        Paths.get(qOfferManager.tmpFolder, "packages_" + timeStamp + ".csv").toString();
     File tempFile = new File(filePath);
     // File tempFile = File.createTempFile("packages", ".csv");
     // String filePath = tempFile.getAbsolutePath();
@@ -424,31 +416,10 @@ final class PackageManagerTab {
         String packageGroup = packageGroupObject.toString();
 
         // based on the package group we have different price modifiers:
-        BigDecimal packagePriceExternalAcademic;
-        BigDecimal packagePriceExternalCommercial;
-        switch (packageGroup) {
-          case "Bioinformatics Analysis":
-          case "Project Management":
-            // recalculate the two external prices (*1.3 and *2.0)
-            packagePriceExternalAcademic =
-                packagePriceInternal.multiply(externalAcademicPriceModifier);
-            packagePriceExternalCommercial =
-                packagePriceInternal.multiply(externalCommercialPriceModifier);
-            break;
-          case "Sequencing":
-          case "Mass spectrometry":
-            // recalculate the two external prices (*1.5)
-            packagePriceExternalAcademic = packagePriceInternal.multiply(externalPriceModifier);
-            packagePriceExternalCommercial = packagePriceInternal.multiply(externalPriceModifier);
-            break;
-          default: // package group is "Other"
-            displayNotification("Wrong package group",
-                "Package has package group \"Other\" "
-                    + "associated with it. Thus an automatic calculation of the external packages is NOT possible. "
-                    + "Please change the package group or disable the Auto-calculate external prices checkbox.",
-                "warning");
-            return;
-        }
+        BigDecimal packagePriceExternalAcademic = PriceModificationHelper
+            .computePrice(packagePriceInternal, "external_academics", packageGroup);
+        BigDecimal packagePriceExternalCommercial = PriceModificationHelper
+            .computePrice(packagePriceInternal, "external_commercial", packageGroup);
 
         // set the respective fields in the grid, which also updates the database
         selectedRow.getItemProperty("package_price_external_academic")
@@ -473,12 +444,10 @@ final class PackageManagerTab {
       }
 
     } else {
-      displayNotification("Price could not be automatically calculated",
-          "Vaadin couldn't get "
-              + "the selected row, so the external prices have NOT been automatically calculated. If you wanted to "
-              + "update the prices, please select the row via left click and then try shift + enter to open the edit "
-              + "menu. Unfortunately this seems to be a little buggy..",
-          "warning");
+      displayNotification("Price could not be automatically calculated", "Vaadin couldn't get "
+          + "the selected row, so the external prices have NOT been automatically calculated. If you wanted to "
+          + "update the prices, please select the row via left click and then try shift + enter to open the edit "
+          + "menu. Unfortunately this seems to be a little buggy..", "warning");
       return;
     }
   }

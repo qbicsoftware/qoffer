@@ -171,6 +171,8 @@ public class qOfferManager extends CustomComponent {
       });
 
     } catch (SQLException e1) {
+      LOG.error("could not create Tabs");
+      LOG.error(e1.getMessage());
       e1.printStackTrace();
     }
 

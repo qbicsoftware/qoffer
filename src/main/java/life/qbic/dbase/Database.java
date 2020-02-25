@@ -364,7 +364,7 @@ public class Database {
   public String[] getAddressForPerson(String personFullName) {
 
     // TODO: deal with multiple first names
-    String[] clientNameArray = personFullName.split(" ");
+    String[] clientNameArray = personFullName.split("\\s+");
     String title = clientNameArray[0];
     String firstName = clientNameArray[1];
     String familyName = clientNameArray[2];

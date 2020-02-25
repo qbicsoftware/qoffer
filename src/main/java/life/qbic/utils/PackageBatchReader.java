@@ -16,6 +16,7 @@ import java.util.Set;
 
 import javax.xml.bind.JAXBException;
 
+import life.qbic.Constants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -52,7 +53,8 @@ public class PackageBatchReader {
       Properties properties = new Properties();
 
       PackageBatchReader p = new PackageBatchReader();
-      if (p.readPackageFile(new File("/Users/frieda/Downloads/qOffer.tsv"))) {
+      // TODO Remove this, after batch upload is supported in qOffer
+      if (p.readPackageFile(new File(Constants.QOFFER_PACKAGES_LIST_PATH))) {
 
         try (final InputStream inputStream = ConfigurationManagerFactory.class.getClassLoader()
             .getResourceAsStream(QBiCPortletUI.DEVELOPER_PROPERTIES_FILE_PATH)) {

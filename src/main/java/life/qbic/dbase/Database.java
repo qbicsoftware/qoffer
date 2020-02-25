@@ -256,8 +256,11 @@ public class Database {
     try (Connection conn = login(); PreparedStatement statement = conn.prepareStatement(sql)) {
       statement.setInt(1, person_id);
       ResultSet rs = statement.executeQuery();
-      if (rs.next())
+      if (rs.next()) {
         organizationId = rs.getInt(1);
+      } else {
+        LOG.info(String.format("Offer Manager could not find an organisation entry for person with id %s.", person_id));
+      }
     } catch (SQLException e) {
       e.printStackTrace();
     }
@@ -346,8 +349,11 @@ public class Database {
         statement.setString(2, familyName);
       }
       ResultSet rs = statement.executeQuery();
-      if (rs.next())
+      if (rs.next()) {
         personId = rs.getInt(1);
+      } else {
+        LOG.info(String.format("Offer Manager could not find a database entry for %s %s %s.", title, firstName, familyName));
+      }
     } catch (SQLException e) {
       e.printStackTrace();
     }

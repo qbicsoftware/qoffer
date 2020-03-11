@@ -369,6 +369,7 @@ public class Database {
     String firstName = clientNameArray[1];
     String familyName = clientNameArray[2];
     int personId = getPersonIdForPersonName(title, firstName, familyName);
+    LOG.info(String.format("Person Id found %d", personId));
 
     // the person could not be found, so we return the notification message
     if (personId == -1)
@@ -378,7 +379,7 @@ public class Database {
           + "creating the offer."};
 
     int organizationId = getOrganizationIdForPersonId(personId);
-
+    LOG.info(String.format("Organisation Id found %d", personId));
     // the organization could not be found, so we return the notification message
     if (organizationId == -1)
       return new String[] {

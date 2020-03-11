@@ -649,7 +649,7 @@ final class OfferManagerTabPackageComponent {
       float discountPercent = getDiscountForRow(packsContainer, packsContainerRowId);
       LOG.info(String.format("Selected Package Price Discount was: %f", discountPercent));
       int discount = (int) (100 * (new Float(1) - discountPercent));
-
+      LOG.info(decimalFormatter.format(packagePrice));
       LOG.info(new BigDecimal(decimalFormatter.format(packagePrice)));
       LOG.info(new BigDecimal(discountPercent));
       BigDecimal res = new BigDecimal(decimalFormatter.format(packagePrice))

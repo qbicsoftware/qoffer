@@ -630,8 +630,14 @@ final class OfferManagerTabPackageComponent {
       String containerPropertyToCheck = "package_price_" + packagePriceType;
 
       // get the respective package price (based on containerPropertyToCheck)
-      Object packagePrice = packsContainer
-          .getContainerProperty(packsContainerRowId, containerPropertyToCheck).getValue();
+      Object packagePrice = packsContainer.getContainerProperty(packsContainerRowId, containerPropertyToCheck).getValue();
+
+      LOG.info(String.format("Selected Package Price is: %s", packagePrice.toString()));
+      LOG.info(String.format("Selected Package Price Type is: %s", containerPropertyToCheck));
+      LOG.info(String.format("Selected Package Price Type in DB was: %s", packagePriceType));
+      LOG.info(String.format("Selected Package Price Type in DB was: %s", packagePriceType));
+
+
       if (packagePrice == null) {
         displayNotification(
             "Error parsing the package price for package " + packsContainerRowId + "!",
@@ -641,7 +647,11 @@ final class OfferManagerTabPackageComponent {
       }
 
       float discountPercent = getDiscountForRow(packsContainer, packsContainerRowId);
+      LOG.info(String.format("Selected Package Price Discount was: %f", discountPercent));
       int discount = (int) (100 * (new Float(1) - discountPercent));
+
+      LOG.info(new BigDecimal(decimalFormatter.format(packagePrice)));
+      LOG.info(new BigDecimal(discountPercent));
       BigDecimal res = new BigDecimal(decimalFormatter.format(packagePrice))
           .multiply(new BigDecimal(discountPercent));
 //      System.out.println("---");

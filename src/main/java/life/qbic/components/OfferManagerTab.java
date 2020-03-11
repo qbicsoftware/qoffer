@@ -567,7 +567,9 @@ final class OfferManagerTab {
 
     UI.getCurrent().access(() -> WindowFactory.addNotification("warn",
         "Searching in database for client", notificationLayout));
+    LOG.info("Here");
     String[] address = db.getAddressForPerson(clientName);
+    LOG.info("Or here");
     String groupAcronym = null;
     String institute = null;
     String umbrellaOrganization = null;
@@ -584,31 +586,34 @@ final class OfferManagerTab {
       return false;
     } else {
       groupAcronym = address[0];
+      LOG.info("Checkpoint 0");
       groupAcronym = checkAddressValidity(groupAcronym, "group");
-
+      LOG.info("Checkpoint 1");
       institute = address[1];
       institute = checkAddressValidity(institute, "institute");
-
+      LOG.info("Checkpoint 2");
       umbrellaOrganization = address[2];
       umbrellaOrganization = checkAddressValidity(umbrellaOrganization, "organization");
-
+      LOG.info("Checkpoint 3");
       street = address[3];
       street = checkAddressValidity(street, "street");
-
+      LOG.info("Checkpoint 4");
       zipCode = address[4];
       zipCode = checkAddressValidity(zipCode, "zip code");
-
+      LOG.info("Checkpoint 5");
       city = address[5];
       city = checkAddressValidity(city, "city");
-
+      LOG.info("Checkpoint 6");
       country = address[6];
       country = checkAddressValidity(country, "country");
-
+      LOG.info("Checkpoint 7");
 
       // e.g. D - 72076 Tübingen, Germany
       cityZipCodeAndCounty = zipCode + " " + city + ", " + country;
+      LOG.info("Checkpoint 8");
     }
 
+    LOG.info("Found PI!");
     String projectReference = offerNumber.substring(offerNumber.indexOf('_') + 1).split("_")[0];
 
     // find the project manager based on the offer_id
@@ -798,7 +803,8 @@ final class OfferManagerTab {
   }
 
   private String checkAddressValidity(String address, String type) {
-    if (address == null | address.equals("") | address.equals(" ")) {
+    LOG.info(String.format("Param to validate: %s, type: %s", address, type));
+    if (address == null || address.equals("") || address.equals(" ")) {
       UI.getCurrent()
           .access(() -> WindowFactory.addNotification("failure",
               "Database entry for " + type + " is empty check the address in the downloaded offer!",

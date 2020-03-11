@@ -616,7 +616,7 @@ final class OfferManagerTabPackageComponent {
       }
       NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
       DecimalFormat decimalFormatter = (DecimalFormat) nf;
-      decimalFormatter.applyLocalizedPattern("#,#00.0#");
+      decimalFormatter.applyLocalizedPattern("#.##");
       // DecimalFormat decimalFormatter = new DecimalFormat("###,###.###");
 
       // get the container property we need to check ("package_price_internal",

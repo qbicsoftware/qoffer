@@ -86,7 +86,7 @@ public class OpenBisProxy {
         final ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
         password = conf.getDataSourcePassword();
         username = conf.getDataSourceUser();
-        url = conf.getDataSourceUrl() + "/openbis/openbis" + IApplicationServerApi.SERVICE_URL;
+      url = conf.getDataSourceUrl() + "/openbis/openbis" + IApplicationServerApi.SERVICE_URL;
         //LOG.info("OpenBIS URL {}",url);
 //      } else {
 //        try (final InputStream input = new FileInputStream(qOfferManagerUtils.PROPERTIES_FILE_PATH)) {

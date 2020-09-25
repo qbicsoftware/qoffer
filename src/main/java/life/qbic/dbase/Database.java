@@ -15,12 +15,11 @@
  *******************************************************************************/
 package life.qbic.dbase;
 
-import com.vaadin.data.util.sqlcontainer.connection.JDBCConnectionPool;
-import com.vaadin.data.util.sqlcontainer.connection.SimpleJDBCConnectionPool;
 import life.qbic.model.packageBean;
 import life.qbic.portal.utils.ConfigurationManager;
 import life.qbic.portal.utils.ConfigurationManagerFactory;
 import life.qbic.utils.PriceModificationHelper;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.math.BigDecimal;
@@ -34,29 +33,52 @@ public class Database {
   private static Database INSTANCE;
 
   private static final Logger LOG = LogManager.getLogger(Database.class);
-  private final String hostname;
-  private final String url; // was host
-  private final String port;
-  private final String sql_database;
+  private final String url;
   private final String username;
   private final String password;
 
-  public Database(String user, String password, String host, String port, String sql_database) {
+  private BasicDataSource dataSource;
+
+
+  private Database(String user, String password, String host, String port, String sql_database) {
     username = user;
     this.password = password;
-    this.hostname = host;
-    this.port = port;
-    this.sql_database = sql_database;
     this.url = "jdbc:mysql://" + host + ":" + port + "/" + sql_database;
-    String mysqlDriverName = "com.mysql.jdbc.Driver";
-    try {
-      Class.forName(mysqlDriverName);
-    } catch (ClassNotFoundException e) {
-      e.printStackTrace();
-    }
+
+    dataSource = new BasicDataSource();
+    dataSource.setUrl(url);
+    dataSource.setUsername(user);
+    dataSource.setPassword(password);
+    dataSource.setMinIdle(5);
+    dataSource.setMaxIdle(10);
+    dataSource.setMaxOpenPreparedStatements(100);
+
     LOG.info("MySQL Database instance created");
   }
 
+  /**
+   * Initiates the database connection by retrieving configuration information from the {@link ConfigurationManager}
+   * The instance is only created if there is no other existing
+   */
+  static void create() {
+    ConfigurationManager conf = ConfigurationManagerFactory.getInstance();
+    if (INSTANCE == null) {
+      INSTANCE = new Database(conf.getMysqlUser(), conf.getMysqlPass(), conf.getMysqlHost(),
+              conf.getMysqlPort(), conf.getMysqlDB());
+    } else{
+      LOG.info("There is already an existing database instance");
+    }
+  }
+
+  /**
+   * Creates a database connection by login into the database based on the given credentials
+   *
+   * @return Connection, otherwise null if connecting to the database fails
+   * @throws SQLException if a database access error occurs or the url is {@code null}
+   */
+  Connection getConnection() throws SQLException {
+    return dataSource.getConnection();
+  }
 
   // create the connection
 
@@ -64,15 +86,6 @@ public class Database {
     init();
     return INSTANCE;
   }
-
-  // creates new connection pool each time called BUT static context..
-  public static JDBCConnectionPool getDatabaseInstanceAlternative() throws SQLException {
-
-    return new SimpleJDBCConnectionPool("com.mysql.jdbc.Driver",
-        "jdbc:mysql://" + INSTANCE.hostname + ":" + INSTANCE.port + "/" + INSTANCE.sql_database,
-        INSTANCE.username, INSTANCE.password, 2, 5);
-  }
-
 
   private static void init() {
     LOG.info("Initializing MySQL Database");

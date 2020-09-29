@@ -22,6 +22,8 @@ logs/
 
 # Other
 **/.factorypath
+src/main/resources/discount_per_sample_size.csv
+.flattened-pom.xml
 
 # compiled Vaadin widgetsets
 src/main/webapp/VAADIN/widgetsets
@@ -35,3 +37,7 @@ src/main/webapp/WEB-INF/resourceFiles/*.csv
 
 # new properties file - do not push this ever
 src/main/resources/developer.properties
+
+
+
+

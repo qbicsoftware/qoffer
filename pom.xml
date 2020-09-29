@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>life.qbic</groupId>
 		<artifactId>portlet-parent-pom</artifactId>
-		<version>1.4.0</version>
+		<version>3.1.0</version>
 	</parent>
 	<groupId>life.qbic</groupId>
 	<artifactId>qoffer-portlet</artifactId>
@@ -14,6 +14,16 @@
 	<url>http://github.com/qbicsoftware/qoffer</url>
 	<description>Allows the user to create offers, manage and print offers and create and manage packages for the offers.</description>
 	<packaging>war</packaging>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<vaadin.version>7.7.8</vaadin.version>
+		<vaadin.plugin.version>7.7.8</vaadin.plugin.version>
+		<liferay.version>6.2.5</liferay.version>
+		<liferay.maven.plugin.version>6.2.5</liferay.maven.plugin.version>
+		<jetty.plugin.version>9.4.31.v20200723</jetty.plugin.version>
+	</properties>
 	<!-- we only need to tell maven where to find our parent pom and other QBiC 
 		dependencies -->
 	<repositories>
@@ -32,7 +42,7 @@
 			</snapshots>
 			<id>nexus-snapshots</id>
 			<name>QBiC Snapshots</name>
-			<url>https://qbic-repo.am10.uni-tuebingen.de/repository/maven-snapshots</url>
+			<url>http://qbic-repo.qbic.uni-tuebingen.de:8081/repository/maven-snapshots</url>
 		</repository>
 		<repository>
 			<releases>
@@ -45,7 +55,7 @@
 			</snapshots>
 			<id>nexus-releases</id>
 			<name>QBiC Releases</name>
-			<url>https://qbic-repo.am10.uni-tuebingen.de/repository/maven-releases</url>
+			<url>http://qbic-repo.qbic.uni-tuebingen.de:8081/repository/maven-releases</url>
 		</repository>
 	</repositories>
 
@@ -54,21 +64,19 @@
 		<dependency>
 			<groupId>life.qbic</groupId>
 			<artifactId>portal-utils-lib</artifactId>
-			<version>1.6.0</version>
+			<version>2.2.1</version>
 		</dependency>
 
 		<dependency>
 			<groupId>life.qbic</groupId>
 			<artifactId>core-utils-lib</artifactId>
-			<version>1.1.0</version>
+			<version>1.7.0</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
-			<version>5.1.6</version>
 		</dependency>
-
 
 
 		<!-- Access to our custom databases (portlets use direct JDBC to access 
@@ -80,8 +88,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>life.qbic.openbis</groupId>
-			<artifactId>openbis_api</artifactId>
+			<groupId>life.qbic</groupId>
+			<artifactId>openbis-api</artifactId>
+			<version>18.06.2</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.vaadin.addons/vaadin-grid-util -->

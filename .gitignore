@@ -22,6 +22,8 @@ logs/
 
 # Other
 **/.factorypath
+.flattened-pom.xml
+src/main/resources/discount_per_sample_size.csv
 
 # compiled Vaadin widgetsets
 src/main/webapp/VAADIN/widgetsets
